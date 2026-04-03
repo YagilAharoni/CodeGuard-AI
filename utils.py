@@ -1,37 +1,43 @@
-import zipfile
+from fpdf import FPDF
 import io
-import time
-import streamlit as st
 
-def process_uploaded_files(uploaded_files):
-    files_to_scan = []
-    for f in uploaded_files:
-        if f.name.endswith('.zip'):
-            with zipfile.ZipFile(f) as z:
-                for filename in z.namelist():
-                    ext = filename.split('.')[-1].lower()
-                    if ext in ['py', 'cpp', 'h', 'js'] and not filename.startswith('__'):
-                        with z.open(filename) as internal_file:
-                            files_to_scan.append({
-                                "name": filename,
-                                "content": internal_file.read().decode("utf-8", errors="ignore")
-                            })
-        else:
-            files_to_scan.append({
-                "name": f.name,
-                "content": f.read().decode("utf-8", errors="ignore")
-            })
-    return files_to_scan
+def generate_pdf_report(results, stats, persona):
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Header
+    pdf.set_font("Arial", "B", 20)
+    pdf.cell(0, 10, "CodeGuard AI - Security Audit Report", ln=True, align='C')
+    pdf.set_font("Arial", "", 10)
+    pdf.cell(0, 10, f"Generated for: {persona} | Date: {time.strftime('%Y-%m-%d %H:%M')}", ln=True, align='C')
+    pdf.ln(10)
 
-def save_to_history(results, stats):
-    if "history" not in st.session_state:
-        st.session_state.history = []
-    entry = {
-        "id": len(st.session_state.history),
-        "time": time.strftime("%H:%M:%S"),
-        "count": len(results),
-        "vulns": stats.get("Vuln", 0),
-        "stats": stats,
-        "full_results": results
-    }
-    st.session_state.history.append(entry)
+    # Summary Table
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Executive Summary", ln=True)
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 10, f"Total Files Scanned: {len(results)}", ln=True)
+    pdf.cell(0, 10, f"Safe Files: {stats.get('Safe', 0)}", ln=True)
+    pdf.cell(0, 10, f"Vulnerabilities Found: {stats.get('Vuln', 0)}", ln=True)
+    pdf.ln(10)
+
+    # Detailed Results
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Detailed Findings", ln=True)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(5)
+
+    for r in results:
+        pdf.set_font("Arial", "B", 12)
+        status = "SAFE" if r['safe'] else "VULNERABLE"
+        pdf.cell(0, 10, f"File: {r['name']} [{status}]", ln=True)
+        
+        pdf.set_font("Arial", "", 10)
+        # We use multi_cell for long AI reports
+        pdf.multi_cell(0, 5, r['report'].replace('###', '').replace('**', ''))
+        pdf.ln(5)
+        pdf.line(10, pdf.get_y(), 100, pdf.get_y())
+        pdf.ln(5)
+
+    # Return as bytes
+    return pdf.output()

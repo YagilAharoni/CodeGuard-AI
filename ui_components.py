@@ -1,6 +1,8 @@
 import streamlit as st
 import plotly.express as px
 import html
+import time
+from utils import generate_pdf_report  # Ensure this function exists in utils.py
 
 # Detailed guide for the login screen only
 API_HELP_GUIDE = """
@@ -22,7 +24,6 @@ def render_login_page(favicon):
     """Renders the gateway login screen with guide and persona selection"""
     _, col, _ = st.columns([1, 2, 1])
     with col:
-        # Smaller icon as requested (80px)
         st.image(favicon, width=80) 
         st.title("🛡️ CodeGuard AI Access")
         
@@ -50,7 +51,6 @@ def render_login_page(favicon):
 def render_sidebar(favicon):
     """Renders sidebar without the API guide for a cleaner look"""
     with st.sidebar:
-        # Even smaller sidebar icon (50px)
         st.image(favicon, width=50)
         st.header("CodeGuard AI")
         st.write(f"Logged in as: **{st.session_state.get('persona', 'User')}**")
@@ -75,10 +75,26 @@ def render_sidebar(favicon):
                 st.rerun()
 
 def render_dashboard(stats, results):
-    """Renders visual analytics with Risk Level breakdown"""
-    st.divider()
-    st.subheader("📊 Security Analysis Breakdown")
+    """Renders visual analytics with Risk Level breakdown and PDF Export"""
     
+    # Header Row with Export Button
+    col_title, col_export = st.columns([7, 3])
+    with col_title:
+        st.subheader("📊 Security Analysis Breakdown")
+    with col_export:
+        # Generate PDF report on the fly
+        try:
+            pdf_data = generate_pdf_report(results, stats, st.session_state.persona)
+            st.download_button(
+                label="📥 Export Report to PDF",
+                data=pdf_data,
+                file_name=f"CodeGuard_AI_Report_{time.strftime('%Y%m%d_%H%M')}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+        except Exception as e:
+            st.error("PDF engine initialization...")
+
     # Calculate Risk Levels from reports
     risk_counts = {"High": 0, "Medium": 0, "Low": 0}
     for r in results:
@@ -107,18 +123,14 @@ def render_dashboard(stats, results):
             "Safe": "#00ccff"
         }
     )
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", height=350)
-    
-    # Disable hover labels as requested
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", height=350, margin=dict(t=20, b=20, l=0, r=0))
     fig.update_traces(hoverinfo='none', hovertemplate=None)
-    
     st.plotly_chart(fig, use_container_width=True)
 
-    # Detailed Logs - All collapsed by default (expanded=False)
+    # Detailed Logs - All collapsed by default
     st.subheader("📂 Detailed Vulnerability Logs")
     for r in results:
         clean_name = html.escape(r['name'])
-        # Dynamic icon based on highest risk found
         report_upper = r['report'].upper()
         icon = "🔴" if "HIGH" in report_upper else "🟡" if "MEDIUM" in report_upper else "✅"
         
@@ -135,28 +147,37 @@ def render_profile_page():
     st.divider()
     
     st.write(f"**Persona:** {st.session_state.get('persona', 'Not set')}")
-    st.write("**Security Level:** Active Session")
+    st.write("**Security Level:** Active Session (Encrypted Memory)")
     
     st.divider()
-    if st.button("🗑️ Clear History", use_container_width=True):
+    if st.button("🗑️ Clear All Session History", use_container_width=True):
         st.session_state.history = []
         st.session_state.current_view = None
         st.success("History cleared.")
         st.rerun()
             
-    if st.button("← Return", use_container_width=True):
+    if st.button("← Return to Auditor", use_container_width=True):
         st.session_state.page = "Auditor"
         st.rerun()
 
 def render_about_page():
-    """Renders application overview"""
+    """Renders application overview and value proposition"""
     st.header("🛡️ About CodeGuard AI")
     st.divider()
-    st.write("""
-    **CodeGuard AI** is a specialized security auditing tool. 
-    It uses advanced LLMs to perform static analysis on your code, identifying 
-    vulnerabilities like SQL injection, XSS, and broken access control before they reach production.
+    
+    st.markdown("""
+    ### Secure Your Code with Intelligence
+    **CodeGuard AI** is a specialized security auditing tool built for modern developers. 
+    By leveraging Large Language Models (LLMs), it performs deep static analysis to uncover 
+    vulnerabilities that traditional regex-based scanners might miss.
+
+    #### Why use CodeGuard AI?
+    * **Automated Risk Assessment:** Instant categorization of High, Medium, and Low risks.
+    * **Educational Context:** Understand not just *what* is wrong, but *how* to fix it.
+    * **Privacy First:** Your code and API keys are processed in-memory and never stored on our disks.
+    * **Exportable Reports:** Professional PDF exports for compliance and team reviews.
     """)
+    
     if st.button("← Back to Auditor", use_container_width=True):
         st.session_state.page = "Auditor"
         st.rerun()
