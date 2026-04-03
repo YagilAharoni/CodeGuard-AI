@@ -4,7 +4,7 @@ import html
 import time
 from utils import generate_pdf_report
 
-# Detailed guide for the login screen only
+# Detailed guide for the login screen
 API_HELP_GUIDE = """
 ### 🔑 Step-by-Step: How to get your API Key
 
@@ -48,7 +48,7 @@ def render_login_page(favicon):
                 st.error("Invalid format. Groq API keys must start with 'gsk_'.")
 
 def render_sidebar(favicon):
-    """Renders sidebar without the API guide for a cleaner look"""
+    """Renders sidebar with navigation and scan history"""
     with st.sidebar:
         st.image(favicon, width=50)
         st.header("CodeGuard AI")
@@ -67,32 +67,30 @@ def render_sidebar(favicon):
             st.caption("No scans recorded.")
         
         for record in reversed(history):
-            label = f"🕒 {record['time']} ({record['vulns']} Vulns)"
+            label = f"🕒 {record['time']} ({record['vulns']} Issues)"
             if st.button(label, key=f"hist_{record['id']}", use_container_width=True):
                 st.session_state.current_view = record
                 st.session_state.page = "Auditor"
                 st.rerun()
 
 def render_auditor_landing(hero_image):
-    """Renders the landing page using either a URL or Base64 string"""
+    """Renders the centered landing page for file uploads"""
     _, col_center, _ = st.columns([1, 2, 1]) 
     with col_center:
         st.markdown("<h1 style='text-align: center;'>CodeGuard AI</h1>", unsafe_allow_html=True)
-        
         st.image(hero_image, use_column_width=True)
-            
         st.markdown("<h3 style='text-align: center;'>Start Your Security Audit</h3>", unsafe_allow_html=True)
+        st.write(f"Logged in as: **{st.session_state.persona}**")
         st.divider()
 
 def render_dashboard(stats, results):
-    """Renders visual analytics with Risk Level breakdown and PDF Export"""
+    """Renders visual analytics with Fixed Pie Chart labels"""
     
     col_title, col_export = st.columns([7, 3])
     with col_title:
         st.subheader("📊 Security Analysis Breakdown")
     with col_export:
         try:
-            # Generate PDF using the cached utility function
             pdf_data = generate_pdf_report(results, stats, st.session_state.persona)
             st.download_button(
                 label="📥 Export Report to PDF",
@@ -111,12 +109,15 @@ def render_dashboard(stats, results):
     m3.metric("Medium Risk", stats.get("Medium", 0))
     m4.metric("Low Risk", stats.get("Low", 0))
 
-    # Risk Chart
+    # --- Fixed Pie Chart (Removed overlapping text labels) ---
+    chart_values = [stats.get("High", 0), stats.get("Medium", 0), stats.get("Low", 0), stats.get("Safe", 0)]
+    chart_names = ["High Risk", "Medium Risk", "Low Risk", "Safe"]
+    
     fig = px.pie(
-        values=[stats.get("High", 0), stats.get("Medium", 0), stats.get("Low", 0), stats.get("Safe", 0)], 
-        names=["High Risk", "Medium Risk", "Low Risk", "Safe"],
+        values=chart_values, 
+        names=chart_names,
         hole=0.5,
-        color=["High Risk", "Medium Risk", "Low Risk", "Safe"],
+        color=chart_names,
         color_discrete_map={
             "High Risk": "#ff3131", 
             "Medium Risk": "#ffaa00", 
@@ -124,11 +125,22 @@ def render_dashboard(stats, results):
             "Safe": "#00ccff"
         }
     )
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", height=350)
-    fig.update_traces(hoverinfo='none')
+    
+    fig.update_traces(
+        textinfo='none',      # Fix: Hide text on chart to avoid 0% overlap
+        hoverinfo='label+percent',
+        hovertemplate='%{label}: %{percent}'
+    )
+    
+    fig.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)', 
+        font_color="white", 
+        height=350,
+        margin=dict(t=10, b=10, l=0, r=0)
+    )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Detailed Logs
+    # Detailed Logs - All collapsed by default
     st.subheader("📂 Detailed Vulnerability Logs")
     for r in results:
         clean_name = html.escape(r['name'])
@@ -143,6 +155,7 @@ def render_dashboard(stats, results):
                 st.code(r['code'])
 
 def render_profile_page():
+    """Renders profile settings and session management"""
     st.header("👤 Profile & Settings")
     st.divider()
     st.write(f"**Persona:** {st.session_state.get('persona', 'Not set')}")
@@ -157,15 +170,15 @@ def render_profile_page():
         st.rerun()
 
 def render_about_page():
+    """Renders tool overview and value proposition"""
     st.header("🛡️ About CodeGuard AI")
     st.divider()
     st.markdown("""
-    **CodeGuard AI** is an advanced security auditor designed to bridge the gap between 
-    development and production-ready security.
+    **CodeGuard AI** is a professional static analysis tool powered by Large Language Models.
     
-    * **Automated SAST:** Static Application Security Testing powered by Llama-3.
-    * **Professional PDF Reports:** Get instant compliance-ready documentation.
-    * **Privacy First:** We don't store your code. Everything is in-memory.
+    * **Automated Auditing:** Instantly identify SQLi, XSS, and logical flaws.
+    * **Risk Categorization:** Clear breakdown of High, Medium, and Low risks.
+    * **Privacy Focus:** No code is stored; analysis happens in session memory.
     """)
     if st.button("← Back", use_container_width=True):
         st.session_state.page = "Auditor"
