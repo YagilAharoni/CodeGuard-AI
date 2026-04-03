@@ -84,23 +84,26 @@ def render_auditor_landing(hero_image):
         st.divider()
 
 def render_dashboard(stats, results):
-    """Renders visual analytics with robust chart handling"""
+    """Renders visual analytics with robust PDF handling"""
     
     col_title, col_export = st.columns([7, 3])
     with col_title:
         st.subheader("📊 Security Analysis Breakdown")
+    
     with col_export:
-        try:
-            pdf_data = generate_pdf_report(results, stats, st.session_state.get('persona', 'User'))
+        # Generate the PDF as bytes from utils
+        pdf_bytes = generate_pdf_report(results, stats, st.session_state.get('persona', 'User'))
+        
+        if pdf_bytes is not None:
             st.download_button(
                 label="📥 Export Report to PDF",
-                data=pdf_data,
-                file_name=f"CodeGuard_AI_Report_{time.strftime('%Y%m%d')}.pdf",
+                data=pdf_bytes,
+                file_name=f"Security_Report_{time.strftime('%Y%m%d')}.pdf",
                 mime="application/pdf",
                 use_container_width=True
             )
-        except Exception:
-            st.error("Wait for report generation...")
+        else:
+            st.info("Preparing PDF... Refresh if not visible.")
 
     # Executive Metrics
     m1, m2, m3, m4 = st.columns(4)
@@ -109,7 +112,7 @@ def render_dashboard(stats, results):
     m3.metric("Medium Risk", stats.get("Medium", 0))
     m4.metric("Low Risk", stats.get("Low", 0))
 
-    # --- Robust Chart Logic (Fixes overlapping 0% labels) ---
+    # --- Chart Logic ---
     chart_data = {
         "Category": ["High Risk", "Medium Risk", "Low Risk", "Safe"],
         "Count": [
@@ -136,8 +139,8 @@ def render_dashboard(stats, results):
         )
 
         fig.update_traces(
-            textinfo='percent',    # Shows percentages only for visible slices
-            textposition='inside', # Keeps labels inside the chart
+            textinfo='percent',
+            textposition='inside',
             insidetextorientation='horizontal'
         )
 
@@ -150,8 +153,6 @@ def render_dashboard(stats, results):
             margin=dict(t=20, b=20, l=0, r=0)
         )
         st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("No scan data available for visualization.")
 
     # Detailed Logs
     st.subheader("📂 Detailed Vulnerability Logs")
