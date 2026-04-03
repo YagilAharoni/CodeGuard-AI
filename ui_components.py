@@ -2,7 +2,7 @@ import streamlit as st
 import plotly.express as px
 import html
 
-# Step-by-step guide for API Key
+# Detailed guide for the login screen only
 API_HELP_GUIDE = """
 ### 🔑 Step-by-Step: How to get your API Key
 
@@ -19,10 +19,10 @@ API_HELP_GUIDE = """
 """
 
 def render_login_page(favicon):
-    """Renders the gateway login screen"""
+    """Renders the gateway login screen with guide and persona selection"""
     _, col, _ = st.columns([1, 2, 1])
     with col:
-        # Smaller icon as requested
+        # Smaller icon as requested (80px)
         st.image(favicon, width=80) 
         st.title("🛡️ CodeGuard AI Access")
         
@@ -31,6 +31,7 @@ def render_login_page(favicon):
             ["Student (Learning/Self-Audit)", "Professional (Production/Enterprise)"]
         )
         
+        # Guide is visible here during login only
         api_input = st.text_input(
             "Groq API Key", 
             type="password",
@@ -44,12 +45,13 @@ def render_login_page(favicon):
                 st.session_state.is_authenticated = True
                 st.rerun()
             else:
-                st.error("Invalid format. Keys must start with 'gsk_'.")
+                st.error("Invalid format. Groq API keys must start with 'gsk_'.")
 
 def render_sidebar(favicon):
-    """Renders the sidebar with history navigation"""
+    """Renders sidebar without the API guide for a cleaner look"""
     with st.sidebar:
-        st.image(favicon, width=50) # Smaller sidebar icon
+        # Even smaller sidebar icon (50px)
+        st.image(favicon, width=50)
         st.header("CodeGuard AI")
         st.write(f"Logged in as: **{st.session_state.get('persona', 'User')}**")
         
@@ -62,6 +64,9 @@ def render_sidebar(favicon):
         st.divider()
         st.subheader("📜 Recent Scans")
         history = st.session_state.get("history", [])
+        if not history:
+            st.caption("No scans recorded.")
+        
         for record in reversed(history):
             label = f"🕒 {record['time']} ({record['vulns']} Vulns)"
             if st.button(label, key=f"hist_{record['id']}", use_container_width=True):
@@ -70,57 +75,87 @@ def render_sidebar(favicon):
                 st.rerun()
 
 def render_dashboard(stats, results):
-    """Renders the visual analytics and reports"""
+    """Renders visual analytics with Risk Level breakdown"""
     st.divider()
-    st.subheader("📊 Security Summary")
+    st.subheader("📊 Security Analysis Breakdown")
     
-    m1, m2, m3 = st.columns(3)
-    files_count = int(len(results))
-    safe_count = int(stats.get("Safe", 0))
-    vuln_count = int(stats.get("Vuln", 0))
+    # Calculate Risk Levels from reports
+    risk_counts = {"High": 0, "Medium": 0, "Low": 0}
+    for r in results:
+        report_text = r['report'].upper()
+        if "HIGH" in report_text: risk_counts["High"] += 1
+        elif "MEDIUM" in report_text: risk_counts["Medium"] += 1
+        elif "LOW" in report_text: risk_counts["Low"] += 1
 
-    with m1: st.markdown(f'<div class="metric-card">Files<br><h2>{files_count}</h2></div>', unsafe_allow_html=True)
-    with m2: st.markdown(f'<div class="metric-card">Safe<br><h2 style="color:#39ff14">{safe_count}</h2></div>', unsafe_allow_html=True)
-    with m3: st.markdown(f'<div class="metric-card">Vulns<br><h2 style="color:#ff3131">{vuln_count}</h2></div>', unsafe_allow_html=True)
+    # Executive Metrics
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Files Scanned", len(results))
+    m2.metric("High Risk", risk_counts["High"], delta_color="inverse")
+    m3.metric("Medium Risk", risk_counts["Medium"])
+    m4.metric("Low Risk", risk_counts["Low"])
 
+    # Risk Chart - Clean Look (No hover labels)
     fig = px.pie(
-        values=[safe_count, vuln_count], 
-        names=["Safe", "Vulnerable"],
+        values=[risk_counts["High"], risk_counts["Medium"], risk_counts["Low"], stats.get("Safe", 0)], 
+        names=["High Risk", "Medium Risk", "Low Risk", "Safe"],
         hole=0.5,
-        color=["Safe", "Vulnerable"],
-        color_discrete_map={"Safe": "#39ff14", "Vulnerable": "#ff3131"}
+        color=["High Risk", "Medium Risk", "Low Risk", "Safe"],
+        color_discrete_map={
+            "High Risk": "#ff3131", 
+            "Medium Risk": "#ffaa00", 
+            "Low Risk": "#39ff14", 
+            "Safe": "#00ccff"
+        }
     )
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", height=300)
-    fig.update_traces(hoverinfo='none')
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", height=350)
+    
+    # Disable hover labels as requested
+    fig.update_traces(hoverinfo='none', hovertemplate=None)
+    
     st.plotly_chart(fig, use_container_width=True)
 
-    st.subheader("📂 Vulnerability Logs")
+    # Detailed Logs - All collapsed by default (expanded=False)
+    st.subheader("📂 Detailed Vulnerability Logs")
     for r in results:
         clean_name = html.escape(r['name'])
-        icon = "✅" if r['safe'] else "⚠️"
+        # Dynamic icon based on highest risk found
+        report_upper = r['report'].upper()
+        icon = "🔴" if "HIGH" in report_upper else "🟡" if "MEDIUM" in report_upper else "✅"
+        
         with st.expander(f"{icon} {clean_name}", expanded=False):
-            t1, t2 = st.tabs(["Report", "Source"])
-            t1.markdown(r['report'])
-            t2.code(r['code'])
+            tab_report, tab_code = st.tabs(["📝 Security Report", "💻 Source Code"])
+            with tab_report:
+                st.markdown(r['report'])
+            with tab_code:
+                st.code(r['code'])
 
 def render_profile_page():
+    """Renders clean profile settings"""
     st.header("👤 Profile & Settings")
     st.divider()
+    
     st.write(f"**Persona:** {st.session_state.get('persona', 'Not set')}")
+    st.write("**Security Level:** Active Session")
+    
+    st.divider()
     if st.button("🗑️ Clear History", use_container_width=True):
         st.session_state.history = []
         st.session_state.current_view = None
+        st.success("History cleared.")
         st.rerun()
-    if st.button("← Back", use_container_width=True):
+            
+    if st.button("← Return", use_container_width=True):
         st.session_state.page = "Auditor"
         st.rerun()
 
 def render_about_page():
+    """Renders application overview"""
     st.header("🛡️ About CodeGuard AI")
     st.divider()
     st.write("""
-    **CodeGuard AI** is a state-of-the-art security auditor. 
-    It helps developers identify risks early in the development lifecycle.
+    **CodeGuard AI** is a specialized security auditing tool. 
+    It uses advanced LLMs to perform static analysis on your code, identifying 
+    vulnerabilities like SQL injection, XSS, and broken access control before they reach production.
     """)
     if st.button("← Back to Auditor", use_container_width=True):
         st.session_state.page = "Auditor"
