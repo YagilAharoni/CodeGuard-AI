@@ -2,35 +2,35 @@ import streamlit as st
 import plotly.express as px
 import html
 
-# Detailed guide only used for the login screen
+# Step-by-step guide for API Key
 API_HELP_GUIDE = """
 ### 🔑 Step-by-Step: How to get your API Key
 
 1. **Sign Up/Login:** Go to the [Groq Cloud Console](https://console.groq.com).
 2. **Find API Keys:** On the left-hand sidebar menu, click on **"API Keys"**.
 3. **Generate New Key:** Click the button **"Create API Key"**.
-4. **Label Your Key:** Give it a name (e.g., "CodeGuard_Project") and click **"Submit"**.
+4. **Label Your Key:** Give it a name (e.g., "CodeGuard_AI") and click **"Submit"**.
 5. **Copy the Key:** A popup will show your key. Click the **Copy** icon. 
    *(⚠️ Warning: You cannot view this key again once you close the popup!)*
 6. **Activate:** Paste the key here to unlock the system.
 
 ---
-*🔒 **Privacy:** Your key is processed only in-memory and is never saved on our servers.*
+*🔒 **Privacy:** Your key is processed only in-memory and is never saved.*
 """
 
 def render_login_page(favicon):
-    """Renders the gateway login screen with guide and persona selection"""
+    """Renders the gateway login screen"""
     _, col, _ = st.columns([1, 2, 1])
     with col:
-        st.image(favicon, width=100)
-        st.title("🛡️ CodeGuard Access")
+        # Smaller icon as requested
+        st.image(favicon, width=80) 
+        st.title("🛡️ CodeGuard AI Access")
         
         user_persona = st.selectbox(
             "Select your profile:",
             ["Student (Learning/Self-Audit)", "Professional (Production/Enterprise)"]
         )
         
-        # Guide is visible here during login
         api_input = st.text_input(
             "Groq API Key", 
             type="password",
@@ -44,16 +44,15 @@ def render_login_page(favicon):
                 st.session_state.is_authenticated = True
                 st.rerun()
             else:
-                st.error("Invalid format. Groq API keys must start with 'gsk_'.")
+                st.error("Invalid format. Keys must start with 'gsk_'.")
 
 def render_sidebar(favicon):
-    """Renders sidebar without the API guide (as requested)"""
+    """Renders the sidebar with history navigation"""
     with st.sidebar:
-        st.image(favicon, width=60)
-        st.header("Control Panel")
+        st.image(favicon, width=50) # Smaller sidebar icon
+        st.header("CodeGuard AI")
         st.write(f"Logged in as: **{st.session_state.get('persona', 'User')}**")
         
-        # Note: API guide (help=...) is removed here for a cleaner look after login
         if st.button("Logout / Change Key", use_container_width=True):
             st.session_state.is_authenticated = False
             st.session_state.api_key = ""
@@ -63,9 +62,6 @@ def render_sidebar(favicon):
         st.divider()
         st.subheader("📜 Recent Scans")
         history = st.session_state.get("history", [])
-        if not history:
-            st.caption("No scans recorded.")
-        
         for record in reversed(history):
             label = f"🕒 {record['time']} ({record['vulns']} Vulns)"
             if st.button(label, key=f"hist_{record['id']}", use_container_width=True):
@@ -74,20 +70,19 @@ def render_sidebar(favicon):
                 st.rerun()
 
 def render_dashboard(stats, results):
-    """Renders visual analytics with clean charts and collapsed logs"""
+    """Renders the visual analytics and reports"""
     st.divider()
-    st.subheader("📊 Executive Security Summary")
+    st.subheader("📊 Security Summary")
     
     m1, m2, m3 = st.columns(3)
     files_count = int(len(results))
     safe_count = int(stats.get("Safe", 0))
     vuln_count = int(stats.get("Vuln", 0))
 
-    with m1: st.markdown(f'<div class="metric-card">Files Scanned<br><h2>{files_count}</h2></div>', unsafe_allow_html=True)
-    with m2: st.markdown(f'<div class="metric-card">Safe Status<br><h2 style="color:#39ff14">{safe_count}</h2></div>', unsafe_allow_html=True)
-    with m3: st.markdown(f'<div class="metric-card">Vulnerabilities<br><h2 style="color:#ff3131">{vuln_count}</h2></div>', unsafe_allow_html=True)
+    with m1: st.markdown(f'<div class="metric-card">Files<br><h2>{files_count}</h2></div>', unsafe_allow_html=True)
+    with m2: st.markdown(f'<div class="metric-card">Safe<br><h2 style="color:#39ff14">{safe_count}</h2></div>', unsafe_allow_html=True)
+    with m3: st.markdown(f'<div class="metric-card">Vulns<br><h2 style="color:#ff3131">{vuln_count}</h2></div>', unsafe_allow_html=True)
 
-    # Risk Distribution Chart - hoverinfo='none' to hide labels on hover
     fig = px.pie(
         values=[safe_count, vuln_count], 
         names=["Safe", "Vulnerable"],
@@ -95,79 +90,38 @@ def render_dashboard(stats, results):
         color=["Safe", "Vulnerable"],
         color_discrete_map={"Safe": "#39ff14", "Vulnerable": "#ff3131"}
     )
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", height=350)
-    
-    # Disable hover labels as requested
-    fig.update_traces(hoverinfo='none', hovertemplate=None)
-    
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", height=300)
+    fig.update_traces(hoverinfo='none')
     st.plotly_chart(fig, use_container_width=True)
 
-    # Detailed Logs - All collapsed by default (expanded=False)
-    st.subheader("📂 Detailed Vulnerability Logs")
+    st.subheader("📂 Vulnerability Logs")
     for r in results:
         clean_name = html.escape(r['name'])
         icon = "✅" if r['safe'] else "⚠️"
         with st.expander(f"{icon} {clean_name}", expanded=False):
-            tab_report, tab_code = st.tabs(["📝 Security Report", "💻 Source Code"])
-            with tab_report:
-                st.markdown(r['report'])
-            with tab_code:
-                st.code(r['code'])
+            t1, t2 = st.tabs(["Report", "Source"])
+            t1.markdown(r['report'])
+            t2.code(r['code'])
 
 def render_profile_page():
-    """Renders profile settings without internal tech disclosure"""
     st.header("👤 Profile & Settings")
     st.divider()
-    
-    c1, c2 = st.columns(2)
-    with c1:
-        st.subheader("Session Info")
-        st.write(f"**Persona:** {st.session_state.get('persona', 'Not set')}")
-        st.write("**Status:** Authenticated")
-        
-    with c2:
-        st.subheader("Management")
-        if st.button("🗑️ Clear History", use_container_width=True):
-            st.session_state.history = []
-            st.session_state.current_view = None
-            st.success("History cleared.")
-            st.rerun()
-            
-    if st.button("← Return", use_container_width=True):
+    st.write(f"**Persona:** {st.session_state.get('persona', 'Not set')}")
+    if st.button("🗑️ Clear History", use_container_width=True):
+        st.session_state.history = []
+        st.session_state.current_view = None
+        st.rerun()
+    if st.button("← Back", use_container_width=True):
         st.session_state.page = "Auditor"
         st.rerun()
-def render_about_page():
-    """Renders a professional overview of the application and its benefits"""
-    st.header("🛡️ About CodeGuard Ultra")
-    st.divider()
-    
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.subheader("What is CodeGuard?")
-        st.write("""
-        CodeGuard Ultra is an AI-powered Security Auditing tool designed to bridge the gap between 
-        writing code and ensuring it is production-ready. By leveraging advanced Large Language Models (LLMs), 
-        it scans your source files for common vulnerabilities, logical flaws, and security anti-patterns.
-        """)
-        
-        st.subheader("Key Benefits")
-        st.markdown("""
-        * **Instant Feedback:** No more waiting for manual code reviews for basic security checks.
-        * **Educational Insights:** Tailored reports help students learn *why* a certain pattern is risky.
-        * **Risk Mitigation:** Identifies OWASP Top 10 issues like SQL Injection, XSS, and Insecure Data Handling.
-        * **Context-Aware:** Different auditing rigor for students vs. enterprise developers.
-        """)
-        
-    with col2:
-        st.info("""
-        **System Specs**
-        - **Engine:** Llama-3.3-70B (via Groq)
-        - **Analysis Type:** Static Application Security Testing (SAST)
-        - **Supported Languages:** Python, C++, JavaScript
-        """)
 
+def render_about_page():
+    st.header("🛡️ About CodeGuard AI")
     st.divider()
+    st.write("""
+    **CodeGuard AI** is a state-of-the-art security auditor. 
+    It helps developers identify risks early in the development lifecycle.
+    """)
     if st.button("← Back to Auditor", use_container_width=True):
         st.session_state.page = "Auditor"
-        st.rerun()        
+        st.rerun()
