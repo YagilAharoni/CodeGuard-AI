@@ -2,5 +2,5 @@ streamlit
 pandas
 plotly
 requests
-streamlit-lottie
 groq
+cryptography
