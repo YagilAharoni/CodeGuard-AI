@@ -12,9 +12,7 @@ from ui_components import (
 
 # --- Assets & Configuration ---
 FAVICON = "https://cdn-icons-png.flaticon.com/512/2092/2092663.png"
-
-# תמונת חוקר הסייבר המעודכנת
-HERO_IMAGE = "https://img.staticdj.com/df9e3bd7bdbe7bebe54b52b863d91786.png"
+HERO_IMAGE = "https://raw.githubusercontent.com/666666/cloud-storage/main/cyber_investigator.png"
 
 st.set_page_config(
     page_title="CodeGuard AI", 
@@ -40,18 +38,18 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Initialize Session States ---
-if "is_authenticated" not in st.session_state: 
-    st.session_state.is_authenticated = False
-if "history" not in st.session_state: 
-    st.session_state.history = []
-if "api_key" not in st.session_state: 
-    st.session_state.api_key = ""
-if "page" not in st.session_state: 
-    st.session_state.page = "Auditor"
-if "current_view" not in st.session_state: 
-    st.session_state.current_view = None
-if "persona" not in st.session_state:
-    st.session_state.persona = "Student"
+state_defaults = {
+    "is_authenticated": False,
+    "history": [],
+    "api_key": "",
+    "page": "Auditor",
+    "current_view": None,
+    "persona": "Student"
+}
+
+for key, value in state_defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
 
 # --- Authentication Guard ---
 if not st.session_state.is_authenticated:
@@ -93,9 +91,9 @@ elif st.session_state.page == "Profile":
     render_profile_page()
 
 else:
-    # --- Auditor Main Page ---
+    # --- Auditor Main Page Logic ---
     if st.session_state.current_view:
-        # Results View
+        # Results View (Historical or New)
         col_back, _ = st.columns([2, 8])
         with col_back:
             if st.button("➕ Start New Scan", use_container_width=True):
@@ -109,20 +107,16 @@ else:
     
     else:
         # --- Landing & Upload View ---
-        
-        # קריאה לפונקציית התצוגה מה-UI (התמונה והכותרות הממורכזות)
         render_auditor_landing(HERO_IMAGE)
 
-        # רכיב העלאת הקבצים (ברוחב מלא)
         uploaded_files = st.file_uploader(
-            "Upload files (Python, C++, JS) or a ZIP archive", 
+            "Upload source files (Python, C++, JS) or a ZIP archive", 
             accept_multiple_files=True, 
             type=['py', 'cpp', 'h', 'js', 'zip']
         )
         
         if uploaded_files and st.button("🚀 Run AI Security Scan", type="primary", use_container_width=True):
-            with st.spinner("Our AI agents are analyzing your code..."):
-                # Process files
+            with st.spinner("Our AI agents are analyzing your codebase..."):
                 files_list = process_uploaded_files(uploaded_files)
                 
                 if not files_list:
@@ -131,17 +125,16 @@ else:
                     stats = {"Safe": 0, "Vuln": 0, "High": 0, "Medium": 0, "Low": 0}
                     results = []
                     
-                    # Scanning progress
                     scan_prog = st.progress(0)
                     for idx, file_item in enumerate(files_list):
-                        # Call logic
+                        # Analysis execution
                         report = analyze_code_security(
                             file_item['name'], 
                             file_item['content'], 
                             st.session_state.api_key
                         )
                         
-                        # Determine safety status and risk levels for metrics
+                        # Parsing report for metrics
                         report_upper = report.upper()
                         is_safe = "[STATUS: SAFE]" in report_upper
                         
@@ -160,13 +153,10 @@ else:
                             "code": file_item['content']
                         })
                         
-                        # Update progress
                         scan_prog.progress((idx + 1) / len(files_list))
                     
-                    # Save results to session history
+                    # Persistence and UI update
                     save_to_history(results, stats)
-                    
-                    # Set current view and refresh to display dashboard
                     st.session_state.current_view = {
                         "stats": stats, 
                         "full_results": results

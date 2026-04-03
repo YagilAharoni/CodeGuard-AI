@@ -74,16 +74,15 @@ def render_sidebar(favicon):
                 st.rerun()
 
 def render_auditor_landing(hero_image):
-    """Renders the centered landing page for file uploads"""
+    """Renders the landing page using either a URL or Base64 string"""
     _, col_center, _ = st.columns([1, 2, 1]) 
     with col_center:
         st.markdown("<h1 style='text-align: center;'>CodeGuard AI</h1>", unsafe_allow_html=True)
         
-        # Display the cyber investigator image
+        # Streamlit יודע לזהות אם זה קישור או Base64 ולהציג בהתאם
         st.image(hero_image, use_column_width=True)
-        
+            
         st.markdown("<h3 style='text-align: center;'>Start Your Security Audit</h3>", unsafe_allow_html=True)
-        st.write(f"Logged in as: **{st.session_state.persona}**")
         st.divider()
 
 def render_dashboard(stats, results):
