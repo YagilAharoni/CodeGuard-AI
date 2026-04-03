@@ -80,18 +80,18 @@ def render_auditor_landing(hero_image):
         st.markdown("<h1 style='text-align: center;'>CodeGuard AI</h1>", unsafe_allow_html=True)
         st.image(hero_image, use_column_width=True)
         st.markdown("<h3 style='text-align: center;'>Start Your Security Audit</h3>", unsafe_allow_html=True)
-        st.write(f"Logged in as: **{st.session_state.persona}**")
+        st.write(f"Logged in as: **{st.session_state.get('persona', 'User')}**")
         st.divider()
 
 def render_dashboard(stats, results):
-    """Renders visual analytics with Fixed Pie Chart labels"""
+    """Renders visual analytics with robust chart handling"""
     
     col_title, col_export = st.columns([7, 3])
     with col_title:
         st.subheader("📊 Security Analysis Breakdown")
     with col_export:
         try:
-            pdf_data = generate_pdf_report(results, stats, st.session_state.persona)
+            pdf_data = generate_pdf_report(results, stats, st.session_state.get('persona', 'User'))
             st.download_button(
                 label="📥 Export Report to PDF",
                 data=pdf_data,
@@ -109,38 +109,51 @@ def render_dashboard(stats, results):
     m3.metric("Medium Risk", stats.get("Medium", 0))
     m4.metric("Low Risk", stats.get("Low", 0))
 
-    # --- Fixed Pie Chart (Removed overlapping text labels) ---
-    chart_values = [stats.get("High", 0), stats.get("Medium", 0), stats.get("Low", 0), stats.get("Safe", 0)]
-    chart_names = ["High Risk", "Medium Risk", "Low Risk", "Safe"]
-    
-    fig = px.pie(
-        values=chart_values, 
-        names=chart_names,
-        hole=0.5,
-        color=chart_names,
-        color_discrete_map={
-            "High Risk": "#ff3131", 
-            "Medium Risk": "#ffaa00", 
-            "Low Risk": "#39ff14", 
-            "Safe": "#00ccff"
-        }
-    )
-    
-    fig.update_traces(
-        textinfo='none',      # Fix: Hide text on chart to avoid 0% overlap
-        hoverinfo='label+percent',
-        hovertemplate='%{label}: %{percent}'
-    )
-    
-    fig.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)', 
-        font_color="white", 
-        height=350,
-        margin=dict(t=10, b=10, l=0, r=0)
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    # --- Robust Chart Logic (Fixes overlapping 0% labels) ---
+    chart_data = {
+        "Category": ["High Risk", "Medium Risk", "Low Risk", "Safe"],
+        "Count": [
+            stats.get("High", 0), 
+            stats.get("Medium", 0), 
+            stats.get("Low", 0), 
+            stats.get("Safe", 0)
+        ]
+    }
 
-    # Detailed Logs - All collapsed by default
+    if sum(chart_data["Count"]) > 0:
+        fig = px.pie(
+            data_frame=chart_data,
+            values="Count",
+            names="Category",
+            hole=0.5,
+            color="Category",
+            color_discrete_map={
+                "High Risk": "#ff3131", 
+                "Medium Risk": "#ffaa00", 
+                "Low Risk": "#39ff14", 
+                "Safe": "#00ccff"
+            }
+        )
+
+        fig.update_traces(
+            textinfo='percent',    # Shows percentages only for visible slices
+            textposition='inside', # Keeps labels inside the chart
+            insidetextorientation='horizontal'
+        )
+
+        fig.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', 
+            plot_bgcolor='rgba(0,0,0,0)',
+            font_color="white", 
+            height=350,
+            showlegend=True,
+            margin=dict(t=20, b=20, l=0, r=0)
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("No scan data available for visualization.")
+
+    # Detailed Logs
     st.subheader("📂 Detailed Vulnerability Logs")
     for r in results:
         clean_name = html.escape(r['name'])
@@ -155,7 +168,7 @@ def render_dashboard(stats, results):
                 st.code(r['code'])
 
 def render_profile_page():
-    """Renders profile settings and session management"""
+    """Renders profile settings and history management"""
     st.header("👤 Profile & Settings")
     st.divider()
     st.write(f"**Persona:** {st.session_state.get('persona', 'Not set')}")
@@ -170,7 +183,7 @@ def render_profile_page():
         st.rerun()
 
 def render_about_page():
-    """Renders tool overview and value proposition"""
+    """Renders application overview"""
     st.header("🛡️ About CodeGuard AI")
     st.divider()
     st.markdown("""
