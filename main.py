@@ -7,7 +7,7 @@ from ui_components import (
 )
 
 FAVICON = "https://cdn-icons-png.flaticon.com/512/2092/2092663.png"
-HERO_IMAGE = "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?q=80&w=1200&auto=format&fit=crop"
+HERO_IMAGE = "https://img.staticdj.com/df9e3bd7bdbe7bebe54b52b863d91786.png"
 
 st.set_page_config(page_title="CodeGuard AI", page_icon=FAVICON, layout="wide")
 
