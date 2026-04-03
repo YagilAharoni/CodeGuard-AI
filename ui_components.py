@@ -136,3 +136,38 @@ def render_profile_page():
     if st.button("← Return", use_container_width=True):
         st.session_state.page = "Auditor"
         st.rerun()
+def render_about_page():
+    """Renders a professional overview of the application and its benefits"""
+    st.header("🛡️ About CodeGuard Ultra")
+    st.divider()
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.subheader("What is CodeGuard?")
+        st.write("""
+        CodeGuard Ultra is an AI-powered Security Auditing tool designed to bridge the gap between 
+        writing code and ensuring it is production-ready. By leveraging advanced Large Language Models (LLMs), 
+        it scans your source files for common vulnerabilities, logical flaws, and security anti-patterns.
+        """)
+        
+        st.subheader("Key Benefits")
+        st.markdown("""
+        * **Instant Feedback:** No more waiting for manual code reviews for basic security checks.
+        * **Educational Insights:** Tailored reports help students learn *why* a certain pattern is risky.
+        * **Risk Mitigation:** Identifies OWASP Top 10 issues like SQL Injection, XSS, and Insecure Data Handling.
+        * **Context-Aware:** Different auditing rigor for students vs. enterprise developers.
+        """)
+        
+    with col2:
+        st.info("""
+        **System Specs**
+        - **Engine:** Llama-3.3-70B (via Groq)
+        - **Analysis Type:** Static Application Security Testing (SAST)
+        - **Supported Languages:** Python, C++, JavaScript
+        """)
+
+    st.divider()
+    if st.button("← Back to Auditor", use_container_width=True):
+        st.session_state.page = "Auditor"
+        st.rerun()        
