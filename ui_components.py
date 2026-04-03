@@ -79,7 +79,6 @@ def render_auditor_landing(hero_image):
     with col_center:
         st.markdown("<h1 style='text-align: center;'>CodeGuard AI</h1>", unsafe_allow_html=True)
         
-        # Streamlit יודע לזהות אם זה קישור או Base64 ולהציג בהתאם
         st.image(hero_image, use_column_width=True)
             
         st.markdown("<h3 style='text-align: center;'>Start Your Security Audit</h3>", unsafe_allow_html=True)
