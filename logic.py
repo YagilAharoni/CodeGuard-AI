@@ -1,16 +1,14 @@
-from groq import Groq
 import streamlit as st
+from groq import Groq
 
 def analyze_code_security(file_name, code_content, api_key):
     persona = st.session_state.get("persona", "Student")
-    
-    # Adjust severity based on persona
-    severity_context = "Focus on educational fixes." if "Student" in persona else "Be extremely strict for production."
+    severity = "Educational focus" if "Student" in persona else "Strict enterprise standards"
     
     try:
         client = Groq(api_key=api_key)
         system_prompt = (
-            f"You are a Senior Security Auditor. User Profile: {persona}. {severity_context} "
+            f"You are a Security Auditor for a {persona}. {severity}. "
             f"Analyze '{file_name}'. Start with [STATUS: SAFE] or [STATUS: VULNERABLE]."
         )
         
@@ -24,4 +22,4 @@ def analyze_code_security(file_name, code_content, api_key):
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"### ❌ Error: {str(e)}"

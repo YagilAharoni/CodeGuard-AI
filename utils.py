@@ -4,15 +4,13 @@ import time
 import streamlit as st
 
 def process_uploaded_files(uploaded_files):
-    """Processes individual files or ZIP archives into a unified list"""
     files_to_scan = []
     for f in uploaded_files:
         if f.name.endswith('.zip'):
             with zipfile.ZipFile(f) as z:
                 for filename in z.namelist():
-                    # Filter for relevant code files only
-                    extension = filename.split('.')[-1].lower()
-                    if extension in ['py', 'cpp', 'h', 'js'] and not filename.startswith('__'):
+                    ext = filename.split('.')[-1].lower()
+                    if ext in ['py', 'cpp', 'h', 'js'] and not filename.startswith('__'):
                         with z.open(filename) as internal_file:
                             files_to_scan.append({
                                 "name": filename,
@@ -26,12 +24,13 @@ def process_uploaded_files(uploaded_files):
     return files_to_scan
 
 def save_to_history(results, stats):
-    """Saves the scan results to the Session State history"""
+    if "history" not in st.session_state:
+        st.session_state.history = []
     entry = {
         "id": len(st.session_state.history),
         "time": time.strftime("%H:%M:%S"),
         "count": len(results),
-        "vulns": stats["Vuln"],
+        "vulns": stats.get("Vuln", 0),
         "stats": stats,
         "full_results": results
     }
