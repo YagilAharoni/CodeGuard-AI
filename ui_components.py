@@ -2,7 +2,7 @@ import streamlit as st
 import plotly.express as px
 import html
 import time
-from utils import generate_pdf_report  # Ensure this function exists in utils.py
+from utils import generate_pdf_report
 
 # Detailed guide for the login screen only
 API_HELP_GUIDE = """
@@ -32,7 +32,6 @@ def render_login_page(favicon):
             ["Student (Learning/Self-Audit)", "Professional (Production/Enterprise)"]
         )
         
-        # Guide is visible here during login only
         api_input = st.text_input(
             "Groq API Key", 
             type="password",
@@ -74,45 +73,49 @@ def render_sidebar(favicon):
                 st.session_state.page = "Auditor"
                 st.rerun()
 
+def render_auditor_landing(hero_image):
+    """Renders the centered landing page for file uploads"""
+    _, col_center, _ = st.columns([1, 2, 1]) 
+    with col_center:
+        st.markdown("<h1 style='text-align: center;'>CodeGuard AI</h1>", unsafe_allow_html=True)
+        
+        # Display the cyber investigator image
+        st.image(hero_image, use_column_width=True)
+        
+        st.markdown("<h3 style='text-align: center;'>Start Your Security Audit</h3>", unsafe_allow_html=True)
+        st.write(f"Logged in as: **{st.session_state.persona}**")
+        st.divider()
+
 def render_dashboard(stats, results):
     """Renders visual analytics with Risk Level breakdown and PDF Export"""
     
-    # Header Row with Export Button
     col_title, col_export = st.columns([7, 3])
     with col_title:
         st.subheader("📊 Security Analysis Breakdown")
     with col_export:
-        # Generate PDF report on the fly
         try:
+            # Generate PDF using the cached utility function
             pdf_data = generate_pdf_report(results, stats, st.session_state.persona)
             st.download_button(
                 label="📥 Export Report to PDF",
                 data=pdf_data,
-                file_name=f"CodeGuard_AI_Report_{time.strftime('%Y%m%d_%H%M')}.pdf",
+                file_name=f"CodeGuard_AI_Report_{time.strftime('%Y%m%d')}.pdf",
                 mime="application/pdf",
                 use_container_width=True
             )
-        except Exception as e:
-            st.error("PDF engine initialization...")
-
-    # Calculate Risk Levels from reports
-    risk_counts = {"High": 0, "Medium": 0, "Low": 0}
-    for r in results:
-        report_text = r['report'].upper()
-        if "HIGH" in report_text: risk_counts["High"] += 1
-        elif "MEDIUM" in report_text: risk_counts["Medium"] += 1
-        elif "LOW" in report_text: risk_counts["Low"] += 1
+        except Exception:
+            st.error("Wait for report generation...")
 
     # Executive Metrics
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Files Scanned", len(results))
-    m2.metric("High Risk", risk_counts["High"], delta_color="inverse")
-    m3.metric("Medium Risk", risk_counts["Medium"])
-    m4.metric("Low Risk", risk_counts["Low"])
+    m1.metric("Files", len(results))
+    m2.metric("High Risk", stats.get("High", 0))
+    m3.metric("Medium Risk", stats.get("Medium", 0))
+    m4.metric("Low Risk", stats.get("Low", 0))
 
-    # Risk Chart - Clean Look (No hover labels)
+    # Risk Chart
     fig = px.pie(
-        values=[risk_counts["High"], risk_counts["Medium"], risk_counts["Low"], stats.get("Safe", 0)], 
+        values=[stats.get("High", 0), stats.get("Medium", 0), stats.get("Low", 0), stats.get("Safe", 0)], 
         names=["High Risk", "Medium Risk", "Low Risk", "Safe"],
         hole=0.5,
         color=["High Risk", "Medium Risk", "Low Risk", "Safe"],
@@ -123,11 +126,11 @@ def render_dashboard(stats, results):
             "Safe": "#00ccff"
         }
     )
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", height=350, margin=dict(t=20, b=20, l=0, r=0))
-    fig.update_traces(hoverinfo='none', hovertemplate=None)
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", height=350)
+    fig.update_traces(hoverinfo='none')
     st.plotly_chart(fig, use_container_width=True)
 
-    # Detailed Logs - All collapsed by default
+    # Detailed Logs
     st.subheader("📂 Detailed Vulnerability Logs")
     for r in results:
         clean_name = html.escape(r['name'])
@@ -142,42 +145,30 @@ def render_dashboard(stats, results):
                 st.code(r['code'])
 
 def render_profile_page():
-    """Renders clean profile settings"""
     st.header("👤 Profile & Settings")
     st.divider()
-    
     st.write(f"**Persona:** {st.session_state.get('persona', 'Not set')}")
-    st.write("**Security Level:** Active Session (Encrypted Memory)")
     
-    st.divider()
-    if st.button("🗑️ Clear All Session History", use_container_width=True):
+    if st.button("🗑️ Clear History", use_container_width=True):
         st.session_state.history = []
         st.session_state.current_view = None
-        st.success("History cleared.")
         st.rerun()
             
-    if st.button("← Return to Auditor", use_container_width=True):
+    if st.button("← Return", use_container_width=True):
         st.session_state.page = "Auditor"
         st.rerun()
 
 def render_about_page():
-    """Renders application overview and value proposition"""
     st.header("🛡️ About CodeGuard AI")
     st.divider()
-    
     st.markdown("""
-    ### Secure Your Code with Intelligence
-    **CodeGuard AI** is a specialized security auditing tool built for modern developers. 
-    By leveraging Large Language Models (LLMs), it performs deep static analysis to uncover 
-    vulnerabilities that traditional regex-based scanners might miss.
-
-    #### Why use CodeGuard AI?
-    * **Automated Risk Assessment:** Instant categorization of High, Medium, and Low risks.
-    * **Educational Context:** Understand not just *what* is wrong, but *how* to fix it.
-    * **Privacy First:** Your code and API keys are processed in-memory and never stored on our disks.
-    * **Exportable Reports:** Professional PDF exports for compliance and team reviews.
-    """)
+    **CodeGuard AI** is an advanced security auditor designed to bridge the gap between 
+    development and production-ready security.
     
-    if st.button("← Back to Auditor", use_container_width=True):
+    * **Automated SAST:** Static Application Security Testing powered by Llama-3.
+    * **Professional PDF Reports:** Get instant compliance-ready documentation.
+    * **Privacy First:** We don't store your code. Everything is in-memory.
+    """)
+    if st.button("← Back", use_container_width=True):
         st.session_state.page = "Auditor"
         st.rerun()

@@ -6,13 +6,14 @@ from ui_components import (
     render_sidebar, 
     render_login_page, 
     render_profile_page, 
-    render_about_page
+    render_about_page, 
+    render_auditor_landing
 )
 
 # --- Assets & Configuration ---
 FAVICON = "https://cdn-icons-png.flaticon.com/512/2092/2092663.png"
 
-# התמונה החדשה של חוקר הסייבר
+# תמונת חוקר הסייבר המעודכנת
 HERO_IMAGE = "https://img.staticdj.com/df9e3bd7bdbe7bebe54b52b863d91786.png"
 
 st.set_page_config(
@@ -64,8 +65,7 @@ render_sidebar(FAVICON)
 col_title, col_about, col_nav = st.columns([8, 2, 2])
 
 with col_title:
-    # כותרת ראשית קבועה
-    st.title("🛡️ CodeGuard AI - Security Auditor")
+    st.title("🛡️ CodeGuard AI")
 
 with col_about:
     if st.button("ℹ️ About", use_container_width=True):
@@ -108,24 +108,12 @@ else:
         )
     
     else:
-        # --- Upload View (The Landing Page) ---
+        # --- Landing & Upload View ---
         
-        # שלב 1: הקטנת התמונה ומירכוזה באמצעות עמודות
-        _, col_center, _ = st.columns([1, 2, 1]) 
-        
-        with col_center:
-            # שלב 2: כותרת גדולה וממורכזת מעל התמונה
-            st.markdown("<h1 style='text-align: center;'>CodeGuard AI</h1>", unsafe_allow_html=True)
-            
-            # שלב 3: התמונה עצמה (בגודל עמודה)
-            st.image(HERO_IMAGE, use_column_width=True)
-            
-            # שלב 4: כותרת משנה ממורכזת מתחת לתמונה
-            st.markdown("<h3 style='text-align: center;'>Start Your Security Audit</h3>", unsafe_allow_html=True)
-            st.write(f"Logged in as: **{st.session_state.persona}**")
-            st.divider()
+        # קריאה לפונקציית התצוגה מה-UI (התמונה והכותרות הממורכזות)
+        render_auditor_landing(HERO_IMAGE)
 
-        # שלב 5: ה-Uploader נשאר ברוחב מלא
+        # רכיב העלאת הקבצים (ברוחב מלא)
         uploaded_files = st.file_uploader(
             "Upload files (Python, C++, JS) or a ZIP archive", 
             accept_multiple_files=True, 
@@ -140,7 +128,7 @@ else:
                 if not files_list:
                     st.error("No valid source files found in the upload.")
                 else:
-                    stats = {"Safe": 0, "Vuln": 0}
+                    stats = {"Safe": 0, "Vuln": 0, "High": 0, "Medium": 0, "Low": 0}
                     results = []
                     
                     # Scanning progress
@@ -153,9 +141,17 @@ else:
                             st.session_state.api_key
                         )
                         
-                        # Determine safety status
-                        is_safe = "[STATUS: SAFE]" in report
-                        stats["Safe" if is_safe else "Vuln"] += 1
+                        # Determine safety status and risk levels for metrics
+                        report_upper = report.upper()
+                        is_safe = "[STATUS: SAFE]" in report_upper
+                        
+                        if not is_safe:
+                            if "HIGH" in report_upper: stats["High"] += 1
+                            elif "MEDIUM" in report_upper: stats["Medium"] += 1
+                            elif "LOW" in report_upper: stats["Low"] += 1
+                            stats["Vuln"] += 1
+                        else:
+                            stats["Safe"] += 1
                         
                         results.append({
                             "name": file_item['name'],
