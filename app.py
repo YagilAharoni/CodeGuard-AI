@@ -35,6 +35,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    """Root endpoint - API status"""
+    return {
+        "message": "CodeGuard AI Backend API is running",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "endpoints": {
+            "analyze": "POST /analyze - Upload files for security analysis",
+            "export_pdf": "GET /export-pdf - Download PDF report"
+        }
+    }
+
 # In-memory storage for reports (so GET /export-pdf works statelessly for the client)
 REPORT_CACHE: Dict[str, Dict[str, Any]] = {}
 
