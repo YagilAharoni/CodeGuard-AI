@@ -387,6 +387,10 @@ async def analyze_endpoint(
         logger.info(f"Persona: {persona}")
         logger.info(f"Provider: {provider}")
         
+        # Generate unique report ID
+        report_id = str(uuid.uuid4())
+        logger.info(f"Generated Report ID: {report_id}")
+        
         files_to_scan = process_file_content(files)
         logger.info(f"Files to scan: {len(files_to_scan)}")
         
