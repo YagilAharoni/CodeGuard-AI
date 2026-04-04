@@ -77,11 +77,11 @@ export default function HistoryPage() {
       <nav className="border-b border-[#30363d] bg-[#161b22]/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">דאשבורד היסטורי</h1>
-            <p className="text-gray-500 text-sm mt-1">ניהול: מעקב אחר רמת האבטחה לאורך זמן ושיפור הצוות.</p>
+            <h1 className="text-2xl font-bold text-white">Historic Security Dashboard</h1>
+            <p className="text-gray-500 text-sm mt-1">Management view for tracking security posture over time and improving team performance.</p>
           </div>
           <div className="flex gap-3">
-            <a href="/" className="px-4 py-2 rounded-lg border border-[#30363d] hover:bg-[#1c2128] transition">חזרה לדשבורד</a>
+            <a href="/" className="px-4 py-2 rounded-lg border border-[#30363d] hover:bg-[#1c2128] transition">Back to Dashboard</a>
             <a href="/history" className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition text-white">📜 History</a>
           </div>
         </div>
@@ -96,20 +96,20 @@ export default function HistoryPage() {
 
         <section className="grid gap-6 md:grid-cols-3">
           <div className="rounded-3xl border border-[#30363d] bg-[#161b22] p-6">
-            <h2 className="text-xl font-semibold text-white mb-3">ניהול</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Management</h2>
             <p className="text-gray-400 text-sm leading-relaxed">
-              מנהל צוות יכול לראות אם כמות הפגיעויות יורדת ככל שהפרויקט מתקדם, ולוודא שהצוות סוגר חורי אבטחה לאורך זמן.
+              A leadership view for tracking vulnerability reduction and ensuring remediation progress over time.
             </p>
           </div>
           <div className="rounded-3xl border border-[#30363d] bg-[#161b22] p-6">
-            <h2 className="text-xl font-semibold text-white mb-3">סריקות שמורות</h2>
-            <p className="text-gray-400 text-sm">סה"כ סריקות: {history.length}</p>
-            <p className="text-gray-400 text-sm">סריקה אחרונה: {history[0]?.timestamp ? formatDate(history[0].timestamp) : "לא נמצאה"}</p>
+            <h2 className="text-xl font-semibold text-white mb-3">Saved Scans</h2>
+            <p className="text-gray-400 text-sm">Total scans: {history.length}</p>
+            <p className="text-gray-400 text-sm">Latest scan: {history[0]?.timestamp ? formatDate(history[0].timestamp) : "Not available"}</p>
           </div>
           <div className="rounded-3xl border border-[#30363d] bg-[#161b22] p-6">
-            <h2 className="text-xl font-semibold text-white mb-3">וידוי</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Verification</h2>
             <p className="text-gray-400 text-sm leading-relaxed">
-              השוואת גרסאות עוזרת לוודא שחורי אבטחה מדווחים בסריקה קודמת אכן נסגרו בסריקה הנוכחית.
+              Version comparison confirms that previously reported security gaps are closed in the latest scan.
             </p>
           </div>
         </section>
@@ -118,11 +118,11 @@ export default function HistoryPage() {
           <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold">Security Trends</h2>
-              <p className="text-gray-500">גרף רמת האבטחה של כל הסריקות לאורך זמן.</p>
+              <p className="text-gray-500">Trend analysis of vulnerability counts across all saved scans.</p>
             </div>
           </div>
-          <div className="w-full h-[420px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full" style={{ minHeight: 420, height: 420 }}>
+            <ResponsiveContainer width="100%" height={420} minHeight={420}>
               <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="#30363d" strokeDasharray="3 3" />
                 <XAxis dataKey="timestamp" stroke="#8b949e" tick={{ fill: '#c9d1d9', fontSize: 12 }} />
@@ -138,10 +138,10 @@ export default function HistoryPage() {
         </section>
 
         <section className="rounded-3xl border border-[#30363d] bg-[#161b22] p-6">
-          <h2 className="text-2xl font-bold mb-4">השוואת גרסאות</h2>
+          <h2 className="text-2xl font-bold mb-4">Version Comparison</h2>
           <div className="grid gap-4 md:grid-cols-3 mb-6">
             <select value={selectedA} onChange={(e) => setSelectedA(e.target.value)} className="w-full rounded-xl border border-[#30363d] bg-[#0d1117] p-3 text-white">
-              <option value="">בחר סריקה ראשונה</option>
+              <option value="">Select first scan</option>
               {history.map((entry) => (
                 <option key={entry.scan_id} value={entry.scan_id}>
                   {entry.timestamp} • {entry.status}
@@ -149,7 +149,7 @@ export default function HistoryPage() {
               ))}
             </select>
             <select value={selectedB} onChange={(e) => setSelectedB(e.target.value)} className="w-full rounded-xl border border-[#30363d] bg-[#0d1117] p-3 text-white">
-              <option value="">בחר סריקה שנייה</option>
+              <option value="">Select second scan</option>
               {history.map((entry) => (
                 <option key={entry.scan_id} value={entry.scan_id}>
                   {entry.timestamp} • {entry.status}
@@ -157,7 +157,7 @@ export default function HistoryPage() {
               ))}
             </select>
             <button onClick={compareScans} className="w-full rounded-xl bg-purple-600 px-4 py-3 text-white font-semibold hover:bg-purple-500 transition">
-              השווה בין סריקות
+              Compare Scans
             </button>
           </div>
 
@@ -165,19 +165,19 @@ export default function HistoryPage() {
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4">
-                  <div className="text-sm text-gray-400">סריקה ישנה</div>
+                  <div className="text-sm text-gray-400">Previous Scan</div>
                   <div className="mt-2 text-white font-bold">{comparison.scan_a.timestamp}</div>
-                  <div className="text-sm text-gray-400">סטטוס: {comparison.scan_a.status}</div>
+                  <div className="text-sm text-gray-400">Status: {comparison.scan_a.status}</div>
                 </div>
                 <div className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4">
-                  <div className="text-sm text-gray-400">סריקה חדשה</div>
+                  <div className="text-sm text-gray-400">Current Scan</div>
                   <div className="mt-2 text-white font-bold">{comparison.scan_b.timestamp}</div>
-                  <div className="text-sm text-gray-400">סטטוס: {comparison.scan_b.status}</div>
+                  <div className="text-sm text-gray-400">Status: {comparison.scan_b.status}</div>
                 </div>
                 <div className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4">
-                  <div className="text-sm text-gray-400">סיכום שינוי</div>
-                  <div className="mt-2 text-white font-bold">{comparison.comparison.resolved_count} נסגרו</div>
-                  <div className="text-sm text-gray-400">{comparison.comparison.new_count} חדשים</div>
+                  <div className="text-sm text-gray-400">Change Summary</div>
+                  <div className="mt-2 text-white font-bold">{comparison.comparison.resolved_count} resolved</div>
+                  <div className="text-sm text-gray-400">{comparison.comparison.new_count} new</div>
                 </div>
               </div>
 
@@ -212,10 +212,10 @@ export default function HistoryPage() {
         </section>
 
         <section className="rounded-3xl border border-[#30363d] bg-[#161b22] p-6">
-          <h2 className="text-2xl font-bold mb-4">סריקות אחרונות</h2>
+          <h2 className="text-2xl font-bold mb-4">Recent Scans</h2>
           <div className="space-y-4">
             {history.length === 0 ? (
-              <div className="rounded-2xl bg-[#0d1117] p-6 text-gray-400">לא נמצאו סריקות עדיין.</div>
+              <div className="rounded-2xl bg-[#0d1117] p-6 text-gray-400">No scans have been recorded yet.</div>
             ) : (
               history.map((entry) => (
                 <div key={entry.scan_id} className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4 grid gap-2 md:grid-cols-4">
