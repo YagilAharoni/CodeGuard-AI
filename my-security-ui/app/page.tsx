@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Head from "next/head";
 import { useScan } from "./hooks/useScan";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
@@ -96,6 +96,7 @@ export default function Home() {
   const [persona, setPersona] = useState<"Student" | "Professional">("Student");
   const [apiKey, setApiKey] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<"auto" | "groq" | "openai" | "gemini" | "ollama">("auto");
+  const [mounted, setMounted] = useState(false);
 
   const [isHovered, setIsHovered] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -104,6 +105,11 @@ export default function Home() {
 
   // Hook for backend connection
   const { uploadFile, downloadReport, isScanning, results, error, clearError, clearResults } = useScan("http://localhost:8000");
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // --- Handlers ---
   const handleDragOver = (e: React.DragEvent) => {
@@ -225,8 +231,17 @@ export default function Home() {
                   <div className="flex flex-col gap-1">
                     <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Model</div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-lg">{getModelInfo().icon}</span>
-                      <span className={`text-sm font-semibold ${getModelInfo().color}`}>{getModelInfo().provider}</span>
+                      {mounted ? (
+                        <>
+                          <span className="text-lg">{getModelInfo().icon}</span>
+                          <span className={`text-sm font-semibold ${getModelInfo().color}`}>{getModelInfo().provider}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-lg">🔍</span>
+                          <span className="text-sm font-semibold text-gray-400">Loading...</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -388,6 +403,76 @@ export default function Home() {
                 </p>
              </div>
 
+             {/* Dynamic Provider Selection */}
+             <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8 w-full max-w-4xl">
+               <label className="block text-sm font-semibold mb-4 text-gray-300">AI Provider Selection</label>
+               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                 <div 
+                   onClick={() => setSelectedProvider("auto")}
+                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                     selectedProvider === "auto" 
+                       ? "border-blue-500 bg-blue-500/10" 
+                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                   }`}
+                 >
+                   <div className="text-2xl mb-2">🔍</div>
+                   <div className="text-sm font-semibold text-white">Auto Detect</div>
+                   <div className="text-xs text-gray-500">From API key</div>
+                 </div>
+                 <div 
+                   onClick={() => setSelectedProvider("groq")}
+                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                     selectedProvider === "groq" 
+                       ? "border-blue-500 bg-blue-500/10" 
+                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                   }`}
+                 >
+                   <div className="text-2xl mb-2">⚡</div>
+                   <div className="text-sm font-semibold text-white">Groq</div>
+                   <div className="text-xs text-gray-500">Fast & Free</div>
+                 </div>
+                 <div 
+                   onClick={() => setSelectedProvider("openai")}
+                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                     selectedProvider === "openai" 
+                       ? "border-green-500 bg-green-500/10" 
+                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                   }`}
+                 >
+                   <div className="text-2xl mb-2">🤖</div>
+                   <div className="text-sm font-semibold text-white">OpenAI</div>
+                   <div className="text-xs text-gray-500">GPT-4o Mini</div>
+                 </div>
+                 <div 
+                   onClick={() => setSelectedProvider("gemini")}
+                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                     selectedProvider === "gemini" 
+                       ? "border-yellow-500 bg-yellow-500/10" 
+                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                   }`}
+                 >
+                   <div className="text-2xl mb-2">✨</div>
+                   <div className="text-sm font-semibold text-white">Gemini</div>
+                   <div className="text-xs text-gray-500">Google AI</div>
+                 </div>
+                 <div 
+                   onClick={() => setSelectedProvider("ollama")}
+                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                     selectedProvider === "ollama" 
+                       ? "border-purple-500 bg-purple-500/10" 
+                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                   }`}
+                 >
+                   <div className="text-2xl mb-2">🦙</div>
+                   <div className="text-sm font-semibold text-white">Ollama</div>
+                   <div className="text-xs text-gray-500">Local AI</div>
+                 </div>
+               </div>
+               <p className="text-xs text-gray-500 mt-3">
+                 Choose your AI provider for this scan. Changes take effect immediately.
+               </p>
+             </div>
+
              {error && (
                <div className="w-full max-w-2xl bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl mb-6 flex justify-between items-center">
                  <span>{error}</span>
@@ -466,6 +551,76 @@ export default function Home() {
                    Export PDF
                  </button>
                </div>
+             </div>
+
+             {/* Dynamic Provider Selection for Next Scan */}
+             <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8">
+               <label className="block text-sm font-semibold mb-4 text-gray-300">Change AI Provider for Next Scan</label>
+               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                 <div 
+                   onClick={() => setSelectedProvider("auto")}
+                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                     selectedProvider === "auto" 
+                       ? "border-blue-500 bg-blue-500/10" 
+                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                   }`}
+                 >
+                   <div className="text-2xl mb-2">🔍</div>
+                   <div className="text-sm font-semibold text-white">Auto Detect</div>
+                   <div className="text-xs text-gray-500">From API key</div>
+                 </div>
+                 <div 
+                   onClick={() => setSelectedProvider("groq")}
+                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                     selectedProvider === "groq" 
+                       ? "border-blue-500 bg-blue-500/10" 
+                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                   }`}
+                 >
+                   <div className="text-2xl mb-2">⚡</div>
+                   <div className="text-sm font-semibold text-white">Groq</div>
+                   <div className="text-xs text-gray-500">Fast & Free</div>
+                 </div>
+                 <div 
+                   onClick={() => setSelectedProvider("openai")}
+                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                     selectedProvider === "openai" 
+                       ? "border-green-500 bg-green-500/10" 
+                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                   }`}
+                 >
+                   <div className="text-2xl mb-2">🤖</div>
+                   <div className="text-sm font-semibold text-white">OpenAI</div>
+                   <div className="text-xs text-gray-500">GPT-4o Mini</div>
+                 </div>
+                 <div 
+                   onClick={() => setSelectedProvider("gemini")}
+                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                     selectedProvider === "gemini" 
+                       ? "border-yellow-500 bg-yellow-500/10" 
+                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                   }`}
+                 >
+                   <div className="text-2xl mb-2">✨</div>
+                   <div className="text-sm font-semibold text-white">Gemini</div>
+                   <div className="text-xs text-gray-500">Google AI</div>
+                 </div>
+                 <div 
+                   onClick={() => setSelectedProvider("ollama")}
+                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                     selectedProvider === "ollama" 
+                       ? "border-purple-500 bg-purple-500/10" 
+                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                   }`}
+                 >
+                   <div className="text-2xl mb-2">🦙</div>
+                   <div className="text-sm font-semibold text-white">Ollama</div>
+                   <div className="text-xs text-gray-500">Local AI</div>
+                 </div>
+               </div>
+               <p className="text-xs text-gray-500 mt-3">
+                 Select a different provider and click "New Scan" to analyze with the new AI model.
+               </p>
              </div>
 
              {/* Metric Cards */}

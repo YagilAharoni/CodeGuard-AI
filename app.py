@@ -397,6 +397,10 @@ async def analyze_endpoint(
         for f in files_to_scan:
             logger.info(f"Analyzing file: {f['name']} with API KEY: {api_key[:10] if api_key else 'NONE'}...")
             res = analyze_code_logic(f["name"], f["content"], api_key, persona, provider)
+            individual_results.append(res)
+        
+        # Combine all individual results into a single report
+        combined = combine_results(individual_results)
         
         pdf_results = [{"name": f.get("file_name", "unknown"), "safe": combined["status"] == "SAFE", "report": f.get("issue_description", "") + " - Fix: " + f.get("suggested_fix", "")} for f in combined["findings"]]
         
