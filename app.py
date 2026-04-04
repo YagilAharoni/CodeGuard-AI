@@ -137,21 +137,35 @@ def call_groq(prompt: str, system_prompt: str, api_key: str, temperature: float 
         logger.error(f"Groq API Error: {e}")
         return '{"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": "unknown", "issue_description": f"Groq Error: {str(e)}", "suggested_fix": "Check API key or rate limits."}]}'
 
+def extract_severity(issue_description: str) -> str:
+    """Extract severity from the issue description."""
+    desc = (issue_description or "").upper()
+    if "HIGH" in desc:
+        return "High"
+    if "MEDIUM" in desc:
+        return "Medium"
+    if "LOW" in desc:
+        return "Low"
+    return "Low"
+
+
 def sort_findings_by_severity(findings: List[dict]) -> List[dict]:
     """Sort findings by severity: High > Medium > Low"""
     severity_order = {"High": 0, "Medium": 1, "Low": 2}
     
     def get_severity(finding: dict) -> int:
-        # Extract severity from the finding if available
-        desc = finding.get("issue_description", "").upper()
-        if "HIGH" in desc:
-            return 0
-        elif "MEDIUM" in desc:
-            return 1
-        else:
-            return 2
+        severity = extract_severity(finding.get("issue_description", ""))
+        return severity_order.get(severity, 2)
     
     return sorted(findings, key=get_severity)
+
+
+def build_stats_from_findings(findings: List[dict]) -> Dict[str, int]:
+    counts = {"High": 0, "Medium": 0, "Low": 0}
+    for finding in findings:
+        counts[extract_severity(finding.get("issue_description", ""))] += 1
+    return counts
+
 
 def parse_ai_response(ai_text: str, filename: str) -> dict:
     try:
@@ -161,10 +175,13 @@ def parse_ai_response(ai_text: str, filename: str) -> dict:
         else:
             parsed = json.loads(ai_text)
         
-        # Sort findings by severity
         if "findings" in parsed:
             parsed["findings"] = sort_findings_by_severity(parsed["findings"])
-        
+            parsed["stats"] = build_stats_from_findings(parsed["findings"])
+        else:
+            parsed["findings"] = []
+            parsed["stats"] = {"High": 0, "Medium": 0, "Low": 0}
+
         return parsed
     except Exception as e:
         logger.error(f"Failed to parse JSON directly: {ai_text}")
@@ -193,11 +210,13 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             "  'improvement_suggestions': ['suggestion1', 'suggestion2', 'suggestion3']\n"
             "}\n\n"
             "IMPORTANT:\n"
-            "- If code has minor issues, mark as SAFE but list them in findings\n"
-            "- Only mark VULNERABLE if there's a severe, exploitable security risk\n"
-            "- For each finding, start the issue_description with severity in brackets: [HIGH], [MEDIUM], or [LOW]\n"
-            "- Provide 2-3 constructive improvement_suggestions for code quality and best practices\n"
-            "- Be encouraging and educational in your descriptions"
+            "- The heart of this application is the solution for each issue. Every finding MUST include a clear, specific fix in suggested_fix.\n"
+            "- If code has minor issues, mark as SAFE but list them in findings.\n"
+            "- Only mark VULNERABLE if there's a severe, exploitable security risk.\n"
+            "- For each finding, start the issue_description with severity in brackets: [HIGH], [MEDIUM], or [LOW].\n"
+            "- Provide a concrete remediation for each issue, not a generic suggestion.\n"
+            "- Provide 2-3 constructive improvement_suggestions for code quality and best practices.\n"
+            "- Be encouraging and educational in your descriptions."
         )
         current_temp = 0.3
     else:
@@ -210,12 +229,13 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             "  'findings': [{'file_name': 'filename', 'issue_description': 'issue description', 'suggested_fix': 'recommended fix'}]\n"
             "}\n\n"
             "IMPORTANT:\n"
-            "- If there is ANY risk, lack of validation, hardcoded secrets, or best practice violation, mark VULNERABLE\n"
-            "- Count issues by severity: High, Medium, Low\n"
-            "- For each finding, start the issue_description with severity in brackets: [HIGH], [MEDIUM], or [LOW]\n"
-            "- Production-grade code must be bulletproof\n"
-            "- Be explicit and detailed about every vulnerability\n"
-            "- Do NOT be lenient with professional code"
+            "- The heart of this application is the solution for each issue. Every finding MUST include a clear, specific fix in suggested_fix.\n"
+            "- If there is ANY risk, lack of validation, hardcoded secrets, or best practice violation, mark VULNERABLE.\n"
+            "- Count issues by severity: High, Medium, Low.\n"
+            "- For each finding, start the issue_description with severity in brackets: [HIGH], [MEDIUM], or [LOW].\n"
+            "- Production-grade code must be bulletproof.\n"
+            "- Be explicit and detailed about every vulnerability.\n"
+            "- Do NOT be lenient with professional code."
         )
         current_temp = 0.1
 
@@ -227,8 +247,10 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
         f"1. Start your response with either '[STATUS: SAFE]' or '[STATUS: VULNERABLE]'.\n"
         f"2. Provide a 'Security Summary'.\n"
         f"3. List 'Vulnerability Details' - for each issue, start with severity level (HIGH/MEDIUM/LOW) in brackets.\n"
-        f"4. Provide 'Recommended Code Fixes'.\n"
-        f"{'5. Suggest 2-3 ways to improve this project (for learning purposes).' if 'Student' in persona else ''}\n\n"
+        f"4. Provide 'Recommended Code Fixes' for every vulnerability. This is the heart of the application.\n"
+        f"   Each finding must include a real, actionable suggested_fix with code examples or exact remediation steps.\n"
+        f"5. Explain the root cause of each vulnerability in one sentence.\n"
+        f"{'6. Suggest 2-3 ways to improve this project (for learning purposes).' if 'Student' in persona else ''}\n\n"
         f"Code Content:\n"
         f"---\n"
         f"{content}\n"
@@ -302,11 +324,6 @@ def combine_results(results_list: List[dict]):
         else:
             total_stats["Vuln"] += 1
         
-        s = res.get("stats", {})
-        total_stats["High"] += int(s.get("High", 0))
-        total_stats["Medium"] += int(s.get("Medium", 0))
-        total_stats["Low"] += int(s.get("Low", 0))
-        
         all_findings.extend(res.get("findings", []))
         
         # Collect improvement suggestions (for Student persona)
@@ -315,6 +332,12 @@ def combine_results(results_list: List[dict]):
     
     # Sort all findings by severity
     all_findings = sort_findings_by_severity(all_findings)
+    
+    # Recalculate the final vulnerability counts directly from findings
+    calculated_stats = build_stats_from_findings(all_findings)
+    total_stats["High"] = calculated_stats["High"]
+    total_stats["Medium"] = calculated_stats["Medium"]
+    total_stats["Low"] = calculated_stats["Low"]
     
     # Determine final status: ERROR > VULNERABLE > SAFE
     # VULNERABLE if ANY vulnerabilities found (even 1 medium risk)
