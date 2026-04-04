@@ -8,6 +8,7 @@ const getSeverityColor = (severity: string): string => {
   const upper = severity.toUpperCase();
   if (upper.includes("HIGH")) return "text-red-500";
   if (upper.includes("MEDIUM")) return "text-yellow-500";
+  if (upper.includes("ERROR")) return "text-orange-500";
   return "text-blue-400";
 };
 
@@ -15,6 +16,7 @@ const getSeverityBgColor = (severity: string): string => {
   const upper = severity.toUpperCase();
   if (upper.includes("HIGH")) return "bg-red-500/20 border-red-500/30";
   if (upper.includes("MEDIUM")) return "bg-yellow-500/20 border-yellow-500/30";
+  if (upper.includes("ERROR")) return "bg-orange-500/20 border-orange-500/30";
   return "bg-blue-500/20 border-blue-500/30";
 };
 
@@ -22,6 +24,7 @@ const getSeverityBadgeColor = (severity: string): string => {
   const upper = severity.toUpperCase();
   if (upper.includes("HIGH")) return "bg-red-500/30 text-red-400";
   if (upper.includes("MEDIUM")) return "bg-yellow-500/30 text-yellow-400";
+  if (upper.includes("ERROR")) return "bg-orange-500/30 text-orange-400";
   return "bg-blue-500/30 text-blue-400";
 };
 
@@ -123,6 +126,17 @@ export default function Home() {
     }
   };
 
+  const getModelInfo = () => {
+    if (!apiKey) return { provider: "Ollama", icon: "🦙", color: "text-purple-400" };
+    
+    const key = apiKey.trim();
+    if (key.startsWith("gsk_")) return { provider: "Groq", icon: "⚡", color: "text-blue-400" };
+    if (key.startsWith("sk-")) return { provider: "OpenAI", icon: "🤖", color: "text-green-400" };
+    if (key.startsWith("AIzaSy")) return { provider: "Google Gemini", icon: "✨", color: "text-yellow-400" };
+    
+    return { provider: "Unknown", icon: "❓", color: "text-gray-400" };
+  };
+
   const runAnalysis = () => {
     if (selectedFiles) {
       uploadFile(selectedFiles, persona, apiKey);
@@ -162,12 +176,34 @@ export default function Home() {
               CodeGuard AI
             </h1>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
             {isLoggedIn && (
-               <div className="px-3 py-1 bg-[#0d1117] border border-[#30363d] rounded-full text-xs font-semibold text-gray-400 flex items-center gap-2">
-                 <span className={`w-2 h-2 rounded-full ${persona === 'Student' ? 'bg-blue-400' : 'bg-red-500 animate-pulse'}`}></span>
-                 {persona === 'Student' ? 'Learning Mode' : 'Auditor Mode'} Active
-               </div>
+              <>
+                {/* Profile Card */}
+                <div className="px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg flex items-center gap-3">
+                  <div className="flex flex-col gap-1">
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Account</div>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${persona === 'Student' ? 'bg-blue-400' : 'bg-red-500'}`}></span>
+                      <span className="text-sm font-semibold text-gray-300">{persona === 'Student' ? '🎓 Student' : '🕵️ Auditor'}</span>
+                    </div>
+                  </div>
+                  <div className="w-px h-8 bg-[#30363d]"></div>
+                  <div className="flex flex-col gap-1">
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Model</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-lg">{getModelInfo().icon}</span>
+                      <span className={`text-sm font-semibold ${getModelInfo().color}`}>{getModelInfo().provider}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Original Status Indicator */}
+                <div className="px-3 py-1 bg-[#0d1117] border border-[#30363d] rounded-full text-xs font-semibold text-gray-400 flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${persona === 'Student' ? 'bg-blue-400' : 'bg-red-500 animate-pulse'}`}></span>
+                  {persona === 'Student' ? 'Learning Mode' : 'Auditor Mode'} Active
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -332,8 +368,8 @@ export default function Home() {
 
              {/* Metric Cards */}
              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 text-center">
-               <div className={`p-6 rounded-xl border ${results.status === 'SAFE' ? 'bg-green-500/10 border-green-500/30' : 'bg-[#161b22] border-[#30363d]'}`}>
-                 <div className="text-3xl font-black mb-1">{results.status}</div>
+               <div className={`p-6 rounded-xl border ${results.status === 'SAFE' ? 'bg-green-500/10 border-green-500/30' : results.status === 'ERROR' ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                 <div className={`text-3xl font-black mb-1 ${results.status === 'SAFE' ? 'text-green-400' : results.status === 'ERROR' ? 'text-yellow-400' : 'text-red-500'}`}>{results.status}</div>
                  <div className="text-sm text-gray-500 uppercase tracking-wide">Status</div>
                </div>
                <div className="p-6 rounded-xl bg-[#161b22] border border-[#30363d]">
@@ -402,6 +438,30 @@ export default function Home() {
                   </div>
                 )}
              </div>
+
+             {/* Improvement Suggestions for Students */}
+             {persona === "Student" && (results as any).improvement_suggestions && (results as any).improvement_suggestions.length > 0 && (
+               <div className="mt-10 space-y-4">
+                 <h3 className="text-2xl font-bold border-b border-[#30363d] pb-2 flex items-center gap-3">
+                   <span className="text-2xl">💡</span>
+                   Project Improvement Suggestions
+                 </h3>
+                 <div className="grid gap-3">
+                   {(results as any).improvement_suggestions.map((suggestion: string, idx: number) => (
+                     <div key={idx} className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                       <div className="flex gap-3">
+                         <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500/30 flex items-center justify-center flex-col">
+                           <span className="text-xs font-bold text-blue-400">{idx + 1}</span>
+                         </div>
+                         <div>
+                           <p className="text-gray-300 text-sm leading-relaxed">{suggestion}</p>
+                         </div>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             )}
           </div>
         )}
 

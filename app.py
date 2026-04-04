@@ -152,29 +152,65 @@ def parse_ai_response(ai_text: str, filename: str) -> dict:
 def analyze_code_logic(filename: str, content: str, api_key: str, persona: str):
     if "Student" in persona:
         system_rules = (
-            "You are a helpful Security Tutor for students. "
-            "Your output MUST BE valid JSON strictly with the following schema: "
-            "{ 'status': 'SAFE' or 'VULNERABLE', 'stats': {'High': 0, 'Medium': 0, 'Low': 0}, 'findings': [{'file_name': 'filename', 'issue_description': 'desc', 'suggested_fix': 'fix'}] }. "
-            "Encourage learning. If code has minor issues, mark as SAFE but list issues in findings."
+            "You are a helpful Security Tutor for students. Your goal is to encourage learning and growth. "
+            "You MUST respond with ONLY valid JSON (no markdown, no extra text) following this exact schema:\n"
+            "{\n"
+            "  'status': 'SAFE' or 'VULNERABLE',\n"
+            "  'stats': {'High': 0, 'Medium': 0, 'Low': 0},\n"
+            "  'findings': [{'file_name': 'filename', 'issue_description': 'issue description', 'suggested_fix': 'recommended fix'}],\n"
+            "  'improvement_suggestions': ['suggestion1', 'suggestion2', 'suggestion3']\n"
+            "}\n\n"
+            "IMPORTANT:\n"
+            "- If code has minor issues, mark as SAFE but list them in findings\n"
+            "- Only mark VULNERABLE if there's a severe, exploitable security risk\n"
+            "- Provide 2-3 constructive improvement_suggestions for code quality and best practices\n"
+            "- Be encouraging and educational in your descriptions"
         )
         current_temp = 0.3
     else:
         system_rules = (
-            "You are a Senior Lead Cyber-Security Auditor. Be RUTHLESS. "
-            "Your output MUST BE valid JSON strictly with the following schema: "
-            "{ 'status': 'SAFE' or 'VULNERABLE', 'stats': {'High': int, 'Medium': int, 'Low': int}, 'findings': [{'file_name': 'filename', 'issue_description': 'desc', 'suggested_fix': 'fix'}] }. "
-            "Any minor risk or lack of validation MUST be marked VULNERABLE."
+            "You are a Senior Lead Cyber-Security Auditor. Be RUTHLESS and thorough. "
+            "You MUST respond with ONLY valid JSON (no markdown, no extra text) following this exact schema:\n"
+            "{\n"
+            "  'status': 'SAFE' or 'VULNERABLE',\n"
+            "  'stats': {'High': 0, 'Medium': 0, 'Low': 0},\n"
+            "  'findings': [{'file_name': 'filename', 'issue_description': 'issue description', 'suggested_fix': 'recommended fix'}]\n"
+            "}\n\n"
+            "IMPORTANT:\n"
+            "- If there is ANY risk, lack of validation, hardcoded secrets, or best practice violation, mark VULNERABLE\n"
+            "- Count issues by severity: High, Medium, Low\n"
+            "- Production-grade code must be bulletproof\n"
+            "- Be explicit and detailed about every vulnerability\n"
+            "- Do NOT be lenient with professional code"
         )
         current_temp = 0.1
 
-    user_prompt = f"File: {filename}\nPersona Context: {persona}\nCode Content:\n{content}"
+    user_prompt = (
+        f"Analyze the following file for security vulnerabilities.\n\n"
+        f"File: {filename}\n"
+        f"Persona Context: {persona}\n\n"
+        f"Report Requirements:\n"
+        f"1. Start your response with either '[STATUS: SAFE]' or '[STATUS: VULNERABLE]'.\n"
+        f"2. Provide a 'Security Summary'.\n"
+        f"3. List 'Vulnerability Details' (if any).\n"
+        f"4. Provide 'Recommended Code Fixes'.\n"
+        f"{'5. Suggest 2-3 ways to improve this project (for learning purposes).' if 'Student' in persona else ''}\n\n"
+        f"Code Content:\n"
+        f"---\n"
+        f"{content}\n"
+        f"---\n\n"
+        f"RESPOND WITH ONLY VALID JSON, NO MARKDOWN CODE BLOCKS, NO EXTRA TEXT."
+    )
 
     try:
         # Route based on API key prefix
-        if api_key:
+        if api_key and str(api_key).strip():  # Better null/empty check
             api_key_str = str(api_key).strip()
+            logger.info(f"[{filename}] API Key received and not empty: {api_key_str[:15]}...")
+            logger.info(f"[{filename}] Checking API key prefix...")
             
             if api_key_str.startswith("gsk_"):
+                logger.info(f"[{filename}] ✓ Detected Groq API key")
                 # Groq API
                 try:
                     client = groq.Groq(api_key=api_key_str)
@@ -190,23 +226,26 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str):
                     )
                     ai_output = completion.choices[0].message.content
                 except Exception as e:
-                    logger.error(f"Groq API Error: {e}")
+                    logger.error(f"[{filename}] Groq API Error: {e}")
                     return {"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": filename, "issue_description": f"Groq Error: {str(e)}", "suggested_fix": "Check API key or Rate Limits."}]}
             
             elif api_key_str.startswith("sk-"):
+                logger.info(f"[{filename}] ✓ Detected OpenAI API key")
                 # OpenAI API
                 ai_output = call_openai(user_prompt, system_rules, api_key_str)
             
             elif api_key_str.startswith("AIzaSy"):
+                logger.info(f"[{filename}] ✓ Detected Google Gemini API key")
                 # Google Gemini API
                 ai_output = call_gemini(user_prompt, system_rules, api_key_str)
             
             else:
                 # Unknown API key format, fallback to Ollama
-                logger.warning(f"Unknown API key format, falling back to Ollama")
+                logger.warning(f"[{filename}] ✗ Unknown API key format: {api_key_str[:20]}..., falling back to Ollama")
                 ai_output = call_ollama(user_prompt, system_rules)
         else:
             # No API key provided, use Ollama
+            logger.info(f"[{filename}] No API key provided or empty, using Ollama")
             ai_output = call_ollama(user_prompt, system_rules)
 
     except Exception as e:
@@ -216,13 +255,18 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str):
     return parse_ai_response(ai_output, filename)
 
 def combine_results(results_list: List[dict]):
-    total_stats = {"High": 0, "Medium": 0, "Low": 0, "Safe": 0, "Vuln": 0}
+    total_stats = {"High": 0, "Medium": 0, "Low": 0, "Safe": 0, "Vuln": 0, "Error": 0}
     all_findings = []
+    all_improvement_suggestions = []
+    has_errors = False
     
     for res in results_list:
-        status = res.get("status", "SAFE")
-        if status.upper() == "SAFE":
+        status = res.get("status", "SAFE").upper()
+        if status == "SAFE":
             total_stats["Safe"] += 1
+        elif status == "ERROR":
+            total_stats["Error"] += 1
+            has_errors = True
         else:
             total_stats["Vuln"] += 1
         
@@ -232,11 +276,19 @@ def combine_results(results_list: List[dict]):
         total_stats["Low"] += int(s.get("Low", 0))
         
         all_findings.extend(res.get("findings", []))
+        
+        # Collect improvement suggestions (for Student persona)
+        if "improvement_suggestions" in res and res["improvement_suggestions"]:
+            all_improvement_suggestions.extend(res["improvement_suggestions"])
     
     # Sort all findings by severity
     all_findings = sort_findings_by_severity(all_findings)
     
-    final_status = "VULNERABLE" if total_stats["Vuln"] > 0 else "SAFE"
+    # Determine final status: ERROR > VULNERABLE > SAFE
+    if has_errors:
+        final_status = "ERROR"
+    else:
+        final_status = "VULNERABLE" if total_stats["Vuln"] > 0 else "SAFE"
     
     # Organize findings by file
     findings_by_file = {}
@@ -246,12 +298,25 @@ def combine_results(results_list: List[dict]):
             findings_by_file[filename] = []
         findings_by_file[filename].append(finding)
     
-    return {
+    result = {
         "status": final_status,
         "stats": total_stats,
         "findings": all_findings,
         "findings_by_file": findings_by_file
     }
+    
+    # Add improvement suggestions if any exist
+    if all_improvement_suggestions:
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_suggestions = []
+        for s in all_improvement_suggestions:
+            if s not in seen:
+                unique_suggestions.append(s)
+                seen.add(s)
+        result["improvement_suggestions"] = unique_suggestions
+    
+    return result
 
 def process_file_content(files: List[UploadFile]) -> List[Dict]:
     files_to_scan = []
@@ -292,14 +357,27 @@ async def analyze_endpoint(
     api_key: Optional[str] = Form(None)
 ):
     try:
+        logger.info(f"=== ANALYZE REQUEST START ===")
+        logger.info(f"API Key received: {api_key}")
+        logger.info(f"API Key type: {type(api_key)}")
+        logger.info(f"API Key is None: {api_key is None}")
+        logger.info(f"API Key is empty: {api_key == ''}")
+        if api_key:
+            logger.info(f"API Key first 20 chars: {api_key[:20]}")
+        logger.info(f"Persona: {persona}")
+        
         files_to_scan = process_file_content(files)
+        logger.info(f"Files to scan: {len(files_to_scan)}")
+        
         if not files_to_scan:
-             return JSONResponse(status_code=400, content={"message": "No valid source files found or invalid format."})
+            return JSONResponse(status_code=400, content={"message": "No valid source files found or invalid format."})
              
         individual_results = []
         for f in files_to_scan:
+            logger.info(f"Analyzing file: {f['name']} with API KEY: {api_key[:10] if api_key else 'NONE'}...")
             res = analyze_code_logic(f["name"], f["content"], api_key, persona)
             individual_results.append(res)
+            logger.info(f"Result for {f['name']}: Status={res.get('status')}")
             
         combined = combine_results(individual_results)
         
@@ -310,14 +388,16 @@ async def analyze_endpoint(
         REPORT_CACHE[report_id] = {
             "results": pdf_results,
             "stats": combined["stats"],
-            "persona": persona
+            "persona": persona,
+            "improvement_suggestions": combined.get("improvement_suggestions", [])
         }
         
         return JSONResponse(content={
             "report_id": report_id,
             "status": combined["status"],
             "stats": combined["stats"],
-            "findings": combined["findings"]
+            "findings": combined["findings"],
+            "improvement_suggestions": combined.get("improvement_suggestions", [])
         })
         
     except Exception as e:
@@ -331,7 +411,7 @@ async def export_pdf_endpoint(request: Request, report_id: str):
     if not cached:
         raise HTTPException(status_code=404, detail="Report ID not found or expired")
         
-    pdf_bytes = generate_pdf_report(cached["results"], cached["stats"], cached["persona"])
+    pdf_bytes = generate_pdf_report(cached["results"], cached["stats"], cached["persona"], cached.get("improvement_suggestions", []))
     
     if not pdf_bytes:
         raise HTTPException(status_code=500, detail="Failed to generate PDF")

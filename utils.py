@@ -63,7 +63,7 @@ def generate_vulnerability_chart():
     return fig
 
 @st.cache_data(show_spinner="Generating PDF Report...")
-def generate_pdf_report(results, stats, persona):
+def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
     """
     Generates a professional PDF report using FPDF.
     Handles encoding to prevent crashes on non-Latin characters.
@@ -156,6 +156,23 @@ def generate_pdf_report(results, stats, persona):
             pdf.ln(5)
             pdf.line(10, pdf.get_y(), 200, pdf.get_y())
             pdf.ln(5)
+
+        # Learning Recommendations for Student Persona
+        if persona == "Student" and improvement_suggestions:
+            pdf.add_page()
+            pdf.set_font("Arial", "B", 12)
+            pdf.cell(0, 10, "4. Learning Recommendations & Project Improvement", ln=True)
+            pdf.ln(5)
+            
+            pdf.set_font("Arial", "", 10)
+            for idx, suggestion in enumerate(improvement_suggestions, 1):
+                pdf.set_font("Arial", "B", 10)
+                pdf.cell(10, 8, f"{idx}.", ln=False)
+                pdf.set_font("Arial", "", 10)
+                clean_suggestion = suggestion.encode('latin-1', 'ignore').decode('latin-1')
+                # Calculate remaining width (200 - 10 for number - margin)
+                pdf.multi_cell(0, 5, clean_suggestion, x=20)
+                pdf.ln(2)
 
         # CRITICAL: Return as bytes directly for Streamlit download_button
         return pdf.output(dest='S').encode('latin-1')

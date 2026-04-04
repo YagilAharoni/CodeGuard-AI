@@ -19,6 +19,7 @@ export interface ScanResult {
   status: 'SAFE' | 'VULNERABLE' | 'ERROR';
   stats: Stats;
   findings: Finding[];
+  improvement_suggestions?: string[];
 }
 
 export const useScan = (apiUrl: string = 'http://localhost:8000') => {
