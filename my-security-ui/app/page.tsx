@@ -158,7 +158,9 @@ export default function Home() {
 
   const runAnalysis = () => {
     if (selectedFiles) {
-      uploadFile(selectedFiles, persona, apiKey, selectedProvider);
+      // Only pass API key for providers that need it
+      const apiKeyToPass = (selectedProvider === "ollama") ? undefined : apiKey;
+      uploadFile(selectedFiles, persona, apiKeyToPass, selectedProvider);
     }
   };
 
@@ -298,17 +300,36 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8">
-              <label className="block text-sm font-semibold mb-2 text-gray-300">AI API Key (Optional)</label>
-              <input 
-                type="password" 
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="gsk_... or sk-... or AIzaSy..."
-                className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
-              />
-              <p className="text-xs text-gray-500 mt-2">Supports: Groq (gsk_), OpenAI (sk-), Google Gemini (AIzaSy), or fallback to local Ollama.</p>
-            </div>
+            {(selectedProvider === "auto" || selectedProvider === "groq" || selectedProvider === "openai" || selectedProvider === "gemini") && (
+              <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8">
+                <label className="block text-sm font-semibold mb-2 text-gray-300">AI API Key</label>
+                <input 
+                  type="password" 
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="gsk_... or sk-... or AIzaSy..."
+                  className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  {selectedProvider === "auto" && "Supports: Groq (gsk_), OpenAI (sk-), Google Gemini (AIzaSy), or fallback to local Ollama."}
+                  {selectedProvider === "groq" && "Enter your Groq API key (starts with 'gsk_')."}
+                  {selectedProvider === "openai" && "Enter your OpenAI API key (starts with 'sk-')."}
+                  {selectedProvider === "gemini" && "Enter your Google Gemini API key (starts with 'AIzaSy')."}
+                </p>
+              </div>
+            )}
+
+            {selectedProvider === "ollama" && (
+              <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl">🦙</div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-300">Local Ollama AI</h3>
+                    <p className="text-xs text-gray-500">No API key required. Uses your local Ollama installation.</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8">
               <label className="block text-sm font-semibold mb-4 text-gray-300">AI Provider Selection</label>
@@ -335,7 +356,7 @@ export default function Home() {
                 >
                   <div className="text-2xl mb-2">⚡</div>
                   <div className="text-sm font-semibold text-white">Groq</div>
-                  <div className="text-xs text-gray-500">Fast & Free</div>
+                  <div className="text-xs text-gray-500">API Key Required</div>
                 </div>
                 <div 
                   onClick={() => setSelectedProvider("openai")}
@@ -347,7 +368,7 @@ export default function Home() {
                 >
                   <div className="text-2xl mb-2">🤖</div>
                   <div className="text-sm font-semibold text-white">OpenAI</div>
-                  <div className="text-xs text-gray-500">GPT-4o Mini</div>
+                  <div className="text-xs text-gray-500">API Key Required</div>
                 </div>
                 <div 
                   onClick={() => setSelectedProvider("gemini")}
@@ -359,7 +380,7 @@ export default function Home() {
                 >
                   <div className="text-2xl mb-2">✨</div>
                   <div className="text-sm font-semibold text-white">Gemini</div>
-                  <div className="text-xs text-gray-500">Google AI</div>
+                  <div className="text-xs text-gray-500">API Key Required</div>
                 </div>
                 <div 
                   onClick={() => setSelectedProvider("ollama")}

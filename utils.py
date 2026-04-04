@@ -69,7 +69,23 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
     Handles encoding to prevent crashes on non-Latin characters.
     """
     try:
-        logger.info(f"PDF generation started - persona: {persona}, results count: {len(results)}, suggestions: {len(improvement_suggestions) if improvement_suggestions else 0}")
+        logger.info(f"PDF generation started - persona: {persona}, results count: {len(results) if results else 0}, suggestions: {len(improvement_suggestions) if improvement_suggestions else 0}")
+        
+        # Validate input data
+        if not results:
+            logger.error("No results provided to PDF generation")
+            # Create a basic PDF with a message
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_font("Arial", "B", 16)
+            pdf.cell(0, 20, "CodeGuard AI - Security Report", ln=True, align='C')
+            pdf.set_font("Arial", "", 12)
+            pdf.cell(0, 20, "No scan results available to generate report.", ln=True, align='C')
+            return pdf.output(dest='S').encode('utf-8', errors='ignore')
+            
+        if not stats:
+            logger.warning("No stats provided, using defaults")
+            stats = {"High": 0, "Medium": 0, "Low": 0}
         
         pdf = FPDF()
         pdf.add_page()
@@ -95,6 +111,7 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
         pdf.ln(10)
 
         # Vulnerability Bar Chart
+        chart_success = False
         try:
             fig, ax = plt.subplots(figsize=(10, 4))
             fig.patch.set_facecolor('white')
@@ -134,8 +151,12 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
             pdf.ln(70)
             
             plt.close(fig)
+            chart_success = True
+            logger.info("Chart generation successful")
         except Exception as e:
             logger.error(f"Failed to generate chart: {e}")
+            chart_success = False
+            # Continue without chart
             pdf.add_page()
             pdf.set_font("Arial", "", 10)
             pdf.cell(0, 10, f"Chart generation failed: {str(e)}", ln=True)
@@ -178,8 +199,24 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
                 pdf.ln(2)
 
         logger.info("PDF generation completed successfully")
-        # CRITICAL: Return as bytes directly for Streamlit download_button
-        return pdf.output(dest='S').encode('latin-1')
+        # Get PDF as bytes - try different methods for reliability
+        try:
+            pdf_bytes = pdf.output(dest='S').encode('latin-1')
+            logger.info(f"PDF generated successfully with {len(pdf_bytes)} bytes")
+            return pdf_bytes
+        except Exception as encode_error:
+            logger.warning(f"latin-1 encoding failed: {encode_error}, trying utf-8")
+            try:
+                pdf_bytes = pdf.output(dest='S').encode('utf-8')
+                logger.info(f"PDF generated successfully with utf-8 encoding, {len(pdf_bytes)} bytes")
+                return pdf_bytes
+            except Exception as utf8_error:
+                logger.error(f"utf-8 encoding also failed: {utf8_error}")
+                # Last resort: return raw string as bytes
+                pdf_string = pdf.output(dest='S')
+                pdf_bytes = pdf_string.encode('utf-8', errors='ignore')
+                logger.warning(f"Using fallback encoding, {len(pdf_bytes)} bytes")
+                return pdf_bytes
         
     except Exception as e:
         logger.error(f"PDF generation failed with error: {str(e)}")

@@ -304,10 +304,13 @@ def combine_results(results_list: List[dict]):
     all_findings = sort_findings_by_severity(all_findings)
     
     # Determine final status: ERROR > VULNERABLE > SAFE
+    # VULNERABLE if ANY vulnerabilities found (even 1 medium risk)
     if has_errors:
         final_status = "ERROR"
+    elif total_stats["High"] > 0 or total_stats["Medium"] > 0 or total_stats["Low"] > 0:
+        final_status = "VULNERABLE"
     else:
-        final_status = "VULNERABLE" if total_stats["Vuln"] > 0 else "SAFE"
+        final_status = "SAFE"
     
     # Organize findings by file
     findings_by_file = {}
@@ -406,7 +409,21 @@ async def analyze_endpoint(
         # Combine all individual results into a single report
         combined = combine_results(individual_results)
         
-        pdf_results = [{"name": f.get("file_name", "unknown"), "safe": combined["status"] == "SAFE", "report": f.get("issue_description", "") + " - Fix: " + f.get("suggested_fix", "")} for f in combined["findings"]]
+        # Create PDF results - one entry per file, not per finding
+        pdf_results = []
+        for filename, findings in combined["findings_by_file"].items():
+            # Determine if this file is safe (no findings = safe)
+            file_safe = len(findings) == 0
+            # Combine all findings for this file into one report
+            file_report = "\n".join([f"{f.get('issue_description', '')} - Fix: {f.get('suggested_fix', '')}" for f in findings])
+            if not file_report:
+                file_report = "No vulnerabilities found."
+            
+            pdf_results.append({
+                "name": filename,
+                "safe": file_safe,
+                "report": file_report
+            })
         
         REPORT_CACHE[report_id] = {
             "results": pdf_results,
