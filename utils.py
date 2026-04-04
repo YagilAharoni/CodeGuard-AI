@@ -69,6 +69,8 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
     Handles encoding to prevent crashes on non-Latin characters.
     """
     try:
+        logger.info(f"PDF generation started - persona: {persona}, results count: {len(results)}, suggestions: {len(improvement_suggestions) if improvement_suggestions else 0}")
+        
         pdf = FPDF()
         pdf.add_page()
         
@@ -159,6 +161,7 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
 
         # Learning Recommendations for Student Persona
         if persona == "Student" and improvement_suggestions:
+            logger.info(f"Adding improvement suggestions section with {len(improvement_suggestions)} suggestions")
             pdf.add_page()
             pdf.set_font("Arial", "B", 12)
             pdf.cell(0, 10, "4. Learning Recommendations & Project Improvement", ln=True)
@@ -174,9 +177,14 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
                 pdf.multi_cell(0, 5, clean_suggestion, x=20)
                 pdf.ln(2)
 
+        logger.info("PDF generation completed successfully")
         # CRITICAL: Return as bytes directly for Streamlit download_button
         return pdf.output(dest='S').encode('latin-1')
         
-    except Exception:
+    except Exception as e:
+        logger.error(f"PDF generation failed with error: {str(e)}")
+        logger.error(f"Error type: {type(e)}")
+        import traceback
+        logger.error(f"PDF generation traceback: {traceback.format_exc()}")
         # Returns None to let UI handle the failure gracefully
         return None

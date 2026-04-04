@@ -163,6 +163,7 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str):
             "IMPORTANT:\n"
             "- If code has minor issues, mark as SAFE but list them in findings\n"
             "- Only mark VULNERABLE if there's a severe, exploitable security risk\n"
+            "- For each finding, start the issue_description with severity in brackets: [HIGH], [MEDIUM], or [LOW]\n"
             "- Provide 2-3 constructive improvement_suggestions for code quality and best practices\n"
             "- Be encouraging and educational in your descriptions"
         )
@@ -179,6 +180,7 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str):
             "IMPORTANT:\n"
             "- If there is ANY risk, lack of validation, hardcoded secrets, or best practice violation, mark VULNERABLE\n"
             "- Count issues by severity: High, Medium, Low\n"
+            "- For each finding, start the issue_description with severity in brackets: [HIGH], [MEDIUM], or [LOW]\n"
             "- Production-grade code must be bulletproof\n"
             "- Be explicit and detailed about every vulnerability\n"
             "- Do NOT be lenient with professional code"
@@ -192,7 +194,7 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str):
         f"Report Requirements:\n"
         f"1. Start your response with either '[STATUS: SAFE]' or '[STATUS: VULNERABLE]'.\n"
         f"2. Provide a 'Security Summary'.\n"
-        f"3. List 'Vulnerability Details' (if any).\n"
+        f"3. List 'Vulnerability Details' - for each issue, start with severity level (HIGH/MEDIUM/LOW) in brackets.\n"
         f"4. Provide 'Recommended Code Fixes'.\n"
         f"{'5. Suggest 2-3 ways to improve this project (for learning purposes).' if 'Student' in persona else ''}\n\n"
         f"Code Content:\n"
@@ -407,20 +409,40 @@ async def analyze_endpoint(
 @app.get("/export-pdf")
 @limiter.limit("10/minute")
 async def export_pdf_endpoint(request: Request, report_id: str):
+    logger.info(f"=== PDF EXPORT REQUEST ===")
+    logger.info(f"Report ID: {report_id}")
+    
     cached = REPORT_CACHE.get(report_id)
     if not cached:
+        logger.error(f"Report ID {report_id} not found in cache")
         raise HTTPException(status_code=404, detail="Report ID not found or expired")
-        
-    pdf_bytes = generate_pdf_report(cached["results"], cached["stats"], cached["persona"], cached.get("improvement_suggestions", []))
     
-    if not pdf_bytes:
-        raise HTTPException(status_code=500, detail="Failed to generate PDF")
+    logger.info(f"Cached data keys: {list(cached.keys())}")
+    logger.info(f"Persona: {cached.get('persona')}")
+    logger.info(f"Results count: {len(cached.get('results', []))}")
+    logger.info(f"Improvement suggestions: {cached.get('improvement_suggestions', [])}")
+    
+    try:
+        pdf_bytes = generate_pdf_report(cached["results"], cached["stats"], cached["persona"], cached.get("improvement_suggestions", []))
+        logger.info(f"PDF generation result: {pdf_bytes is not None}")
         
-    return StreamingResponse(
-        io.BytesIO(pdf_bytes),
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=security_report_{report_id[:8]}.pdf"}
-    )
+        if not pdf_bytes:
+            logger.error("PDF generation returned None")
+            raise HTTPException(status_code=500, detail="Failed to generate PDF")
+            
+        logger.info(f"PDF size: {len(pdf_bytes)} bytes")
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=security_report_{report_id[:8]}.pdf"}
+        )
+        
+    except Exception as e:
+        logger.error(f"PDF generation error: {str(e)}")
+        logger.error(f"Error type: {type(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

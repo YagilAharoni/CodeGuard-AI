@@ -99,6 +99,7 @@ export default function Home() {
   const [isHovered, setIsHovered] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
 
   // Hook for backend connection
   const { uploadFile, downloadReport, isScanning, results, error, clearError, clearResults } = useScan("http://localhost:8000");
@@ -140,6 +141,26 @@ export default function Home() {
   const runAnalysis = () => {
     if (selectedFiles) {
       uploadFile(selectedFiles, persona, apiKey);
+    }
+  };
+
+  const toggleFileExpansion = (fileName: string) => {
+    const newExpanded = new Set(expandedFiles);
+    if (newExpanded.has(fileName)) {
+      newExpanded.delete(fileName);
+    } else {
+      newExpanded.add(fileName);
+    }
+    setExpandedFiles(newExpanded);
+  };
+
+  const toggleAllFiles = () => {
+    if (expandedFiles.size === Object.keys(groupedFindings).length) {
+      // All expanded, collapse all
+      setExpandedFiles(new Set());
+    } else {
+      // Expand all
+      setExpandedFiles(new Set(Object.keys(groupedFindings)));
     }
   };
 
@@ -391,45 +412,99 @@ export default function Home() {
 
              {/* Findings Grouped by File */}
              <div className="space-y-8">
-                <h3 className="text-2xl font-bold border-b border-[#30363d] pb-2">Identified Vulnerabilities by File</h3>
+                <div className="flex items-center justify-between border-b border-[#30363d] pb-2">
+                  <h3 className="text-2xl font-bold">Identified Vulnerabilities by File</h3>
+                  {results.findings && results.findings.length > 0 && (
+                    <button
+                      onClick={toggleAllFiles}
+                      className="px-4 py-2 bg-[#161b22] border border-[#30363d] rounded-lg hover:bg-[#1c2128] transition-colors text-sm font-medium flex items-center gap-2"
+                    >
+                      <svg className={`w-4 h-4 transition-transform ${expandedFiles.size === Object.keys(groupedFindings).length ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                      {expandedFiles.size === Object.keys(groupedFindings).length ? 'Collapse All' : 'Expand All'}
+                    </button>
+                  )}
+                </div>
                 
                 {results.findings && results.findings.length > 0 ? (
-                  Object.entries(groupedFindings).map(([fileName, findings]) => (
-                    <div key={fileName} className="rounded-xl border border-[#30363d] overflow-hidden">
-                      <div className="bg-[#161b22] p-4 border-b border-[#30363d] flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.3A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z" />
-                          </svg>
-                          <span className="font-mono text-sm text-gray-300">{fileName}</span>
-                        </div>
-                        <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-bold">
-                          {findings.length} issue{findings.length !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-
-                      <div className="space-y-4 p-4">
-                        {findings.map((finding: any, idx: number) => {
-                          const severity = finding.issue_description?.match(/HIGH|MEDIUM|LOW/i)?.[0] || "LOW";
-                          return (
-                            <div key={idx} className={`p-4 rounded-lg border ${getSeverityBgColor(severity)}`}>
-                              <div className="flex items-start justify-between mb-2">
-                                <h4 className="font-bold text-gray-200">Issue {idx + 1}</h4>
-                                <span className={`px-2 py-1 rounded text-xs font-bold ${getSeverityBadgeColor(severity)}`}>
-                                  {severity.toUpperCase()}
+                  Object.entries(groupedFindings).map(([fileName, findings]) => {
+                    const isExpanded = expandedFiles.has(fileName);
+                    const severityCounts = findings.reduce((acc: any, finding: any) => {
+                      const severity = finding.issue_description?.match(/\[(HIGH|MEDIUM|LOW)\]/i)?.[1] || "LOW";
+                      acc[severity] = (acc[severity] || 0) + 1;
+                      return acc;
+                    }, {});
+                    
+                    return (
+                      <div key={fileName} className="rounded-xl border border-[#30363d] overflow-hidden">
+                        <button 
+                          onClick={() => toggleFileExpansion(fileName)}
+                          className="w-full bg-[#161b22] p-4 border-b border-[#30363d] flex items-center justify-between hover:bg-[#1c2128] transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <svg 
+                              className={`w-5 h-5 text-blue-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                            <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.3A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z" />
+                            </svg>
+                            <span className="font-mono text-sm text-gray-300">{fileName}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex gap-2">
+                              {severityCounts.HIGH && (
+                                <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-bold">
+                                  {severityCounts.HIGH} High
                                 </span>
-                              </div>
-                              <p className="text-gray-300 text-sm mb-3">{finding.issue_description}</p>
-                              <div className="bg-[#0d1117] p-3 rounded border border-[#30363d]">
-                                <p className="text-green-400 text-xs font-semibold mb-1">Suggested Fix:</p>
-                                <p className="text-gray-400 text-sm font-mono">{finding.suggested_fix}</p>
-                              </div>
+                              )}
+                              {severityCounts.MEDIUM && (
+                                <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded text-xs font-bold">
+                                  {severityCounts.MEDIUM} Medium
+                                </span>
+                              )}
+                              {severityCounts.LOW && (
+                                <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-bold">
+                                  {severityCounts.LOW} Low
+                                </span>
+                              )}
                             </div>
-                          );
-                        })}
+                            <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-bold">
+                              {findings.length} issue{findings.length !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="space-y-4 p-4">
+                            {findings.map((finding: any, idx: number) => {
+                              const severity = finding.issue_description?.match(/\[(HIGH|MEDIUM|LOW)\]/i)?.[1] || "LOW";
+                              return (
+                                <div key={idx} className={`p-4 rounded-lg border ${getSeverityBgColor(severity)}`}>
+                                  <div className="flex items-start justify-between mb-2">
+                                    <h4 className="font-bold text-gray-200">Issue {idx + 1}</h4>
+                                    <span className={`px-2 py-1 rounded text-xs font-bold ${getSeverityBadgeColor(severity)}`}>
+                                      {severity.toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <p className="text-gray-300 text-sm mb-3">{finding.issue_description}</p>
+                                  <div className="bg-[#0d1117] p-3 rounded border border-[#30363d]">
+                                    <p className="text-green-400 text-xs font-semibold mb-1">Suggested Fix:</p>
+                                    <p className="text-gray-400 text-sm font-mono">{finding.suggested_fix}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="p-10 rounded-xl bg-green-500/5 border border-green-500/20 text-center">
                     <div className="text-4xl mb-4">✨</div>
