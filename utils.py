@@ -1,8 +1,14 @@
 import zipfile
 import io
 import time
+import logging
 import streamlit as st
 from fpdf import FPDF
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+
+logger = logging.getLogger(__name__)
 
 def process_uploaded_files(uploaded_files):
     """
@@ -48,6 +54,14 @@ def save_to_history(results, stats):
     }
     st.session_state.history.append(entry)
 
+def generate_vulnerability_chart():
+    """Generate a vulnerability distribution chart as PNG bytes"""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+    fig.patch.set_facecolor('white')
+    
+    # Placeholder data - will be replaced in generate_pdf_report
+    return fig
+
 @st.cache_data(show_spinner="Generating PDF Report...")
 def generate_pdf_report(results, stats, persona):
     """
@@ -75,21 +89,68 @@ def generate_pdf_report(results, stats, persona):
         pdf.cell(0, 8, f"Total Files Analyzed: {len(results)}", ln=True)
         pdf.cell(0, 8, f"High Risk Vulnerabilities: {stats.get('High', 0)}", ln=True)
         pdf.cell(0, 8, f"Medium Risk Vulnerabilities: {stats.get('Medium', 0)}", ln=True)
+        pdf.cell(0, 8, f"Low Risk Vulnerabilities: {stats.get('Low', 0)}", ln=True)
         pdf.ln(10)
 
-        # Detailed Findings
+        # Vulnerability Bar Chart
+        try:
+            fig, ax = plt.subplots(figsize=(10, 4))
+            fig.patch.set_facecolor('white')
+            
+            categories = ['High', 'Medium', 'Low']
+            values = [stats.get('High', 0), stats.get('Medium', 0), stats.get('Low', 0)]
+            colors = ['#ef4444', '#eab308', '#3b82f6']
+            
+            ax.bar(categories, values, color=colors, edgecolor='black', linewidth=1.5)
+            ax.set_ylabel('Count', fontsize=12, fontweight='bold')
+            ax.set_title('Vulnerability Distribution by Severity', fontsize=14, fontweight='bold')
+            ax.grid(axis='y', alpha=0.3)
+            
+            for i, v in enumerate(values):
+                ax.text(i, v + 0.1, str(v), ha='center', va='bottom', fontweight='bold')
+            
+            # Save chart to bytes
+            chart_bytes = io.BytesIO()
+            plt.savefig(chart_bytes, format='png', dpi=100, bbox_inches='tight')
+            chart_bytes.seek(0)
+            
+            # Add chart to PDF
+            pdf.add_page()
+            pdf.set_font("Arial", "B", 12)
+            pdf.cell(0, 10, "2. Vulnerability Distribution Chart", ln=True)
+            pdf.ln(5)
+            
+            # Create temp directory if it doesn't exist
+            import tempfile
+            import os
+            temp_dir = tempfile.gettempdir()
+            temp_image = os.path.join(temp_dir, "vuln_chart.png")
+            with open(temp_image, 'wb') as f:
+                f.write(chart_bytes.getvalue())
+            
+            pdf.image(temp_image, x=10, y=pdf.get_y(), w=190)
+            pdf.ln(70)
+            
+            plt.close(fig)
+        except Exception as e:
+            logger.error(f"Failed to generate chart: {e}")
+            pdf.add_page()
+            pdf.set_font("Arial", "", 10)
+            pdf.cell(0, 10, f"Chart generation failed: {str(e)}", ln=True)
+
+        # Detailed Findings by File
+        pdf.add_page()
         pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 10, "2. Detailed Findings", ln=True)
+        pdf.cell(0, 10, "3. Detailed Findings by File", ln=True)
+        pdf.ln(5)
         
         for r in results:
             pdf.set_font("Arial", "B", 11)
-            # Ensure filenames are encoded for PDF safety
             safe_name = r['name'].encode('latin-1', 'ignore').decode('latin-1')
             status = "VULNERABLE" if not r['safe'] else "SAFE"
             pdf.cell(0, 10, f"File: {safe_name} [%s]" % status, ln=True)
             
             pdf.set_font("Arial", "", 9)
-            # Strip problematic characters from AI report
             clean_report = r['report'].encode('latin-1', 'ignore').decode('latin-1')
             pdf.multi_cell(0, 5, clean_report)
             pdf.ln(5)

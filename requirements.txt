@@ -9,3 +9,7 @@ fastapi
 uvicorn
 python-multipart
 slowapi
+openai
+google-generativeai
+matplotlib
+pillow

@@ -14,6 +14,8 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 import groq
+from openai import OpenAI
+import google.generativeai as genai
 from utils import generate_pdf_report
 import zipfile
 
@@ -51,12 +53,87 @@ def call_ollama(prompt: str, system_prompt: str) -> str:
         logger.error(f"Ollama connection failed: {e}")
         return '{"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": "unknown", "issue_description": "Failed to connect to Ollama. Ensure Ollama is running.", "suggested_fix": "Start Ollama via command line."}]}'
 
+def call_openai(prompt: str, system_prompt: str, api_key: str) -> str:
+    """Call OpenAI API (GPT-4 or GPT-3.5)"""
+    try:
+        client = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.1,
+            max_tokens=1024,
+            response_format={"type": "json_object"}
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        logger.error(f"OpenAI API Error: {e}")
+        return '{"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": "unknown", "issue_description": f"OpenAI Error: {str(e)}", "suggested_fix": "Check API key or rate limits."}]}'
+
+def call_gemini(prompt: str, system_prompt: str, api_key: str) -> str:
+    """Call Google Gemini API"""
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-pro')
+        combined_prompt = f"{system_prompt}\n\n{prompt}"
+        response = model.generate_content(combined_prompt)
+        
+        # Extract JSON from response
+        if response.text:
+            text = response.text.strip()
+            # Try to parse JSON directly
+            if text.startswith('{'):
+                return text
+            # Try to extract JSON from markdown code block
+            if "```json" in text:
+                json_str = text.split("```json")[-1].split("```")[0].strip()
+                return json_str
+            # Return formatted error if response is not JSON
+            return json.dumps({
+                "status": "ERROR",
+                "stats": {"High": 0, "Medium": 0, "Low": 0},
+                "findings": [{
+                    "file_name": "unknown",
+                    "issue_description": "Gemini response was not properly formatted JSON",
+                    "suggested_fix": f"Raw response: {text[:500]}"
+                }]
+            })
+        return '{"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": "unknown", "issue_description": "No response from Gemini", "suggested_fix": "Try again or use a different provider."}]}'
+    except Exception as e:
+        logger.error(f"Gemini API Error: {e}")
+        return '{"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": "unknown", "issue_description": f"Gemini Error: {str(e)}", "suggested_fix": "Check API key or rate limits."}]}'
+
+def sort_findings_by_severity(findings: List[dict]) -> List[dict]:
+    """Sort findings by severity: High > Medium > Low"""
+    severity_order = {"High": 0, "Medium": 1, "Low": 2}
+    
+    def get_severity(finding: dict) -> int:
+        # Extract severity from the finding if available
+        desc = finding.get("issue_description", "").upper()
+        if "HIGH" in desc:
+            return 0
+        elif "MEDIUM" in desc:
+            return 1
+        else:
+            return 2
+    
+    return sorted(findings, key=get_severity)
+
 def parse_ai_response(ai_text: str, filename: str) -> dict:
     try:
         if "```json" in ai_text:
             json_str = ai_text.split("```json")[-1].split("```")[0].strip()
-            return json.loads(json_str)
-        return json.loads(ai_text)
+            parsed = json.loads(json_str)
+        else:
+            parsed = json.loads(ai_text)
+        
+        # Sort findings by severity
+        if "findings" in parsed:
+            parsed["findings"] = sort_findings_by_severity(parsed["findings"])
+        
+        return parsed
     except Exception as e:
         logger.error(f"Failed to parse JSON directly: {ai_text}")
         status = "VULNERABLE" if "[STATUS: VULNERABLE]" in ai_text.upper() or "VULNERABLE" in ai_text.upper() else "SAFE"
@@ -92,25 +169,49 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str):
 
     user_prompt = f"File: {filename}\nPersona Context: {persona}\nCode Content:\n{content}"
 
-    if api_key and str(api_key).startswith("gsk_"):
-        try:
-            client = groq.Groq(api_key=api_key)
-            completion = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": system_rules},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=current_temp,
-                max_tokens=1024,
-                response_format={"type": "json_object"}
-            )
-            ai_output = completion.choices[0].message.content
-        except Exception as e:
-            logger.error(f"Groq API Error: {e}")
-            return {"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": filename, "issue_description": f"Groq Error: {str(e)}", "suggested_fix": "Check API key or Rate Limits."}]}
-    else:
-        ai_output = call_ollama(user_prompt, system_rules)
+    try:
+        # Route based on API key prefix
+        if api_key:
+            api_key_str = str(api_key).strip()
+            
+            if api_key_str.startswith("gsk_"):
+                # Groq API
+                try:
+                    client = groq.Groq(api_key=api_key_str)
+                    completion = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=[
+                            {"role": "system", "content": system_rules},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        temperature=current_temp,
+                        max_tokens=1024,
+                        response_format={"type": "json_object"}
+                    )
+                    ai_output = completion.choices[0].message.content
+                except Exception as e:
+                    logger.error(f"Groq API Error: {e}")
+                    return {"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": filename, "issue_description": f"Groq Error: {str(e)}", "suggested_fix": "Check API key or Rate Limits."}]}
+            
+            elif api_key_str.startswith("sk-"):
+                # OpenAI API
+                ai_output = call_openai(user_prompt, system_rules, api_key_str)
+            
+            elif api_key_str.startswith("AIzaSy"):
+                # Google Gemini API
+                ai_output = call_gemini(user_prompt, system_rules, api_key_str)
+            
+            else:
+                # Unknown API key format, fallback to Ollama
+                logger.warning(f"Unknown API key format, falling back to Ollama")
+                ai_output = call_ollama(user_prompt, system_rules)
+        else:
+            # No API key provided, use Ollama
+            ai_output = call_ollama(user_prompt, system_rules)
+
+    except Exception as e:
+        logger.error(f"Unexpected error in analyze_code_logic: {e}")
+        return {"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": filename, "issue_description": f"Analysis Error: {str(e)}", "suggested_fix": "Try again or contact support."}]}
 
     return parse_ai_response(ai_output, filename)
 
@@ -131,13 +232,25 @@ def combine_results(results_list: List[dict]):
         total_stats["Low"] += int(s.get("Low", 0))
         
         all_findings.extend(res.get("findings", []))
-        
+    
+    # Sort all findings by severity
+    all_findings = sort_findings_by_severity(all_findings)
+    
     final_status = "VULNERABLE" if total_stats["Vuln"] > 0 else "SAFE"
+    
+    # Organize findings by file
+    findings_by_file = {}
+    for finding in all_findings:
+        filename = finding.get("file_name", "unknown")
+        if filename not in findings_by_file:
+            findings_by_file[filename] = []
+        findings_by_file[filename].append(finding)
     
     return {
         "status": final_status,
         "stats": total_stats,
-        "findings": all_findings
+        "findings": all_findings,
+        "findings_by_file": findings_by_file
     }
 
 def process_file_content(files: List[UploadFile]) -> List[Dict]:
