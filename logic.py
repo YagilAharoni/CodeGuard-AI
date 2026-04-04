@@ -53,7 +53,7 @@ def analyze_code_security(filename, content, api_key, persona="Student"):
                 {"role": "user", "content": user_prompt}
             ],
             temperature=current_temp,
-            max_tokens=1024
+            max_tokens=1028 
         )
         
         return completion.choices[0].message.content
