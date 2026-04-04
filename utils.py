@@ -2,7 +2,6 @@ import zipfile
 import io
 import time
 import logging
-import streamlit as st
 from fpdf import FPDF
 import matplotlib.pyplot as plt
 import matplotlib
@@ -38,49 +37,24 @@ def process_uploaded_files(uploaded_files):
             })
     return files_to_scan
 
-def save_to_history(results, stats):
-    """
-    Saves the current scan results into the session history.
-    """
-    if "history" not in st.session_state:
-        st.session_state.history = []
-    
-    entry = {
-        "id": len(st.session_state.history),
-        "time": time.strftime("%H:%M:%S"),
-        "vulns": stats.get("High", 0) + stats.get("Medium", 0) + stats.get("Low", 0),
-        "stats": stats,
-        "full_results": results
-    }
-    st.session_state.history.append(entry)
-
-def generate_vulnerability_chart():
-    """Generate a vulnerability distribution chart as PNG bytes"""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
-    fig.patch.set_facecolor('white')
-    
-    # Placeholder data - will be replaced in generate_pdf_report
-    return fig
-
-@st.cache_data(show_spinner="Generating PDF Report...")
 def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
     """
     Generates a professional PDF report using FPDF.
     Handles encoding to prevent crashes on non-Latin characters.
     """
     try:
-        logger.info(f"PDF generation started - persona: {persona}, results count: {len(results) if results else 0}, suggestions: {len(improvement_suggestions) if improvement_suggestions else 0}")
+        logger.info(f"PDF generation started - persona: {persona}, results type: {type(results)}, suggestions: {len(improvement_suggestions) if improvement_suggestions else 0}")
         
         # Validate input data
-        if not results:
-            logger.error("No results provided to PDF generation")
+        if not results or not isinstance(results, dict):
+            logger.error("Invalid results format provided to PDF generation")
             # Create a basic PDF with a message
             pdf = FPDF()
             pdf.add_page()
             pdf.set_font("Arial", "B", 16)
             pdf.cell(0, 20, "CodeGuard AI - Security Report", ln=True, align='C')
             pdf.set_font("Arial", "", 12)
-            pdf.cell(0, 20, "No scan results available to generate report.", ln=True, align='C')
+            pdf.cell(0, 20, "Invalid scan results format.", ln=True, align='C')
             return pdf.output(dest='S').encode('utf-8', errors='ignore')
             
         if not stats:
@@ -104,7 +78,9 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
         pdf.set_font("Arial", "B", 12)
         pdf.cell(0, 10, "1. Executive Summary", ln=True)
         pdf.set_font("Arial", "", 10)
-        pdf.cell(0, 8, f"Total Files Analyzed: {len(results)}", ln=True)
+        total_files = len(results.get("findings_by_file", {}))
+        pdf.cell(0, 8, f"Total Files Analyzed: {total_files}", ln=True)
+        pdf.cell(0, 8, f"Overall Status: {results.get('status', 'UNKNOWN')}", ln=True)
         pdf.cell(0, 8, f"High Risk Vulnerabilities: {stats.get('High', 0)}", ln=True)
         pdf.cell(0, 8, f"Medium Risk Vulnerabilities: {stats.get('Medium', 0)}", ln=True)
         pdf.cell(0, 8, f"Low Risk Vulnerabilities: {stats.get('Low', 0)}", ln=True)
@@ -167,18 +143,34 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
         pdf.cell(0, 10, "3. Detailed Findings by File", ln=True)
         pdf.ln(5)
         
-        for r in results:
-            pdf.set_font("Arial", "B", 11)
-            safe_name = r['name'].encode('latin-1', 'ignore').decode('latin-1')
-            status = "VULNERABLE" if not r['safe'] else "SAFE"
-            pdf.cell(0, 10, f"File: {safe_name} [%s]" % status, ln=True)
-            
-            pdf.set_font("Arial", "", 9)
-            clean_report = r['report'].encode('latin-1', 'ignore').decode('latin-1')
-            pdf.multi_cell(0, 5, clean_report)
-            pdf.ln(5)
-            pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-            pdf.ln(5)
+        findings_by_file = results.get("findings_by_file", {})
+        if not findings_by_file:
+            pdf.set_font("Arial", "", 10)
+            pdf.cell(0, 10, "No findings to display.", ln=True)
+        else:
+            for file_name, findings in findings_by_file.items():
+                pdf.set_font("Arial", "B", 11)
+                safe_name = file_name.encode('latin-1', 'ignore').decode('latin-1')
+                finding_count = len(findings)
+                status = "SAFE" if finding_count == 0 else "VULNERABLE"
+                pdf.cell(0, 10, f"File: {safe_name} [{status}] - {finding_count} issue{'s' if finding_count != 1 else ''}", ln=True)
+                pdf.ln(3)
+                
+                if findings:
+                    for idx, finding in enumerate(findings, 1):
+                        pdf.set_font("Arial", "B", 9)
+                        issue_desc = finding.get('issue_description', 'No description')
+                        safe_desc = issue_desc.encode('latin-1', 'ignore').decode('latin-1')
+                        pdf.cell(0, 6, f"Issue {idx}: {safe_desc}", ln=True)
+                        
+                        pdf.set_font("Arial", "", 8)
+                        suggested_fix = finding.get('suggested_fix', 'No fix suggested')
+                        safe_fix = suggested_fix.encode('latin-1', 'ignore').decode('latin-1')
+                        pdf.multi_cell(0, 4, f"Fix: {safe_fix}")
+                        pdf.ln(2)
+                
+                pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+                pdf.ln(5)
 
         # Learning Recommendations for Student Persona
         if persona == "Student" and improvement_suggestions:
