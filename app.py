@@ -1,5 +1,7 @@
 import json
 import logging
+import os
+import time
 import uuid
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, Request, Form, UploadFile, File
@@ -50,6 +52,46 @@ async def root():
 
 # In-memory storage for reports (so GET /export-pdf works statelessly for the client)
 REPORT_CACHE: Dict[str, Dict[str, Any]] = {}
+HISTORY_FILE = "scan_history.json"
+
+
+def load_scan_history() -> List[Dict[str, Any]]:
+    if not os.path.exists(HISTORY_FILE):
+        return []
+    try:
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+def save_scan_history(history: List[Dict[str, Any]]) -> None:
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=2, ensure_ascii=False)
+
+
+def append_scan_history(entry: Dict[str, Any]) -> None:
+    history = load_scan_history()
+    history.append(entry)
+    save_scan_history(history)
+
+
+def compare_scan_issues(base_findings: List[Dict[str, Any]], compare_findings: List[Dict[str, Any]]) -> Dict[str, Any]:
+    base_set = { (f.get('file_name', ''), f.get('issue_description', '')) for f in base_findings }
+    compare_set = { (f.get('file_name', ''), f.get('issue_description', '')) for f in compare_findings }
+
+    resolved = base_set - compare_set
+    new_issues = compare_set - base_set
+    unchanged = base_set & compare_set
+
+    return {
+        "resolved_count": len(resolved),
+        "new_count": len(new_issues),
+        "unchanged_count": len(unchanged),
+        "resolved_issues": [ {"file_name": fn, "issue_description": desc} for fn, desc in resolved ],
+        "new_issues": [ {"file_name": fn, "issue_description": desc} for fn, desc in new_issues ],
+        "unchanged_issues": [ {"file_name": fn, "issue_description": desc} for fn, desc in unchanged ]
+    }
 
 def call_ollama(prompt: str, system_prompt: str) -> str:
     """Fallback to local Ollama API"""
@@ -206,7 +248,7 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             "{\n"
             "  'status': 'SAFE' or 'VULNERABLE',\n"
             "  'stats': {'High': 0, 'Medium': 0, 'Low': 0},\n"
-            "  'findings': [{'file_name': 'filename', 'issue_description': 'issue description', 'suggested_fix': 'recommended fix'}],\n"
+            "  'findings': [{'file_name': 'filename', 'issue_description': 'issue description', 'suggested_fix': 'recommended fix', 'source_code': 'original code sample', 'fixed_code': 'corrected code sample'}],\n"
             "  'improvement_suggestions': ['suggestion1', 'suggestion2', 'suggestion3']\n"
             "}\n\n"
             "IMPORTANT:\n"
@@ -216,6 +258,7 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             "- For each finding, start the issue_description with severity in brackets: [HIGH], [MEDIUM], or [LOW].\n"
             "- Provide a concrete remediation for each issue, not a generic suggestion.\n"
             "- Provide 2-3 constructive improvement_suggestions for code quality and best practices.\n"
+            "- When possible, include source_code with the problematic snippet and fixed_code with the corrected version.\n"
             "- Be encouraging and educational in your descriptions."
         )
         current_temp = 0.3
@@ -226,7 +269,7 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             "{\n"
             "  'status': 'SAFE' or 'VULNERABLE',\n"
             "  'stats': {'High': 0, 'Medium': 0, 'Low': 0},\n"
-            "  'findings': [{'file_name': 'filename', 'issue_description': 'issue description', 'suggested_fix': 'recommended fix'}]\n"
+            "  'findings': [{'file_name': 'filename', 'issue_description': 'issue description', 'suggested_fix': 'recommended fix', 'source_code': 'original code sample', 'fixed_code': 'corrected code sample'}]\n"
             "}\n\n"
             "IMPORTANT:\n"
             "- The heart of this application is the solution for each issue. Every finding MUST include a clear, specific fix in suggested_fix.\n"
@@ -235,6 +278,7 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             "- For each finding, start the issue_description with severity in brackets: [HIGH], [MEDIUM], or [LOW].\n"
             "- Production-grade code must be bulletproof.\n"
             "- Be explicit and detailed about every vulnerability.\n"
+            "- When possible, include source_code with the problematic snippet and fixed_code with the corrected version.\n"
             "- Do NOT be lenient with professional code."
         )
         current_temp = 0.1
@@ -249,6 +293,7 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
         f"3. List 'Vulnerability Details' - for each issue, start with severity level (HIGH/MEDIUM/LOW) in brackets.\n"
         f"4. Provide 'Recommended Code Fixes' for every vulnerability. This is the heart of the application.\n"
         f"   Each finding must include a real, actionable suggested_fix with code examples or exact remediation steps.\n"
+        f"   Where possible, include 'source_code' with the problematic snippet and 'fixed_code' with the corrected version.\n"
         f"5. Explain the root cause of each vulnerability in one sentence.\n"
         f"{'6. Suggest 2-3 ways to improve this project (for learning purposes).' if 'Student' in persona else ''}\n\n"
         f"Code Content:\n"
@@ -462,11 +507,26 @@ async def analyze_endpoint(
             })
         
         REPORT_CACHE[report_id] = {
-            "results": pdf_results,
+            "results": {
+                "status": combined["status"],
+                "findings_by_file": combined["findings_by_file"],
+            },
             "stats": combined["stats"],
             "persona": persona,
             "improvement_suggestions": combined.get("improvement_suggestions", [])
         }
+
+        scan_history_entry = {
+            "scan_id": report_id,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "persona": persona,
+            "provider": provider or ("auto" if api_key else "ollama"),
+            "status": combined["status"],
+            "stats": combined["stats"],
+            "findings": combined["findings"],
+            "findings_by_file": combined["findings_by_file"]
+        }
+        append_scan_history(scan_history_entry)
         
         return JSONResponse(content={
             "report_id": report_id,
@@ -479,6 +539,28 @@ async def analyze_endpoint(
     except Exception as e:
         logger.error(f"Error processing analysis: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/history")
+async def get_scan_history():
+    history = load_scan_history()
+    return {"history": history}
+
+@app.get("/compare")
+async def compare_scans(scan_a: str, scan_b: str):
+    history = load_scan_history()
+    scan_map = {entry.get("scan_id"): entry for entry in history}
+    first = scan_map.get(scan_a)
+    second = scan_map.get(scan_b)
+
+    if not first or not second:
+        raise HTTPException(status_code=404, detail="One or both scan IDs not found")
+
+    comparison = compare_scan_issues(first.get("findings", []), second.get("findings", []))
+    return {
+        "scan_a": first,
+        "scan_b": second,
+        "comparison": comparison
+    }
 
 @app.get("/export-pdf")
 @limiter.limit("10/minute")

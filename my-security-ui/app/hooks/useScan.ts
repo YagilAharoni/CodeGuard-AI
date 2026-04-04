@@ -6,6 +6,8 @@ export interface Finding {
   file_name: string;
   issue_description: string;
   suggested_fix: string;
+  source_code?: string;
+  fixed_code?: string;
 }
 
 export interface Stats {

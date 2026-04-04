@@ -102,6 +102,8 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
+  const [expandedDiffs, setExpandedDiffs] = useState<Record<string, boolean>>({});
+  const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
 
   // Hook for backend connection
   const { uploadFile, downloadReport, isScanning, results, error, clearError, clearResults } = useScan("http://localhost:8000");
@@ -154,6 +156,65 @@ export default function Home() {
       case "ollama": return { provider: "Ollama", icon: "🦙", color: "text-purple-400" };
       default: return { provider: "Unknown", icon: "❓", color: "text-gray-400" };
     }
+  };
+
+  const getFindingKey = (fileName: string, idx: number) => `${fileName}-${idx}`;
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedMessage('Fixed code copied to clipboard.');
+    } catch (err) {
+      setCopiedMessage('Unable to copy fixed code. Please copy manually.');
+    }
+  };
+
+  useEffect(() => {
+    if (!copiedMessage) return;
+    const timeout = window.setTimeout(() => setCopiedMessage(null), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [copiedMessage]);
+
+  const toggleDiffPanel = (key: string) => {
+    setExpandedDiffs(prev => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const renderFixComparison = (finding: any) => {
+    const source = finding.source_code?.trim();
+    const fixed = finding.fixed_code?.trim();
+
+    if (!source && !fixed) {
+      return (
+        <div className="bg-[#0d1117] p-3 rounded border border-[#30363d]">
+          <p className="text-green-400 text-xs font-semibold mb-1">Suggested Fix:</p>
+          <pre className="text-gray-400 text-sm font-mono whitespace-pre-wrap break-words">{finding.suggested_fix}</pre>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid gap-4 md:grid-cols-2 mt-3">
+        {source && (
+          <div className="bg-[#0d1117] p-3 rounded border border-[#30363d]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-yellow-300 text-xs font-semibold uppercase tracking-wide">Original Code</span>
+            </div>
+            <pre className="text-gray-400 text-sm font-mono whitespace-pre-wrap break-words">{source}</pre>
+          </div>
+        )}
+        {fixed && (
+          <div className="bg-[#0d1117] p-3 rounded border border-[#30363d]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-green-400 text-xs font-semibold uppercase tracking-wide">Auto-Fixed Code</span>
+            </div>
+            <pre className="text-gray-400 text-sm font-mono whitespace-pre-wrap break-words">{fixed}</pre>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const runAnalysis = () => {
@@ -218,6 +279,9 @@ export default function Home() {
             </h1>
           </div>
           <div className="flex gap-4 items-center">
+            <a href="/history" className="px-4 py-2 rounded-lg border border-[#30363d] hover:bg-[#161b22] transition text-sm font-medium text-white">
+              📜 History
+            </a>
             {isLoggedIn && (
               <>
                 {/* Profile Card */}
@@ -667,6 +731,10 @@ export default function Home() {
              {/* Vulnerability Charts */}
              <VulnerabilityChart stats={results.stats} />
 
+             <div className="mt-6 mb-4 rounded-xl bg-[#161b22] border border-blue-500/20 p-4 text-sm text-blue-200">
+               <strong className="text-blue-300">Auto-Fix Mode:</strong> Review suggested fixes with one-click copy and preview the original vs fixed code when available.
+             </div>
+
              {/* Findings Grouped by File */}
              <div className="space-y-8">
                 <div className="flex items-center justify-between border-b border-[#30363d] pb-2">
@@ -750,9 +818,41 @@ export default function Home() {
                                     </span>
                                   </div>
                                   <p className="text-gray-300 text-sm mb-3">{finding.issue_description}</p>
-                                  <div className="bg-[#0d1117] p-3 rounded border border-[#30363d]">
-                                    <p className="text-green-400 text-xs font-semibold mb-1">Suggested Fix:</p>
-                                    <p className="text-gray-400 text-sm font-mono">{finding.suggested_fix}</p>
+                                  <div className="flex flex-col gap-3">
+                                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                                      <button
+                                        onClick={() => copyToClipboard(finding.fixed_code?.trim() || finding.suggested_fix)}
+                                        className="px-3 py-2 rounded-lg border border-[#30363d] bg-[#161b22] text-sm font-medium hover:bg-[#1c2128] transition-colors"
+                                      >
+                                        Copy Fixed Code
+                                      </button>
+                                      <button
+                                        onClick={() => toggleDiffPanel(getFindingKey(fileName, idx))}
+                                        className="px-3 py-2 rounded-lg border border-[#30363d] bg-[#161b22] text-sm font-medium hover:bg-[#1c2128] transition-colors"
+                                      >
+                                        {expandedDiffs[getFindingKey(fileName, idx)] ? 'Hide Fix Preview' : 'Show Fix Preview'}
+                                      </button>
+                                      {copiedMessage && (
+                                        <span className="text-xs text-green-300">{copiedMessage}</span>
+                                      )}
+                                    </div>
+                                    {expandedDiffs[getFindingKey(fileName, idx)] ? (
+                                      <div className="bg-[#0d1117] p-4 rounded border border-[#30363d]">
+                                        {finding.source_code || finding.fixed_code ? (
+                                          renderFixComparison(finding)
+                                        ) : (
+                                          <>
+                                            <p className="text-green-400 text-xs font-semibold mb-2">Suggested Fix:</p>
+                                            <pre className="text-gray-400 text-sm font-mono whitespace-pre-wrap break-words">{finding.suggested_fix}</pre>
+                                          </>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="bg-[#0d1117] p-3 rounded border border-[#30363d]">
+                                        <p className="text-green-400 text-xs font-semibold mb-1">Suggested Fix:</p>
+                                        <p className="text-gray-400 text-sm font-mono whitespace-pre-wrap break-words">{finding.suggested_fix}</p>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               );
