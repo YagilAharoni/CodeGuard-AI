@@ -105,6 +105,25 @@ def call_gemini(prompt: str, system_prompt: str, api_key: str) -> str:
         logger.error(f"Gemini API Error: {e}")
         return '{"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": "unknown", "issue_description": f"Gemini Error: {str(e)}", "suggested_fix": "Check API key or rate limits."}]}'
 
+def call_groq(prompt: str, system_prompt: str, api_key: str, temperature: float = 0.3) -> str:
+    """Call Groq API"""
+    try:
+        client = groq.Groq(api_key=api_key)
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=temperature,
+            max_tokens=1024,
+            response_format={"type": "json_object"}
+        )
+        return completion.choices[0].message.content
+    except Exception as e:
+        logger.error(f"Groq API Error: {e}")
+        return '{"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": "unknown", "issue_description": f"Groq Error: {str(e)}", "suggested_fix": "Check API key or rate limits."}]}'
+
 def sort_findings_by_severity(findings: List[dict]) -> List[dict]:
     """Sort findings by severity: High > Medium > Low"""
     severity_order = {"High": 0, "Medium": 1, "Low": 2}
@@ -149,7 +168,7 @@ def parse_ai_response(ai_text: str, filename: str) -> dict:
             }]
         }
 
-def analyze_code_logic(filename: str, content: str, api_key: str, persona: str):
+def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, provider: str = None):
     if "Student" in persona:
         system_rules = (
             "You are a helpful Security Tutor for students. Your goal is to encourage learning and growth. "
@@ -205,50 +224,48 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str):
     )
 
     try:
-        # Route based on API key prefix
-        if api_key and str(api_key).strip():  # Better null/empty check
-            api_key_str = str(api_key).strip()
-            logger.info(f"[{filename}] API Key received and not empty: {api_key_str[:15]}...")
-            logger.info(f"[{filename}] Checking API key prefix...")
-            
-            if api_key_str.startswith("gsk_"):
-                logger.info(f"[{filename}] ✓ Detected Groq API key")
-                # Groq API
-                try:
-                    client = groq.Groq(api_key=api_key_str)
-                    completion = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=[
-                            {"role": "system", "content": system_rules},
-                            {"role": "user", "content": user_prompt}
-                        ],
-                        temperature=current_temp,
-                        max_tokens=1024,
-                        response_format={"type": "json_object"}
-                    )
-                    ai_output = completion.choices[0].message.content
-                except Exception as e:
-                    logger.error(f"[{filename}] Groq API Error: {e}")
-                    return {"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": filename, "issue_description": f"Groq Error: {str(e)}", "suggested_fix": "Check API key or Rate Limits."}]}
-            
-            elif api_key_str.startswith("sk-"):
-                logger.info(f"[{filename}] ✓ Detected OpenAI API key")
-                # OpenAI API
-                ai_output = call_openai(user_prompt, system_rules, api_key_str)
-            
-            elif api_key_str.startswith("AIzaSy"):
-                logger.info(f"[{filename}] ✓ Detected Google Gemini API key")
-                # Google Gemini API
-                ai_output = call_gemini(user_prompt, system_rules, api_key_str)
-            
+        # Route based on provider selection or API key prefix
+        if provider and provider != "auto":
+            # Manual provider selection
+            logger.info(f"[{filename}] Manual provider selection: {provider}")
+            if provider == "groq":
+                ai_output = call_groq(user_prompt, system_rules, api_key, current_temp)
+            elif provider == "openai":
+                ai_output = call_openai(user_prompt, system_rules, api_key)
+            elif provider == "gemini":
+                ai_output = call_gemini(user_prompt, system_rules, api_key)
+            elif provider == "ollama":
+                ai_output = call_ollama(user_prompt, system_rules)
             else:
-                # Unknown API key format, fallback to Ollama
-                logger.warning(f"[{filename}] ✗ Unknown API key format: {api_key_str[:20]}..., falling back to Ollama")
+                logger.warning(f"[{filename}] Unknown provider: {provider}, falling back to Ollama")
                 ai_output = call_ollama(user_prompt, system_rules)
         else:
-            # No API key provided, use Ollama
-            logger.info(f"[{filename}] No API key provided or empty, using Ollama")
-            ai_output = call_ollama(user_prompt, system_rules)
+            # Auto-detection based on API key prefix
+            if api_key and str(api_key).strip():  # Better null/empty check
+                api_key_str = str(api_key).strip()
+                logger.info(f"[{filename}] API Key received and not empty: {api_key_str[:15]}...")
+                logger.info(f"[{filename}] Checking API key prefix...")
+                
+                if api_key_str.startswith("gsk_"):
+                    logger.info(f"[{filename}] ✓ Detected Groq API key")
+                    ai_output = call_groq(user_prompt, system_rules, api_key_str, current_temp)
+                
+                elif api_key_str.startswith("sk-"):
+                    logger.info(f"[{filename}] ✓ Detected OpenAI API key")
+                    ai_output = call_openai(user_prompt, system_rules, api_key_str)
+                
+                elif api_key_str.startswith("AIzaSy"):
+                    logger.info(f"[{filename}] ✓ Detected Google Gemini API key")
+                    ai_output = call_gemini(user_prompt, system_rules, api_key_str)
+                
+                else:
+                    # Unknown API key format, fallback to Ollama
+                    logger.warning(f"[{filename}] ✗ Unknown API key format: {api_key_str[:20]}..., falling back to Ollama")
+                    ai_output = call_ollama(user_prompt, system_rules)
+            else:
+                # No API key provided, use Ollama
+                logger.info(f"[{filename}] No API key provided or empty, using Ollama")
+                ai_output = call_ollama(user_prompt, system_rules)
 
     except Exception as e:
         logger.error(f"Unexpected error in analyze_code_logic: {e}")
@@ -356,7 +373,8 @@ async def analyze_endpoint(
     request: Request,
     files: List[UploadFile] = File(...),
     persona: str = Form("Student"),
-    api_key: Optional[str] = Form(None)
+    api_key: Optional[str] = Form(None),
+    provider: Optional[str] = Form(None)
 ):
     try:
         logger.info(f"=== ANALYZE REQUEST START ===")
@@ -367,6 +385,7 @@ async def analyze_endpoint(
         if api_key:
             logger.info(f"API Key first 20 chars: {api_key[:20]}")
         logger.info(f"Persona: {persona}")
+        logger.info(f"Provider: {provider}")
         
         files_to_scan = process_file_content(files)
         logger.info(f"Files to scan: {len(files_to_scan)}")
@@ -377,13 +396,7 @@ async def analyze_endpoint(
         individual_results = []
         for f in files_to_scan:
             logger.info(f"Analyzing file: {f['name']} with API KEY: {api_key[:10] if api_key else 'NONE'}...")
-            res = analyze_code_logic(f["name"], f["content"], api_key, persona)
-            individual_results.append(res)
-            logger.info(f"Result for {f['name']}: Status={res.get('status')}")
-            
-        combined = combine_results(individual_results)
-        
-        report_id = str(uuid.uuid4())
+            res = analyze_code_logic(f["name"], f["content"], api_key, persona, provider)
         
         pdf_results = [{"name": f.get("file_name", "unknown"), "safe": combined["status"] == "SAFE", "report": f.get("issue_description", "") + " - Fix: " + f.get("suggested_fix", "")} for f in combined["findings"]]
         

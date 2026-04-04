@@ -27,7 +27,7 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
   const [results, setResults] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const uploadFile = async (files: File | FileList | File[], persona: string = 'Student', apiKey?: string) => {
+  const uploadFile = async (files: File | FileList | File[], persona: string = 'Student', apiKey?: string, provider?: string) => {
     setIsScanning(true);
     setResults(null);
     setError(null);
@@ -43,6 +43,10 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
     
     if (apiKey) {
       formData.append('api_key', apiKey);
+    }
+
+    if (provider) {
+      formData.append('provider', provider);
     }
 
     try {

@@ -95,6 +95,7 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [persona, setPersona] = useState<"Student" | "Professional">("Student");
   const [apiKey, setApiKey] = useState("");
+  const [selectedProvider, setSelectedProvider] = useState<"auto" | "groq" | "openai" | "gemini" | "ollama">("auto");
 
   const [isHovered, setIsHovered] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -128,19 +129,30 @@ export default function Home() {
   };
 
   const getModelInfo = () => {
-    if (!apiKey) return { provider: "Ollama", icon: "🦙", color: "text-purple-400" };
+    if (selectedProvider === "auto") {
+      if (!apiKey) return { provider: "Ollama", icon: "🦙", color: "text-purple-400" };
+      
+      const key = apiKey.trim();
+      if (key.startsWith("gsk_")) return { provider: "Groq", icon: "⚡", color: "text-blue-400" };
+      if (key.startsWith("sk-")) return { provider: "OpenAI", icon: "🤖", color: "text-green-400" };
+      if (key.startsWith("AIzaSy")) return { provider: "Google Gemini", icon: "✨", color: "text-yellow-400" };
+      
+      return { provider: "Unknown", icon: "❓", color: "text-gray-400" };
+    }
     
-    const key = apiKey.trim();
-    if (key.startsWith("gsk_")) return { provider: "Groq", icon: "⚡", color: "text-blue-400" };
-    if (key.startsWith("sk-")) return { provider: "OpenAI", icon: "🤖", color: "text-green-400" };
-    if (key.startsWith("AIzaSy")) return { provider: "Google Gemini", icon: "✨", color: "text-yellow-400" };
-    
-    return { provider: "Unknown", icon: "❓", color: "text-gray-400" };
+    // Manual provider selection
+    switch (selectedProvider) {
+      case "groq": return { provider: "Groq", icon: "⚡", color: "text-blue-400" };
+      case "openai": return { provider: "OpenAI", icon: "🤖", color: "text-green-400" };
+      case "gemini": return { provider: "Google Gemini", icon: "✨", color: "text-yellow-400" };
+      case "ollama": return { provider: "Ollama", icon: "🦙", color: "text-purple-400" };
+      default: return { provider: "Unknown", icon: "❓", color: "text-gray-400" };
+    }
   };
 
   const runAnalysis = () => {
     if (selectedFiles) {
-      uploadFile(selectedFiles, persona, apiKey);
+      uploadFile(selectedFiles, persona, apiKey, selectedProvider);
     }
   };
 
@@ -281,6 +293,75 @@ export default function Home() {
                 className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
               />
               <p className="text-xs text-gray-500 mt-2">Supports: Groq (gsk_), OpenAI (sk-), Google Gemini (AIzaSy), or fallback to local Ollama.</p>
+            </div>
+
+            <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8">
+              <label className="block text-sm font-semibold mb-4 text-gray-300">AI Provider Selection</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div 
+                  onClick={() => setSelectedProvider("auto")}
+                  className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                    selectedProvider === "auto" 
+                      ? "border-blue-500 bg-blue-500/10" 
+                      : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                  }`}
+                >
+                  <div className="text-2xl mb-2">🔍</div>
+                  <div className="text-sm font-semibold text-white">Auto Detect</div>
+                  <div className="text-xs text-gray-500">From API key</div>
+                </div>
+                <div 
+                  onClick={() => setSelectedProvider("groq")}
+                  className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                    selectedProvider === "groq" 
+                      ? "border-blue-500 bg-blue-500/10" 
+                      : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                  }`}
+                >
+                  <div className="text-2xl mb-2">⚡</div>
+                  <div className="text-sm font-semibold text-white">Groq</div>
+                  <div className="text-xs text-gray-500">Fast & Free</div>
+                </div>
+                <div 
+                  onClick={() => setSelectedProvider("openai")}
+                  className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                    selectedProvider === "openai" 
+                      ? "border-green-500 bg-green-500/10" 
+                      : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                  }`}
+                >
+                  <div className="text-2xl mb-2">🤖</div>
+                  <div className="text-sm font-semibold text-white">OpenAI</div>
+                  <div className="text-xs text-gray-500">GPT-4o Mini</div>
+                </div>
+                <div 
+                  onClick={() => setSelectedProvider("gemini")}
+                  className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                    selectedProvider === "gemini" 
+                      ? "border-yellow-500 bg-yellow-500/10" 
+                      : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                  }`}
+                >
+                  <div className="text-2xl mb-2">✨</div>
+                  <div className="text-sm font-semibold text-white">Gemini</div>
+                  <div className="text-xs text-gray-500">Google AI</div>
+                </div>
+                <div 
+                  onClick={() => setSelectedProvider("ollama")}
+                  className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                    selectedProvider === "ollama" 
+                      ? "border-purple-500 bg-purple-500/10" 
+                      : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
+                  }`}
+                >
+                  <div className="text-2xl mb-2">🦙</div>
+                  <div className="text-sm font-semibold text-white">Ollama</div>
+                  <div className="text-xs text-gray-500">Local AI</div>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-3">
+                Choose "Auto Detect" to automatically select based on your API key, or manually select a provider to override.
+              </p>
             </div>
 
             <button 
