@@ -2,90 +2,6 @@
 import React, { useState, useRef } from "react";
 import Head from "next/head";
 import { useScan } from "./hooks/useScan";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-
-const getSeverityColor = (severity: string): string => {
-  const upper = severity.toUpperCase();
-  if (upper.includes("HIGH")) return "text-red-500";
-  if (upper.includes("MEDIUM")) return "text-yellow-500";
-  return "text-blue-400";
-};
-
-const getSeverityBgColor = (severity: string): string => {
-  const upper = severity.toUpperCase();
-  if (upper.includes("HIGH")) return "bg-red-500/20 border-red-500/30";
-  if (upper.includes("MEDIUM")) return "bg-yellow-500/20 border-yellow-500/30";
-  return "bg-blue-500/20 border-blue-500/30";
-};
-
-const getSeverityBadgeColor = (severity: string): string => {
-  const upper = severity.toUpperCase();
-  if (upper.includes("HIGH")) return "bg-red-500/30 text-red-400";
-  if (upper.includes("MEDIUM")) return "bg-yellow-500/30 text-yellow-400";
-  return "bg-blue-500/30 text-blue-400";
-};
-
-const VulnerabilityChart = ({ stats }: { stats: any }) => {
-  const chartData = [
-    { name: "High", value: stats.High || 0, fill: "#ef4444" },
-    { name: "Medium", value: stats.Medium || 0, fill: "#eab308" },
-    { name: "Low", value: stats.Low || 0, fill: "#3b82f6" },
-  ];
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-      <div className="bg-[#161b22] p-6 rounded-xl border border-[#30363d]">
-        <h3 className="text-lg font-bold mb-6 text-gray-200">Distribution by Severity</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#30363d" />
-            <XAxis dataKey="name" stroke="#8b949e" />
-            <YAxis stroke="#8b949e" />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#161b22",
-                border: "1px solid #30363d",
-                borderRadius: "8px",
-                color: "#c9d1d9",
-              }}
-            />
-            <Bar dataKey="value" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="bg-[#161b22] p-6 rounded-xl border border-[#30363d]">
-        <h3 className="text-lg font-bold mb-6 text-gray-200">Overview</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, value }) => `${name}: ${value}`}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#161b22",
-                border: "1px solid #30363d",
-                borderRadius: "8px",
-                color: "#c9d1d9",
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-};
 
 export default function Home() {
   // --- States ---
@@ -128,22 +44,6 @@ export default function Home() {
       uploadFile(selectedFiles, persona, apiKey);
     }
   };
-
-  // Group findings by file and sort
-  const groupedFindings = React.useMemo(() => {
-    if (!results?.findings) return {};
-    
-    const grouped: { [key: string]: any[] } = {};
-    results.findings.forEach((finding: any) => {
-      const fileName = finding.file_name || "unknown";
-      if (!grouped[fileName]) {
-        grouped[fileName] = [];
-      }
-      grouped[fileName].push(finding);
-    });
-    
-    return grouped;
-  }, [results]);
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans selection:bg-blue-500/30 pb-20">
@@ -215,15 +115,15 @@ export default function Home() {
             </div>
 
             <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8">
-              <label className="block text-sm font-semibold mb-2 text-gray-300">AI API Key (Optional)</label>
+              <label className="block text-sm font-semibold mb-2 text-gray-300">Groq API Key (Optional for Llama-3)</label>
               <input 
                 type="password" 
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="gsk_... or sk-... or AIzaSy..."
+                placeholder="gsk_..."
                 className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
               />
-              <p className="text-xs text-gray-500 mt-2">Supports: Groq (gsk_), OpenAI (sk-), Google Gemini (AIzaSy), or fallback to local Ollama.</p>
+              <p className="text-xs text-gray-500 mt-2">If empty, system will fallback to local Ollama models.</p>
             </div>
 
             <button 
@@ -350,48 +250,28 @@ export default function Home() {
                </div>
              </div>
 
-             {/* Vulnerability Charts */}
-             <VulnerabilityChart stats={results.stats} />
-
-             {/* Findings Grouped by File */}
-             <div className="space-y-8">
-                <h3 className="text-2xl font-bold border-b border-[#30363d] pb-2">Identified Vulnerabilities by File</h3>
-                
+             {/* Findings */}
+             <div className="space-y-6">
+                <h3 className="text-2xl font-bold border-b border-[#30363d] pb-2">Identified Vulnerabilities</h3>
                 {results.findings && results.findings.length > 0 ? (
-                  Object.entries(groupedFindings).map(([fileName, findings]) => (
-                    <div key={fileName} className="rounded-xl border border-[#30363d] overflow-hidden">
-                      <div className="bg-[#161b22] p-4 border-b border-[#30363d] flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.3A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z" />
-                          </svg>
-                          <span className="font-mono text-sm text-gray-300">{fileName}</span>
-                        </div>
-                        <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-bold">
-                          {findings.length} issue{findings.length !== 1 ? "s" : ""}
+                  results.findings.map((finding, idx) => (
+                    <div key={idx} className="p-6 rounded-xl bg-[#161b22] border border-red-500/20 shadow-lg shadow-red-500/5">
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-md text-xs font-bold font-mono">
+                          {finding.file_name}
                         </span>
                       </div>
-
-                      <div className="space-y-4 p-4">
-                        {findings.map((finding: any, idx: number) => {
-                          const severity = finding.issue_description?.match(/HIGH|MEDIUM|LOW/i)?.[0] || "LOW";
-                          return (
-                            <div key={idx} className={`p-4 rounded-lg border ${getSeverityBgColor(severity)}`}>
-                              <div className="flex items-start justify-between mb-2">
-                                <h4 className="font-bold text-gray-200">Issue {idx + 1}</h4>
-                                <span className={`px-2 py-1 rounded text-xs font-bold ${getSeverityBadgeColor(severity)}`}>
-                                  {severity.toUpperCase()}
-                                </span>
-                              </div>
-                              <p className="text-gray-300 text-sm mb-3">{finding.issue_description}</p>
-                              <div className="bg-[#0d1117] p-3 rounded border border-[#30363d]">
-                                <p className="text-green-400 text-xs font-semibold mb-1">Suggested Fix:</p>
-                                <p className="text-gray-400 text-sm font-mono">{finding.suggested_fix}</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <h4 className="text-lg font-bold text-gray-200 mb-2">Issue Description</h4>
+                      <p className="text-gray-400 mb-6 font-mono text-sm bg-[#0d1117] p-4 rounded-lg border border-[#30363d]">
+                        {finding.issue_description}
+                      </p>
+                      <h4 className="text-lg font-bold text-green-400 mb-2 flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        Suggested Fix
+                      </h4>
+                      <p className="text-gray-300 font-mono text-sm bg-[#0d1117] p-4 rounded-lg border border-[#30363d]">
+                        {finding.suggested_fix}
+                      </p>
                     </div>
                   ))
                 ) : (
