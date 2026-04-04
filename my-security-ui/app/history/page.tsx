@@ -34,7 +34,7 @@ export default function HistoryPage() {
         const response = await axios.get("http://localhost:8000/history");
         setHistory(response.data.history || []);
       } catch (err: any) {
-        setError("לא ניתן למשוך היסטוריית סריקות. בדוק את השרת.");
+        setError("Unable to retrieve scan history. Please verify the backend server is running.");
       }
     };
     fetchHistory();
@@ -53,7 +53,7 @@ export default function HistoryPage() {
 
   const compareScans = async () => {
     if (!selectedA || !selectedB) {
-      setError("בחר שתי סריקות להשוואה.");
+      setError("Please select two scans for comparison.");
       return;
     }
 
@@ -64,7 +64,7 @@ export default function HistoryPage() {
       setComparison(response.data);
       setError(null);
     } catch (err: any) {
-      setError("לא ניתן לבצע השוואה כרגע. בדוק את מזהי הסריקות.");
+      setError("Unable to perform comparison at this time. Please verify the selected scan IDs.");
     }
   };
 
@@ -183,9 +183,9 @@ export default function HistoryPage() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4">
-                  <h3 className="text-lg font-semibold mb-3">חורים שנסגרו</h3>
+                  <h3 className="text-lg font-semibold mb-3">Resolved Issues</h3>
                   {comparison.comparison.resolved_issues.length === 0 ? (
-                    <p className="text-gray-400">לא נמצאו חורים שנסגרו.</p>
+                    <p className="text-gray-400">No resolved issues were found.</p>
                   ) : (
                     <ul className="space-y-2 text-sm text-gray-300">
                       {comparison.comparison.resolved_issues.slice(0, 5).map((item: any, idx: number) => (
@@ -195,9 +195,9 @@ export default function HistoryPage() {
                   )}
                 </div>
                 <div className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4">
-                  <h3 className="text-lg font-semibold mb-3">חורים חדשים</h3>
+                  <h3 className="text-lg font-semibold mb-3">New Issues</h3>
                   {comparison.comparison.new_issues.length === 0 ? (
-                    <p className="text-gray-400">לא נמצאו חורים חדשים.</p>
+                    <p className="text-gray-400">No new issues were detected.</p>
                   ) : (
                     <ul className="space-y-2 text-sm text-gray-300">
                       {comparison.comparison.new_issues.slice(0, 5).map((item: any, idx: number) => (
@@ -220,11 +220,11 @@ export default function HistoryPage() {
               history.map((entry) => (
                 <div key={entry.scan_id} className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4 grid gap-2 md:grid-cols-4">
                   <div>
-                    <div className="text-sm text-gray-400">תאריך</div>
+                    <div className="text-sm text-gray-400">Date</div>
                     <div className="text-white">{formatDate(entry.timestamp)}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-400">סטטוס</div>
+                    <div className="text-sm text-gray-400">Status</div>
                     <div className="text-white">{entry.status}</div>
                   </div>
                   <div>
@@ -232,7 +232,7 @@ export default function HistoryPage() {
                     <div className="text-white">{entry.stats.High} / {entry.stats.Medium} / {entry.stats.Low}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-400">מזהה סריקה</div>
+                    <div className="text-sm text-gray-400">Scan ID</div>
                     <div className="text-gray-300 text-xs font-mono truncate">{entry.scan_id}</div>
                   </div>
                 </div>
