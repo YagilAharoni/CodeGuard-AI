@@ -156,7 +156,15 @@ def save_scan_history(history: List[Dict[str, Any]]) -> None:
         json.dump(history, f, indent=2, ensure_ascii=False)
 
 
-def append_scan_history(entry: Dict[str, Any]) -> None:
+def save_scan_history(history: List[Dict[str, Any]]) -> None:
+    with history_lock:
+        try:
+            with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+                json.dump(history, f, indent=4)
+        except Exception as e:
+            logger.error(f"Error saving scan history: {e}")
+
+def append_scan_history(entry: Dict[str, Any]):
     history = load_scan_history()
     
     # 7-day pruning logic
@@ -170,12 +178,10 @@ def append_scan_history(entry: Dict[str, Any]) -> None:
         for h in history:
             try:
                 ts_str = h.get("timestamp", "")
-                # Format: "Y-m-d H:M:S"
                 ts = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
                 if ts >= seven_days_ago:
                     pruned_history.append(h)
             except (ValueError, TypeError):
-                # If timestamp is malformed, keep it just in case or skip it
                 pruned_history.append(h)
         
         history = pruned_history
@@ -184,6 +190,35 @@ def append_scan_history(entry: Dict[str, Any]) -> None:
 
     history.append(entry)
     save_scan_history(history)
+
+# --- Cache Cleanup Background Task ---
+def cleanup_report_cache():
+    """Background task to remove old items from REPORT_CACHE"""
+    while True:
+        try:
+            current_time = time.time()
+            to_delete = []
+            # Use list to avoid 'dictionary changed size during iteration'
+            for rid in list(REPORT_CACHE.keys()):
+                data = REPORT_CACHE[rid]
+                # Items created more than 30 mins ago
+                if current_time - data.get("created_at", 0) > 1800:
+                    to_delete.append(rid)
+            
+            for rid in to_delete:
+                del REPORT_CACHE[rid]
+                
+            if to_delete:
+                logger.info(f"Background cleanup: Removed {len(to_delete)} expired reports from cache.")
+                
+        except Exception as e:
+            logger.error(f"Cache cleanup error: {e}")
+        
+        time.sleep(600) # Run every 10 mins
+
+# Start the cleanup thread
+cleanup_thread = threading.Thread(target=cleanup_report_cache, daemon=True)
+cleanup_thread.start()
 
 
 def compare_scan_issues(base_findings: List[Dict[str, Any]], compare_findings: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -589,11 +624,31 @@ def combine_results(results_list: List[dict]):
 
 def process_file_content(files: List[UploadFile]) -> List[Dict]:
     files_to_scan = []
+    total_size = 0
     
     for file in files:
         if not file.filename:
             continue
             
+        # Check total file count
+        if len(files_to_scan) >= MAX_FILES_PER_SCAN:
+            logger.warning(f"Scan limit reached: maximum {MAX_FILES_PER_SCAN} files allowed.")
+            break
+
+        # Check individual file size
+        file.file.seek(0, 2)
+        size = file.file.tell()
+        file.file.seek(0)
+        
+        if size > MAX_FILE_SIZE:
+            logger.warning(f"File {file.filename} too large: {size} bytes. Skipping.")
+            continue
+            
+        total_size += size
+        if total_size > MAX_TOTAL_SCAN_SIZE:
+            logger.warning("Total scan size limit reached. Skipping remaining files.")
+            break
+
         content_bytes = file.file.read()
         
         if file.filename.endswith('.zip'):
@@ -660,7 +715,8 @@ async def analyze_endpoint(
         
         # Combine all individual results into a single report
         combined = combine_results(individual_results)
-        
+        combined["created_at"] = time.time()  # For cache cleanup
+
         # Create PDF results - one entry per file, not per finding
         pdf_results = []
         for filename, findings in combined["findings_by_file"].items():
@@ -864,21 +920,34 @@ async def analyze_github_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/history")
-async def get_scan_history(username: Optional[str] = None):
+async def get_scan_history(request: Request, username: Optional[str] = None):
+    # Authorization check
+    auth_user = request.headers.get("X-User")
+    if not auth_user or (username and auth_user != username):
+        raise HTTPException(status_code=403, detail="Unauthorized access to history")
+        
+    target_user = username or auth_user
     history = load_scan_history()
-    if username:
-        history = [entry for entry in history if entry.get("username", "anonymous") == username]
-    return {"history": history}
+    if target_user:
+        history = [entry for entry in history if entry.get("username", "anonymous") == target_user]
+    return {"history": history[::-1]}  # Return reversed (latest first)
 
 @app.get("/compare")
-async def compare_scans(scan_a: str, scan_b: str):
+async def compare_scans(request: Request, scan_a: str, scan_b: str):
+    auth_user = request.headers.get("X-User")
+    if not auth_user:
+         raise HTTPException(status_code=403, detail="Unauthorized access to comparison")
+
     history = load_scan_history()
-    scan_map = {entry.get("scan_id"): entry for entry in history}
+    # Filter to only allow comparing scans owned by the user
+    user_history = [entry for entry in history if entry.get("username") == auth_user]
+    scan_map = {entry.get("scan_id"): entry for entry in user_history}
+    
     first = scan_map.get(scan_a)
     second = scan_map.get(scan_b)
 
     if not first or not second:
-        raise HTTPException(status_code=404, detail="One or both scan IDs not found")
+        raise HTTPException(status_code=404, detail="One or both scan IDs not found or access denied")
 
     comparison = compare_scan_issues(first.get("findings", []), second.get("findings", []))
     return {
@@ -890,6 +959,10 @@ async def compare_scans(scan_a: str, scan_b: str):
 @app.get("/export-pdf")
 @limiter.limit("10/minute")
 async def export_pdf_endpoint(request: Request, report_id: str, username: Optional[str] = None):
+    auth_user = request.headers.get("X-User")
+    if not auth_user:
+         raise HTTPException(status_code=403, detail="Unauthorized access to export")
+
     logger.info(f"=== PDF EXPORT REQUEST ===")
     logger.info(f"Report ID: {report_id}")
     

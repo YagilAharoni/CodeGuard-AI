@@ -40,7 +40,8 @@ function HistoryPageContent() {
     const fetchHistory = async () => {
       try {
         const response = await axios.get("http://localhost:8000/history", {
-          params: { username }
+          params: { username },
+          headers: { 'X-User': username }
         });
         setHistory(response.data.history || []);
       } catch (err: any) {
@@ -69,7 +70,8 @@ function HistoryPageContent() {
 
     try {
       const response = await axios.get("http://localhost:8000/compare", {
-        params: { scan_a: selectedA, scan_b: selectedB }
+        params: { scan_a: selectedA, scan_b: selectedB },
+        headers: { 'X-User': username }
       });
       setComparison(response.data);
       setError(null);

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import axios from "axios";
 import { useScan } from "../hooks/useScan";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
@@ -120,9 +121,26 @@ export default function Home() {
   const [expandedDiffs, setExpandedDiffs] = useState<Record<string, boolean>>({});
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
   const [isFolderMode, setIsFolderMode] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
 
   // Hook for backend connection
   const { uploadFile, scanGithubUrl, downloadReport, isScanning, results, error, clearError, clearResults } = useScan("http://localhost:8000");
+
+  const fetchHistory = async () => {
+    const stored = localStorage.getItem('codeguard_user');
+    if (!stored) return;
+    try {
+      const user = JSON.parse(stored);
+      const userToFetch = user.username || "anonymous";
+      const response = await axios.get("http://localhost:8000/history", {
+        params: { username: userToFetch },
+        headers: { 'X-User': userToFetch }
+      });
+      setHistory(response.data.history || []);
+    } catch (err) {
+      console.error("Failed to fetch history:", err);
+    }
+  };
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -138,6 +156,14 @@ export default function Home() {
       // ignore
     }
   }, []);
+
+  useEffect(() => {
+    if (mounted) fetchHistory();
+  }, [mounted]);
+
+  useEffect(() => {
+    if (results) fetchHistory();
+  }, [results]);
 
   // --- Handlers ---
   const handleDragOver = (e: React.DragEvent) => {
@@ -501,6 +527,49 @@ export default function Home() {
               >
                 {isScanning ? "🔮 Agents Analyzing Code..." : "🚀 Run AI Scan"}
               </button>
+            )}
+            {/* --- RECENT HISTORY PREVIEW --- */}
+            {history.length > 0 && (
+              <div className="w-full max-w-4xl mt-16 p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md animate-fade-in">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold flex items-center gap-3">
+                    <span className="text-2xl">🕒</span>
+                    Recent Security Scans
+                  </h3>
+                  <a href={`/history?user=${encodeURIComponent(loggedInUsername)}`} className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors font-semibold flex items-center gap-1 group">
+                    View All <span className="group-hover:translate-x-1 transition-transform">→</span>
+                  </a>
+                </div>
+                <div className="grid gap-4">
+                  {history.slice(0, 3).map((scan: any) => (
+                    <div key={scan.scan_id} className="flex flex-col md:flex-row items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:border-cyan-500/30 transition-all group">
+                      <div className="flex items-center gap-4 mb-4 md:mb-0">
+                         <div className={`w-3 h-3 rounded-full ${scan.status === 'SAFE' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'}`}></div>
+                         <div>
+                            <div className="text-sm font-bold text-white group-hover:text-cyan-400 transition">{scan.timestamp}</div>
+                            <div className="text-xs text-gray-500 truncate max-w-[200px]">{scan.source || 'Local Upload'}</div>
+                         </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="flex gap-2">
+                           {scan.stats && (
+                             <>
+                               <span className="text-xs font-semibold px-2 py-1 bg-red-500/10 text-red-400 rounded border border-red-500/20">H: {scan.stats.High}</span>
+                               <span className="text-xs font-semibold px-2 py-1 bg-yellow-500/10 text-yellow-400 rounded border border-yellow-500/20">M: {scan.stats.Medium}</span>
+                             </>
+                           )}
+                        </div>
+                        <button 
+                          onClick={() => downloadReport(scan.scan_id, loggedInUsername)}
+                          className="px-4 py-2 bg-white/5 hover:bg-cyan-500/20 rounded-lg text-xs font-bold transition-all border border-white/10 hover:border-cyan-500/50"
+                        >
+                          DOWNLOAD PDF
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         )}

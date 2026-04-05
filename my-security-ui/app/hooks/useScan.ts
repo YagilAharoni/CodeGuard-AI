@@ -61,6 +61,7 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
       const response = await axios.post<ScanResult>(`${apiUrl}/analyze`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'X-User': username || 'anonymous'
         },
       });
 
@@ -110,6 +111,7 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
       const response = await axios.post<ScanResult>(`${apiUrl}/analyze-github`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'X-User': username || 'anonymous'
         },
       });
 
@@ -144,6 +146,9 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
       const response = await axios.get(`${apiUrl}/export-pdf`, {
         params,
         responseType: 'blob',
+        headers: {
+          'X-User': username || 'anonymous'
+        }
       });
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
