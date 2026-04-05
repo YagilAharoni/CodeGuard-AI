@@ -48,7 +48,10 @@ export default function LandingPage() {
         // Switch to login mode after successful registration
         setIsLogin(true);
         setError("Registration successful! Please login.");
-        setEmail(email || username);
+        // Ensure fields are cleared for the login attempt
+        setUsername("");
+        setEmail("");
+        setPassword("");
       } else {
         // Store user info in localStorage for use across pages
         if (data.user) {
@@ -150,21 +153,33 @@ export default function LandingPage() {
             
             <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-4 relative z-10">
               <button 
-                onClick={() => {setIsLogin(true); setError("");}}
+                onClick={() => {
+                  setIsLogin(true); 
+                  setError("");
+                  setUsername("");
+                  setEmail("");
+                  setPassword("");
+                }}
                 className={`text-lg font-bold transition-all duration-300 ${isLogin ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(0,240,255,0.5)]' : 'text-gray-500 hover:text-white'}`}
               >
                 Sign In
               </button>
               <div className="w-px h-6 bg-white/10"></div>
               <button 
-                onClick={() => {setIsLogin(false); setError("");}}
+                onClick={() => {
+                  setIsLogin(false); 
+                  setError("");
+                  setUsername("");
+                  setEmail("");
+                  setPassword("");
+                }}
                 className={`text-lg font-bold transition-all duration-300 ${!isLogin ? 'text-purple-400 drop-shadow-[0_0_10px_rgba(138,43,226,0.5)]' : 'text-gray-500 hover:text-white'}`}
               >
                 Create Account
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+            <form onSubmit={handleSubmit} className="space-y-6 relative z-10" autoComplete="off">
               
               {!isLogin && (
                 <div className="space-y-1.5 group">
@@ -176,6 +191,7 @@ export default function LandingPage() {
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
                     placeholder="neo_1337"
+                    autoComplete="off"
                   />
                 </div>
               )}
@@ -191,6 +207,7 @@ export default function LandingPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
                   placeholder={isLogin ? "neo / neo@matrix.com" : "neo@matrix.com"}
+                  autoComplete="off"
                 />
               </div>
 
@@ -203,6 +220,7 @@ export default function LandingPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-mono text-sm"
                   placeholder="••••••••"
+                  autoComplete="new-password"
                 />
               </div>
 
@@ -246,6 +264,9 @@ export default function LandingPage() {
                   onClick={() => {
                     setIsLogin(!isLogin);
                     setError("");
+                    setUsername("");
+                    setEmail("");
+                    setPassword("");
                   }}
                   className="text-cyan-400 hover:text-cyan-300 font-bold uppercase tracking-widest font-mono"
                 >
