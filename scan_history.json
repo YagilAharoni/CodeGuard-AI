@@ -132,5 +132,346 @@
         }
       ]
     }
+  },
+  {
+    "scan_id": "6a402233-9f01-4f2e-b04a-60e5efed9dda",
+    "timestamp": "2026-04-05 21:16:15",
+    "persona": "Student",
+    "provider": "auto",
+    "status": "VULNERABLE",
+    "stats": {
+      "High": 1,
+      "Medium": 2,
+      "Low": 2,
+      "Safe": 1,
+      "Vuln": 1,
+      "Error": 0
+    },
+    "findings": [
+      {
+        "file_name": "app.py",
+        "issue_description": "[HIGH] Hardcoded API keys and lack of input validation",
+        "suggested_fix": "Use environment variables for API keys and validate all user inputs",
+        "source_code": "api_key = \"sk-...\"",
+        "fixed_code": "import os\napi_key = os.environ.get('API_KEY')"
+      },
+      {
+        "file_name": "app.py",
+        "issue_description": "[MEDIUM] Missing error handling for API calls",
+        "suggested_fix": "Implement try-except blocks for API calls to handle potential errors",
+        "source_code": "response = requests.post(...)",
+        "fixed_code": "try:\n    response = requests.post(...)\nexcept requests.exceptions.RequestException as e:\n    logger.error(f\"API call failed: {e}\")"
+      },
+      {
+        "file_name": "utils.py",
+        "issue_description": "[MEDIUM] Insecure use of temporary directory for chart generation",
+        "suggested_fix": "Use a secure method to generate and store temporary files",
+        "source_code": "temp_image = os.path.join(tempfile.gettempdir(), 'vuln_chart.png')",
+        "fixed_code": "import secrets; temp_image = os.path.join(tempfile.gettempdir(), f'{secrets.token_urlsafe(8)}.png')"
+      },
+      {
+        "file_name": "app.py",
+        "issue_description": "[LOW] Potential ZIP file parsing vulnerabilities",
+        "suggested_fix": "Use a secure ZIP file parsing library and validate file contents",
+        "source_code": "with zipfile.ZipFile(io.BytesIO(content_bytes)) as z:",
+        "fixed_code": "import zipfile\nwith zipfile.ZipFile(io.BytesIO(content_bytes), 'r') as z:"
+      },
+      {
+        "file_name": "utils.py",
+        "issue_description": "[LOW] Potential issue with file handling in process_uploaded_files function",
+        "suggested_fix": "Add error handling for file operations to prevent crashes",
+        "source_code": "with z.open(filename) as internal_file:",
+        "fixed_code": "try: with z.open(filename) as internal_file: ... except Exception as e: logger.error(f'Error reading file {filename}: {e}')"
+      }
+    ],
+    "findings_by_file": {
+      "app.py": [
+        {
+          "file_name": "app.py",
+          "issue_description": "[HIGH] Hardcoded API keys and lack of input validation",
+          "suggested_fix": "Use environment variables for API keys and validate all user inputs",
+          "source_code": "api_key = \"sk-...\"",
+          "fixed_code": "import os\napi_key = os.environ.get('API_KEY')"
+        },
+        {
+          "file_name": "app.py",
+          "issue_description": "[MEDIUM] Missing error handling for API calls",
+          "suggested_fix": "Implement try-except blocks for API calls to handle potential errors",
+          "source_code": "response = requests.post(...)",
+          "fixed_code": "try:\n    response = requests.post(...)\nexcept requests.exceptions.RequestException as e:\n    logger.error(f\"API call failed: {e}\")"
+        },
+        {
+          "file_name": "app.py",
+          "issue_description": "[LOW] Potential ZIP file parsing vulnerabilities",
+          "suggested_fix": "Use a secure ZIP file parsing library and validate file contents",
+          "source_code": "with zipfile.ZipFile(io.BytesIO(content_bytes)) as z:",
+          "fixed_code": "import zipfile\nwith zipfile.ZipFile(io.BytesIO(content_bytes), 'r') as z:"
+        }
+      ],
+      "utils.py": [
+        {
+          "file_name": "utils.py",
+          "issue_description": "[MEDIUM] Insecure use of temporary directory for chart generation",
+          "suggested_fix": "Use a secure method to generate and store temporary files",
+          "source_code": "temp_image = os.path.join(tempfile.gettempdir(), 'vuln_chart.png')",
+          "fixed_code": "import secrets; temp_image = os.path.join(tempfile.gettempdir(), f'{secrets.token_urlsafe(8)}.png')"
+        },
+        {
+          "file_name": "utils.py",
+          "issue_description": "[LOW] Potential issue with file handling in process_uploaded_files function",
+          "suggested_fix": "Add error handling for file operations to prevent crashes",
+          "source_code": "with z.open(filename) as internal_file:",
+          "fixed_code": "try: with z.open(filename) as internal_file: ... except Exception as e: logger.error(f'Error reading file {filename}: {e}')"
+        }
+      ]
+    },
+    "username": "yagil"
+  },
+  {
+    "scan_id": "f735ba82-114f-4917-9253-0891618db4c5",
+    "timestamp": "2026-04-05 21:18:06",
+    "persona": "Student",
+    "provider": "auto",
+    "status": "VULNERABLE",
+    "stats": {
+      "High": 1,
+      "Medium": 2,
+      "Low": 3,
+      "Safe": 1,
+      "Vuln": 1,
+      "Error": 0
+    },
+    "findings": [
+      {
+        "file_name": "HW5_318725405__213478142_Q2.cpp",
+        "issue_description": "[HIGH] Potential buffer overflow in the cin statement for team name and score",
+        "suggested_fix": "Use std::string instead of char array to avoid buffer overflow",
+        "source_code": "cin >> team_name;",
+        "fixed_code": "std::string team_name; std::cin >> team_name;"
+      },
+      {
+        "file_name": "HW5_318725405__213478142_Q2.cpp",
+        "issue_description": "[MEDIUM] Memory leak in case of exception in memory allocation",
+        "suggested_fix": "Use smart pointers or containers to manage memory",
+        "source_code": "Teams[i] = new char[team_name_size];",
+        "fixed_code": "std::vector<std::string> Teams(num_of_teams);"
+      },
+      {
+        "file_name": "HW5_318725405__213478142_Q2.cpp",
+        "issue_description": "[MEDIUM] Potential null pointer dereference in calcAndSort function",
+        "suggested_fix": "Check for null pointer before dereferencing",
+        "source_code": "sortedScores[i] = calculateScore(Scores[i]);",
+        "fixed_code": "if (Scores[i] != nullptr) { sortedScores[i] = calculateScore(Scores[i]); }"
+      },
+      {
+        "file_name": "HW5_318725405__213478142_Q1.cpp",
+        "issue_description": "[LOW] The code uses a fixed-size array for team names and scores, which could lead to buffer overflow issues if the number of teams exceeds the defined maximum.",
+        "suggested_fix": "Use dynamic memory allocation or std::vector to handle variable-sized arrays.",
+        "source_code": "char teamsList[][MAX_STR_LEN] = {\"Team_A\", \"Team_B\", \"Team_C\"};",
+        "fixed_code": "std::vector<std::string> teamsList = {\"Team_A\", \"Team_B\", \"Team_C\"};"
+      },
+      {
+        "file_name": "HW5_318725405__213478142_Q1.cpp",
+        "issue_description": "[LOW] The code uses C-style strings and manual memory management, which can lead to memory leaks or corruption.",
+        "suggested_fix": "Use std::string instead of C-style strings and smart pointers for memory management.",
+        "source_code": "char* Teams[MAX_TEAMS];",
+        "fixed_code": "std::vector<std::string> teams;"
+      },
+      {
+        "file_name": "HW5_318725405__213478142_Q2.cpp",
+        "issue_description": "[LOW] Using magic numbers in the code",
+        "suggested_fix": "Define constants for magic numbers",
+        "source_code": "char team_name[MAX_STR_LEN];",
+        "fixed_code": "const int MAX_TEAM_NAME_LENGTH = 11; char team_name[MAX_TEAM_NAME_LENGTH];"
+      }
+    ],
+    "findings_by_file": {
+      "HW5_318725405__213478142_Q2.cpp": [
+        {
+          "file_name": "HW5_318725405__213478142_Q2.cpp",
+          "issue_description": "[HIGH] Potential buffer overflow in the cin statement for team name and score",
+          "suggested_fix": "Use std::string instead of char array to avoid buffer overflow",
+          "source_code": "cin >> team_name;",
+          "fixed_code": "std::string team_name; std::cin >> team_name;"
+        },
+        {
+          "file_name": "HW5_318725405__213478142_Q2.cpp",
+          "issue_description": "[MEDIUM] Memory leak in case of exception in memory allocation",
+          "suggested_fix": "Use smart pointers or containers to manage memory",
+          "source_code": "Teams[i] = new char[team_name_size];",
+          "fixed_code": "std::vector<std::string> Teams(num_of_teams);"
+        },
+        {
+          "file_name": "HW5_318725405__213478142_Q2.cpp",
+          "issue_description": "[MEDIUM] Potential null pointer dereference in calcAndSort function",
+          "suggested_fix": "Check for null pointer before dereferencing",
+          "source_code": "sortedScores[i] = calculateScore(Scores[i]);",
+          "fixed_code": "if (Scores[i] != nullptr) { sortedScores[i] = calculateScore(Scores[i]); }"
+        },
+        {
+          "file_name": "HW5_318725405__213478142_Q2.cpp",
+          "issue_description": "[LOW] Using magic numbers in the code",
+          "suggested_fix": "Define constants for magic numbers",
+          "source_code": "char team_name[MAX_STR_LEN];",
+          "fixed_code": "const int MAX_TEAM_NAME_LENGTH = 11; char team_name[MAX_TEAM_NAME_LENGTH];"
+        }
+      ],
+      "HW5_318725405__213478142_Q1.cpp": [
+        {
+          "file_name": "HW5_318725405__213478142_Q1.cpp",
+          "issue_description": "[LOW] The code uses a fixed-size array for team names and scores, which could lead to buffer overflow issues if the number of teams exceeds the defined maximum.",
+          "suggested_fix": "Use dynamic memory allocation or std::vector to handle variable-sized arrays.",
+          "source_code": "char teamsList[][MAX_STR_LEN] = {\"Team_A\", \"Team_B\", \"Team_C\"};",
+          "fixed_code": "std::vector<std::string> teamsList = {\"Team_A\", \"Team_B\", \"Team_C\"};"
+        },
+        {
+          "file_name": "HW5_318725405__213478142_Q1.cpp",
+          "issue_description": "[LOW] The code uses C-style strings and manual memory management, which can lead to memory leaks or corruption.",
+          "suggested_fix": "Use std::string instead of C-style strings and smart pointers for memory management.",
+          "source_code": "char* Teams[MAX_TEAMS];",
+          "fixed_code": "std::vector<std::string> teams;"
+        }
+      ]
+    },
+    "username": "yagil"
+  },
+  {
+    "scan_id": "recent-test-id",
+    "timestamp": "2026-04-03 21:24:34",
+    "username": "testuser"
+  },
+  {
+    "scan_id": "new-test-id",
+    "timestamp": "2026-04-05 21:24:38",
+    "username": "testuser"
+  },
+  {
+    "scan_id": "4e20823a-50df-4338-b104-ad5b8f325c98",
+    "timestamp": "2026-04-05 21:25:27",
+    "persona": "Professional",
+    "provider": "auto",
+    "status": "VULNERABLE",
+    "stats": {
+      "High": 2,
+      "Medium": 1,
+      "Low": 2,
+      "Safe": 0,
+      "Vuln": 2,
+      "Error": 0
+    },
+    "findings": [
+      {
+        "file_name": "HW6_318725405_213478142_Q1.cpp",
+        "issue_description": "[HIGH] Potential memory leak due to missing delete statements for dynamically allocated memory",
+        "suggested_fix": "Add delete statements to free the memory allocated by new",
+        "source_code": "Node* newNode = new Node();",
+        "fixed_code": "Node* newNode = new Node(); // ... later, when newNode is no longer needed: delete newNode;",
+        "root_cause": "The code allocates memory using new but does not free it using delete, leading to a potential memory leak."
+      },
+      {
+        "file_name": "HW6_318725405_213478142_Q1.cpp",
+        "issue_description": "[HIGH] Use of using namespace std; can lead to naming conflicts",
+        "suggested_fix": "Use the std namespace prefix for standard library functions and objects instead of using namespace std;",
+        "source_code": "using namespace std;",
+        "fixed_code": "std::cout << \"lists (1->2->3 vs 3->2->1)\" << std::endl;",
+        "root_cause": "The using namespace std; directive can cause naming conflicts with user-defined functions and variables."
+      },
+      {
+        "file_name": "HW6_318725405_213478142_Q1.cpp",
+        "issue_description": "[MEDIUM] Missing input validation in the mirror function",
+        "suggested_fix": "Add input validation to check for null pointers and handle them accordingly",
+        "source_code": "bool mirror(Node* list1, Node* list2);",
+        "fixed_code": "bool mirror(Node* list1, Node* list2) { if (list1 == nullptr || list2 == nullptr) { return false; } // ... }",
+        "root_cause": "The mirror function does not check for null pointers, which can lead to null pointer dereferences and crashes."
+      },
+      {
+        "file_name": "HW6_318725405_213478142_Q1.cpp",
+        "issue_description": "[LOW] Magic numbers are used in the code",
+        "suggested_fix": "Replace magic numbers with named constants to improve code readability and maintainability",
+        "source_code": "Node* l1 = createNode(1);",
+        "fixed_code": "const int FIRST_NODE_VALUE = 1; Node* l1 = createNode(FIRST_NODE_VALUE);",
+        "root_cause": "Magic numbers make the code less readable and more prone to errors."
+      },
+      {
+        "file_name": "HW6_318725405_213478142_Q2.cpp",
+        "issue_description": "[LOW] Using 'using namespace std;' can lead to naming conflicts and pollute the global namespace.",
+        "suggested_fix": "Instead of 'using namespace std;', import only the necessary standard library components, e.g., 'using std::cout;'.",
+        "source_code": "using namespace std;",
+        "fixed_code": "using std::cout;",
+        "root_cause": "The code uses 'using namespace std;' which can cause naming conflicts."
+      }
+    ],
+    "findings_by_file": {
+      "HW6_318725405_213478142_Q1.cpp": [
+        {
+          "file_name": "HW6_318725405_213478142_Q1.cpp",
+          "issue_description": "[HIGH] Potential memory leak due to missing delete statements for dynamically allocated memory",
+          "suggested_fix": "Add delete statements to free the memory allocated by new",
+          "source_code": "Node* newNode = new Node();",
+          "fixed_code": "Node* newNode = new Node(); // ... later, when newNode is no longer needed: delete newNode;",
+          "root_cause": "The code allocates memory using new but does not free it using delete, leading to a potential memory leak."
+        },
+        {
+          "file_name": "HW6_318725405_213478142_Q1.cpp",
+          "issue_description": "[HIGH] Use of using namespace std; can lead to naming conflicts",
+          "suggested_fix": "Use the std namespace prefix for standard library functions and objects instead of using namespace std;",
+          "source_code": "using namespace std;",
+          "fixed_code": "std::cout << \"lists (1->2->3 vs 3->2->1)\" << std::endl;",
+          "root_cause": "The using namespace std; directive can cause naming conflicts with user-defined functions and variables."
+        },
+        {
+          "file_name": "HW6_318725405_213478142_Q1.cpp",
+          "issue_description": "[MEDIUM] Missing input validation in the mirror function",
+          "suggested_fix": "Add input validation to check for null pointers and handle them accordingly",
+          "source_code": "bool mirror(Node* list1, Node* list2);",
+          "fixed_code": "bool mirror(Node* list1, Node* list2) { if (list1 == nullptr || list2 == nullptr) { return false; } // ... }",
+          "root_cause": "The mirror function does not check for null pointers, which can lead to null pointer dereferences and crashes."
+        },
+        {
+          "file_name": "HW6_318725405_213478142_Q1.cpp",
+          "issue_description": "[LOW] Magic numbers are used in the code",
+          "suggested_fix": "Replace magic numbers with named constants to improve code readability and maintainability",
+          "source_code": "Node* l1 = createNode(1);",
+          "fixed_code": "const int FIRST_NODE_VALUE = 1; Node* l1 = createNode(FIRST_NODE_VALUE);",
+          "root_cause": "Magic numbers make the code less readable and more prone to errors."
+        }
+      ],
+      "HW6_318725405_213478142_Q2.cpp": [
+        {
+          "file_name": "HW6_318725405_213478142_Q2.cpp",
+          "issue_description": "[LOW] Using 'using namespace std;' can lead to naming conflicts and pollute the global namespace.",
+          "suggested_fix": "Instead of 'using namespace std;', import only the necessary standard library components, e.g., 'using std::cout;'.",
+          "source_code": "using namespace std;",
+          "fixed_code": "using std::cout;",
+          "root_cause": "The code uses 'using namespace std;' which can cause naming conflicts."
+        }
+      ]
+    },
+    "username": "yagil",
+    "improvement_suggestions": [],
+    "source": "local_upload"
+  },
+  {
+    "scan_id": "69edea33-8331-4e81-b851-a80915119be6",
+    "timestamp": "2026-04-05 21:25:32",
+    "username": "testuser_verify",
+    "persona": "Student",
+    "status": "VULNERABLE",
+    "stats": {
+      "High": 1,
+      "Medium": 0,
+      "Low": 1
+    },
+    "findings_by_file": {
+      "main.py": [
+        {
+          "issue_description": "SQL Injection",
+          "suggested_fix": "Use ORM"
+        }
+      ]
+    },
+    "improvement_suggestions": [
+      "Practice safe coding"
+    ]
   }
 ]

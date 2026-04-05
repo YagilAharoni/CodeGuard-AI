@@ -154,6 +154,30 @@ def save_scan_history(history: List[Dict[str, Any]]) -> None:
 
 def append_scan_history(entry: Dict[str, Any]) -> None:
     history = load_scan_history()
+    
+    # 7-day pruning logic
+    try:
+        from datetime import datetime, timedelta
+        now = datetime.now()
+        seven_days_ago = now - timedelta(days=7)
+        
+        # Filter history to keep only entries from the last 7 days
+        pruned_history = []
+        for h in history:
+            try:
+                ts_str = h.get("timestamp", "")
+                # Format: "Y-m-d H:M:S"
+                ts = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
+                if ts >= seven_days_ago:
+                    pruned_history.append(h)
+            except (ValueError, TypeError):
+                # If timestamp is malformed, keep it just in case or skip it
+                pruned_history.append(h)
+        
+        history = pruned_history
+    except Exception as e:
+        logger.error(f"Error pruning history: {e}")
+
     history.append(entry)
     save_scan_history(history)
 
@@ -609,7 +633,9 @@ async def analyze_endpoint(
             "stats": combined["stats"],
             "findings": combined["findings"],
             "findings_by_file": combined["findings_by_file"],
-            "username": username or "anonymous"
+            "username": username or "anonymous",
+            "improvement_suggestions": combined.get("improvement_suggestions", []),
+            "source": "local_upload"
         }
         append_scan_history(scan_history_entry)
         
@@ -717,6 +743,7 @@ async def analyze_github_endpoint(
             "findings": combined["findings"],
             "findings_by_file": combined["findings_by_file"],
             "username": username or "anonymous",
+            "improvement_suggestions": combined.get("improvement_suggestions", []),
             "source": f"github:{owner}/{repo}"
         }
         append_scan_history(scan_history_entry)
@@ -764,14 +791,30 @@ async def export_pdf_endpoint(request: Request, report_id: str, username: Option
     logger.info(f"Report ID: {report_id}")
     
     cached = REPORT_CACHE.get(report_id)
-    if not cached:
-        logger.error(f"Report ID {report_id} not found in cache")
-        raise HTTPException(status_code=404, detail="Report ID not found or expired")
     
-    logger.info(f"Cached data keys: {list(cached.keys())}")
-    logger.info(f"Persona: {cached.get('persona')}")
-    logger.info(f"Results count: {len(cached.get('results', []))}")
-    logger.info(f"Improvement suggestions: {cached.get('improvement_suggestions', [])}")
+    # Fallback to history if not in cache (e.g. server restart)
+    if not cached:
+        logger.info(f"Report ID {report_id} not in cache, checking history...")
+        history = load_scan_history()
+        match = next((h for h in history if h.get("scan_id") == report_id), None)
+        
+        if match:
+            logger.info(f"Found report {report_id} in history fallback.")
+            cached = {
+                "results": {
+                    "status": match.get("status"),
+                    "findings_by_file": match.get("findings_by_file"),
+                },
+                "stats": match.get("stats"),
+                "persona": match.get("persona"),
+                "username": match.get("username", "anonymous"),
+                "improvement_suggestions": match.get("improvement_suggestions", [])
+            }
+        else:
+            logger.error(f"Report ID {report_id} not found in cache or history")
+            raise HTTPException(status_code=404, detail="Report ID not found or expired")
+    
+    logger.info(f"Data available for PDF: Persona={cached.get('persona')}, Results={len(cached.get('results', {}).get('findings_by_file', {}))} files")
     
     try:
         report_username = username or cached.get("username", "anonymous")

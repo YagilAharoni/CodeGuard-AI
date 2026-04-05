@@ -299,10 +299,12 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
             pdf.set_font("Arial", "", 10)
             for idx, suggestion in enumerate(improvement_suggestions, 1):
                 pdf.set_font("Arial", "B", 10)
+                pdf.set_x(10)
                 pdf.cell(10, 8, f"{idx}.", ln=False)
                 pdf.set_font("Arial", "", 10)
                 clean_suggestion = suggestion.encode('latin-1', 'ignore').decode('latin-1')
-                pdf.multi_cell(0, 5, clean_suggestion, x=20)
+                pdf.set_x(20)
+                pdf.multi_cell(0, 5, clean_suggestion)
                 pdf.ln(2)
 
         logger.info("PDF generation completed successfully")

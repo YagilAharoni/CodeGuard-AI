@@ -214,6 +214,26 @@ export default function LandingPage() {
                   )}
                 </div>
               </button>
+
+              <div className="mt-6 flex justify-between items-center text-[10px] sm:text-xs text-gray-500">
+                <button 
+                  type="button" 
+                  onClick={() => setError("Password reset protocol initiated. Please check your secure comms or contact administrator.")}
+                  className="hover:text-cyan-400 transition-colors uppercase tracking-widest font-mono"
+                >
+                  [ Forgot Password? ]
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setError("");
+                  }}
+                  className="text-cyan-400 hover:text-cyan-300 font-bold uppercase tracking-widest font-mono"
+                >
+                  {isLogin ? ">> Register Operator" : ">> Back to Login"}
+                </button>
+              </div>
             </form>
           </div>
         </div>
