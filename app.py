@@ -3,6 +3,7 @@ import logging
 import os
 import time
 import uuid
+import threading
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, Request, Form, UploadFile, File
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -139,6 +140,7 @@ async def login(req: LoginRequest):
 # In-memory storage for reports (so GET /export-pdf works statelessly for the client)
 REPORT_CACHE: Dict[str, Dict[str, Any]] = {}
 HISTORY_FILE = "scan_history.json"
+history_lock = threading.Lock()
 
 
 def load_scan_history() -> List[Dict[str, Any]]:
@@ -151,9 +153,7 @@ def load_scan_history() -> List[Dict[str, Any]]:
         return []
 
 
-def save_scan_history(history: List[Dict[str, Any]]) -> None:
-    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(history, f, indent=2, ensure_ascii=False)
+
 
 
 def save_scan_history(history: List[Dict[str, Any]]) -> None:
