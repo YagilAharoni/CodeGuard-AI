@@ -10,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
 import io
+import sqlite3
+import bcrypt
 
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -46,7 +48,86 @@ async def root():
         "docs": "/docs",
         "endpoints": {
             "analyze": "POST /analyze - Upload files for security analysis",
-            "export_pdf": "GET /export-pdf - Download PDF report"
+            "export_pdf": "GET /export-pdf - Download PDF report",
+            "register": "POST /api/register - Register a new user",
+            "login": "POST /api/login - Login a user"
+        }
+    }
+
+# --- Database Setup ---
+DB_FILE = "users.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+class RegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+
+class LoginRequest(BaseModel):
+    login: str  # can be email or username
+    password: str
+
+@app.post("/api/register")
+async def register(req: RegisterRequest):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    
+    # check if user exists
+    c.execute("SELECT id FROM users WHERE username = ? OR email = ?", (req.username, req.email))
+    if c.fetchone():
+        conn.close()
+        raise HTTPException(status_code=400, detail="Username or email already exists")
+    
+    # hash password
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(req.password.encode('utf-8'), salt)
+    
+    c.execute("""
+        INSERT INTO users (username, email, password_hash)
+        VALUES (?, ?, ?)
+    """, (req.username, req.email, hashed.decode('utf-8')))
+    conn.commit()
+    conn.close()
+    
+    return {"message": "User registered successfully"}
+
+@app.post("/api/login")
+async def login(req: LoginRequest):
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    
+    c.execute("SELECT id, username, password_hash FROM users WHERE username = ? OR email = ?", (req.login, req.login))
+    user = c.fetchone()
+    conn.close()
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+    user_id, username, stored_hash = user
+    if not bcrypt.checkpw(req.password.encode('utf-8'), stored_hash.encode('utf-8')):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+    return {
+        "message": "Login successful",
+        "user": {
+            "id": user_id,
+            "username": username
         }
     }
 
