@@ -43,8 +43,12 @@ export default function LandingPage() {
         // Switch to login mode after successful registration
         setIsLogin(true);
         setError("Registration successful! Please login.");
-        setEmail(email || username); // prefill with email/username used
+        setEmail(email || username);
       } else {
+        // Store user info in localStorage for use across pages
+        if (data.user) {
+          localStorage.setItem('codeguard_user', JSON.stringify(data.user));
+        }
         // Redirect to dashboard on successful login
         router.push("/dashboard");
       }

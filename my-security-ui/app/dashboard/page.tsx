@@ -28,21 +28,24 @@ const getSeverityBadgeColor = (severity: string): string => {
 };
 
 const VulnerabilityChart = ({ stats }: { stats: any }) => {
-  const chartData = [
+  const allChartData = [
     { name: "High", value: stats.High || 0, fill: "#ef4444" },
     { name: "Medium", value: stats.Medium || 0, fill: "#eab308" },
     { name: "Low", value: stats.Low || 0, fill: "#3b82f6" },
   ];
+
+  // Filter out zero-value slices for pie chart to prevent overlap
+  const pieChartData = allChartData.filter((d) => d.value > 0);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
       <div className="bg-[#161b22] p-6 rounded-xl border border-[#30363d]">
         <h3 className="text-lg font-bold mb-6 text-gray-200">Distribution by Severity</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData}>
+          <BarChart data={allChartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#30363d" />
             <XAxis dataKey="name" stroke="#8b949e" />
-            <YAxis stroke="#8b949e" />
+            <YAxis stroke="#8b949e" allowDecimals={false} />
             <Tooltip
               contentStyle={{
                 backgroundColor: "#161b22",
@@ -51,39 +54,51 @@ const VulnerabilityChart = ({ stats }: { stats: any }) => {
                 color: "#c9d1d9",
               }}
             />
-            <Bar dataKey="value" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+            <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+              {allChartData.map((entry, index) => (
+                <Cell key={`bar-cell-${index}`} fill={entry.fill} />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       <div className="bg-[#161b22] p-6 rounded-xl border border-[#30363d]">
         <h3 className="text-lg font-bold mb-6 text-gray-200">Overview</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, value }) => `${name}: ${value}`}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#161b22",
-                border: "1px solid #30363d",
-                borderRadius: "8px",
-                color: "#c9d1d9",
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+        {pieChartData.length === 0 ? (
+          <div className="flex items-center justify-center h-[300px]">
+            <div className="text-center">
+              <div className="text-4xl mb-2">✅</div>
+              <p className="text-gray-400 text-sm">No vulnerabilities found</p>
+            </div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={pieChartData}
+                cx="50%"
+                cy="50%"
+                labelLine={true}
+                label={({ name, value }) => `${name}: ${value}`}
+                outerRadius={90}
+                dataKey="value"
+              >
+                {pieChartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#161b22",
+                  border: "1px solid #30363d",
+                  borderRadius: "8px",
+                  color: "#c9d1d9",
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
@@ -94,8 +109,8 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [persona, setPersona] = useState<"Student" | "Professional">("Student");
   const [apiKey, setApiKey] = useState("");
-  const [selectedProvider, setSelectedProvider] = useState<"auto" | "groq" | "openai" | "gemini" | "ollama">("auto");
   const [mounted, setMounted] = useState(false);
+  const [loggedInUsername, setLoggedInUsername] = useState<string>("anonymous");
 
   const [isHovered, setIsHovered] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -111,6 +126,16 @@ export default function Home() {
   // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
+    // Read user from localStorage
+    try {
+      const stored = localStorage.getItem('codeguard_user');
+      if (stored) {
+        const user = JSON.parse(stored);
+        setLoggedInUsername(user.username || "anonymous");
+      }
+    } catch {
+      // ignore
+    }
   }, []);
 
   // --- Handlers ---
@@ -137,25 +162,12 @@ export default function Home() {
   };
 
   const getModelInfo = () => {
-    if (selectedProvider === "auto") {
-      if (!apiKey) return { provider: "Ollama", icon: "🦙", color: "text-purple-400" };
-      
-      const key = apiKey.trim();
-      if (key.startsWith("gsk_")) return { provider: "Groq", icon: "⚡", color: "text-blue-400" };
-      if (key.startsWith("sk-")) return { provider: "OpenAI", icon: "🤖", color: "text-green-400" };
-      if (key.startsWith("AIzaSy")) return { provider: "Google Gemini", icon: "✨", color: "text-yellow-400" };
-      
-      return { provider: "Unknown", icon: "❓", color: "text-gray-400" };
-    }
-    
-    // Manual provider selection
-    switch (selectedProvider) {
-      case "groq": return { provider: "Groq", icon: "⚡", color: "text-blue-400" };
-      case "openai": return { provider: "OpenAI", icon: "🤖", color: "text-green-400" };
-      case "gemini": return { provider: "Google Gemini", icon: "✨", color: "text-yellow-400" };
-      case "ollama": return { provider: "Ollama", icon: "🦙", color: "text-purple-400" };
-      default: return { provider: "Unknown", icon: "❓", color: "text-gray-400" };
-    }
+    if (!apiKey) return { provider: "Ollama", icon: "🦙", color: "text-purple-400" };
+    const key = apiKey.trim();
+    if (key.startsWith("gsk_")) return { provider: "Groq", icon: "⚡", color: "text-cyan-400" };
+    if (key.startsWith("sk-")) return { provider: "OpenAI", icon: "🤖", color: "text-green-400" };
+    if (key.startsWith("AIzaSy")) return { provider: "Google Gemini", icon: "✨", color: "text-yellow-400" };
+    return { provider: "Auto", icon: "🔍", color: "text-gray-400" };
   };
 
   const getFindingKey = (fileName: string, idx: number) => `${fileName}-${idx}`;
@@ -218,12 +230,11 @@ export default function Home() {
   };
 
   const runAnalysis = () => {
-    // Only pass API key for providers that need it
-    const apiKeyToPass = (selectedProvider === "ollama") ? undefined : apiKey;
+    const apiKeyToPass = apiKey || undefined;
     if (githubUrl && !selectedFiles) {
-      scanGithubUrl(githubUrl, persona, apiKeyToPass, selectedProvider);
+      scanGithubUrl(githubUrl, persona, apiKeyToPass, "auto", loggedInUsername);
     } else if (selectedFiles) {
-      uploadFile(selectedFiles, persona, apiKeyToPass, selectedProvider);
+      uploadFile(selectedFiles, persona, apiKeyToPass, "auto", loggedInUsername);
     }
   };
 
@@ -264,71 +275,52 @@ export default function Home() {
   }, [results]);
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans selection:bg-blue-500/30 pb-20">
-      {/* Navbar Minimalist */}
-      <nav className="border-b border-[#30363d] bg-[#161b22]/80 backdrop-blur-md sticky top-0 z-50">
+    <div className="relative min-h-screen bg-[#0A0C10] text-white font-sans selection:bg-cyan-500/30 pb-20 overflow-hidden">
+
+      {/* Cyber background glows */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#8A2BE2]/10 blur-[130px] pointer-events-none" />
+      <div className="absolute top-[20%] right-[-10%] w-[40%] h-[60%] rounded-full bg-[#00F0FF]/8 blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[40%] rounded-full bg-[#8A2BE2]/8 blur-[120px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGRlZnM+PHBhdHRlcm4gaWQ9ImciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgNDBoNDBWMEgweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZykiLz48L3N2Zz4=')] pointer-events-none opacity-40" />
+
+      {/* Navbar */}
+      <nav className="border-b border-white/5 bg-[#0A0C10]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
               <span className="text-white font-bold text-xl">🛡️</span>
             </div>
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-100 to-gray-400">
+            <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
               CodeGuard AI
             </h1>
           </div>
           <div className="flex gap-4 items-center">
-            <a href="/history" className="px-4 py-2 rounded-lg border border-[#30363d] hover:bg-[#161b22] transition text-sm font-medium text-white">
+            <a href={`/history?user=${encodeURIComponent(loggedInUsername)}`} className="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition text-sm font-medium text-gray-300">
               📜 History
             </a>
-            {isLoggedIn && (
-              <>
-                {/* Profile Card */}
-                <div className="px-4 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg flex items-center gap-3">
-                  <div className="flex flex-col gap-1">
-                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Account</div>
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${persona === 'Student' ? 'bg-blue-400' : 'bg-red-500'}`}></span>
-                      <span className="text-sm font-semibold text-gray-300">{persona === 'Student' ? '🎓 Student' : '🕵️ Auditor'}</span>
-                    </div>
-                  </div>
-                  <div className="w-px h-8 bg-[#30363d]"></div>
-                  <div className="flex flex-col gap-1">
-                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Model</div>
-                    <div className="flex items-center gap-1.5">
-                      {mounted ? (
-                        <>
-                          <span className="text-lg">{getModelInfo().icon}</span>
-                          <span className={`text-sm font-semibold ${getModelInfo().color}`}>{getModelInfo().provider}</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-lg">🔍</span>
-                          <span className="text-sm font-semibold text-gray-400">Loading...</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Original Status Indicator */}
-                <div className="px-3 py-1 bg-[#0d1117] border border-[#30363d] rounded-full text-xs font-semibold text-gray-400 flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${persona === 'Student' ? 'bg-blue-400' : 'bg-red-500 animate-pulse'}`}></span>
-                  {persona === 'Student' ? 'Learning Mode' : 'Auditor Mode'} Active
-                </div>
-              </>
-            )}
+            <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg flex items-center gap-2">
+              <span className="text-xs text-gray-500">👤</span>
+              <span className="text-sm font-semibold text-cyan-300">{loggedInUsername}</span>
+              <button
+                onClick={() => { localStorage.removeItem('codeguard_user'); window.location.href = '/'; }}
+                className="ml-2 text-xs text-gray-500 hover:text-red-400 transition"
+                title="Logout"
+              >
+                ⏻
+              </button>
+            </div>
           </div>
         </div>
       </nav>
 
       {/* Application Main Body */}
-      <main className="max-w-5xl mx-auto px-6 py-12 flex flex-col items-center">
+      <main className="relative z-10 max-w-5xl mx-auto px-6 py-12 flex flex-col items-center">
         
         {/* --- VIEW 1: LOGIN / PERSONA SELECTION --- */}
         {!isLoggedIn && (
           <div className="w-full max-w-2xl mt-10 animate-fade-in">
             <div className="text-center mb-10">
-              <h2 className="text-4xl font-extrabold tracking-tight mb-4">Identify Yourself</h2>
+              <h2 className="text-4xl font-extrabold tracking-tight mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">Identify Yourself</h2>
               <p className="text-gray-400">Choose your analysis strictness and role.</p>
             </div>
 
@@ -338,8 +330,8 @@ export default function Home() {
                 onClick={() => setPersona("Student")}
                 className={`cursor-pointer p-6 rounded-2xl border-2 transition-all duration-300 ${
                   persona === "Student" 
-                    ? "border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/20" 
-                    : "border-[#30363d] bg-[#161b22] hover:border-gray-500"
+                    ? "border-cyan-500 bg-cyan-500/10 shadow-lg shadow-cyan-500/20" 
+                    : "border-white/10 bg-white/5 hover:border-cyan-500/40"
                 }`}
               >
                 <div className="text-4xl mb-4">🎓</div>
@@ -352,8 +344,8 @@ export default function Home() {
                 onClick={() => setPersona("Professional")}
                 className={`cursor-pointer p-6 rounded-2xl border-2 transition-all duration-300 ${
                   persona === "Professional" 
-                    ? "border-red-500 bg-red-500/10 shadow-lg shadow-red-500/20" 
-                    : "border-[#30363d] bg-[#161b22] hover:border-gray-500"
+                    ? "border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/20" 
+                    : "border-white/10 bg-white/5 hover:border-purple-500/40"
                 }`}
               >
                 <div className="text-4xl mb-4">🕵️‍♂️</div>
@@ -362,111 +354,28 @@ export default function Home() {
               </div>
             </div>
 
-            {(selectedProvider === "auto" || selectedProvider === "groq" || selectedProvider === "openai" || selectedProvider === "gemini") && (
-              <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8">
-                <label className="block text-sm font-semibold mb-2 text-gray-300">AI API Key</label>
-                <input 
-                  type="password" 
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="gsk_... or sk-... or AIzaSy..."
-                  className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  {selectedProvider === "auto" && "Supports: Groq (gsk_), OpenAI (sk-), Google Gemini (AIzaSy), or fallback to local Ollama."}
-                  {selectedProvider === "groq" && "Enter your Groq API key (starts with 'gsk_')."}
-                  {selectedProvider === "openai" && "Enter your OpenAI API key (starts with 'sk-')."}
-                  {selectedProvider === "gemini" && "Enter your Google Gemini API key (starts with 'AIzaSy')."}
-                </p>
-              </div>
-            )}
-
-            {selectedProvider === "ollama" && (
-              <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">🦙</div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-300">Local Ollama AI</h3>
-                    <p className="text-xs text-gray-500">No API key required. Uses your local Ollama installation.</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8">
-              <label className="block text-sm font-semibold mb-4 text-gray-300">AI Provider Selection</label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <div 
-                  onClick={() => setSelectedProvider("auto")}
-                  className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                    selectedProvider === "auto" 
-                      ? "border-blue-500 bg-blue-500/10" 
-                      : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                  }`}
-                >
-                  <div className="text-2xl mb-2">🔍</div>
-                  <div className="text-sm font-semibold text-white">Auto Detect</div>
-                  <div className="text-xs text-gray-500">From API key</div>
-                </div>
-                <div 
-                  onClick={() => setSelectedProvider("groq")}
-                  className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                    selectedProvider === "groq" 
-                      ? "border-blue-500 bg-blue-500/10" 
-                      : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                  }`}
-                >
-                  <div className="text-2xl mb-2">⚡</div>
-                  <div className="text-sm font-semibold text-white">Groq</div>
-                  <div className="text-xs text-gray-500">API Key Required</div>
-                </div>
-                <div 
-                  onClick={() => setSelectedProvider("openai")}
-                  className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                    selectedProvider === "openai" 
-                      ? "border-green-500 bg-green-500/10" 
-                      : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                  }`}
-                >
-                  <div className="text-2xl mb-2">🤖</div>
-                  <div className="text-sm font-semibold text-white">OpenAI</div>
-                  <div className="text-xs text-gray-500">API Key Required</div>
-                </div>
-                <div 
-                  onClick={() => setSelectedProvider("gemini")}
-                  className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                    selectedProvider === "gemini" 
-                      ? "border-yellow-500 bg-yellow-500/10" 
-                      : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                  }`}
-                >
-                  <div className="text-2xl mb-2">✨</div>
-                  <div className="text-sm font-semibold text-white">Gemini</div>
-                  <div className="text-xs text-gray-500">API Key Required</div>
-                </div>
-                <div 
-                  onClick={() => setSelectedProvider("ollama")}
-                  className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                    selectedProvider === "ollama" 
-                      ? "border-purple-500 bg-purple-500/10" 
-                      : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                  }`}
-                >
-                  <div className="text-2xl mb-2">🦙</div>
-                  <div className="text-sm font-semibold text-white">Ollama</div>
-                  <div className="text-xs text-gray-500">Local AI</div>
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 mt-3">
-                Choose "Auto Detect" to automatically select based on your API key, or manually select a provider to override.
-              </p>
+            {/* API Key input only - no provider selector */}
+            <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mb-8 backdrop-blur-sm">
+              <label className="block text-sm font-semibold mb-2 text-gray-300">AI API Key <span className="text-gray-500 font-normal">(optional — uses local Ollama if empty)</span></label>
+              <input 
+                type="password" 
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="gsk_... or sk-... or AIzaSy..."
+                className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-2">Auto-detects: Groq (gsk_), OpenAI (sk-), Google Gemini (AIzaSy), or falls back to local Ollama.</p>
             </div>
 
             <button 
               onClick={() => setIsLoggedIn(true)}
-              className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold text-lg transition-transform hover:scale-[1.01] shadow-xl shadow-blue-500/20"
+              className="relative w-full overflow-hidden group rounded-xl border border-white/10"
             >
-              Enter System
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/80 to-purple-600/80 transition-transform duration-500 group-hover:scale-105"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-md"></div>
+              <div className="relative px-6 py-4 flex items-center justify-center font-bold text-white tracking-wider uppercase text-sm">
+                Enter System
+              </div>
             </button>
           </div>
         )}
@@ -486,74 +395,17 @@ export default function Home() {
                 </p>
              </div>
 
-             {/* Dynamic Provider Selection */}
-             <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8 w-full max-w-4xl">
-               <label className="block text-sm font-semibold mb-4 text-gray-300">AI Provider Selection</label>
-               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                 <div 
-                   onClick={() => setSelectedProvider("auto")}
-                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                     selectedProvider === "auto" 
-                       ? "border-blue-500 bg-blue-500/10" 
-                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                   }`}
-                 >
-                   <div className="text-2xl mb-2">🔍</div>
-                   <div className="text-sm font-semibold text-white">Auto Detect</div>
-                   <div className="text-xs text-gray-500">From API key</div>
-                 </div>
-                 <div 
-                   onClick={() => setSelectedProvider("groq")}
-                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                     selectedProvider === "groq" 
-                       ? "border-blue-500 bg-blue-500/10" 
-                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                   }`}
-                 >
-                   <div className="text-2xl mb-2">⚡</div>
-                   <div className="text-sm font-semibold text-white">Groq</div>
-                   <div className="text-xs text-gray-500">Fast & Free</div>
-                 </div>
-                 <div 
-                   onClick={() => setSelectedProvider("openai")}
-                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                     selectedProvider === "openai" 
-                       ? "border-green-500 bg-green-500/10" 
-                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                   }`}
-                 >
-                   <div className="text-2xl mb-2">🤖</div>
-                   <div className="text-sm font-semibold text-white">OpenAI</div>
-                   <div className="text-xs text-gray-500">GPT-4o Mini</div>
-                 </div>
-                 <div 
-                   onClick={() => setSelectedProvider("gemini")}
-                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                     selectedProvider === "gemini" 
-                       ? "border-yellow-500 bg-yellow-500/10" 
-                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                   }`}
-                 >
-                   <div className="text-2xl mb-2">✨</div>
-                   <div className="text-sm font-semibold text-white">Gemini</div>
-                   <div className="text-xs text-gray-500">Google AI</div>
-                 </div>
-                 <div 
-                   onClick={() => setSelectedProvider("ollama")}
-                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                     selectedProvider === "ollama" 
-                       ? "border-purple-500 bg-purple-500/10" 
-                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                   }`}
-                 >
-                   <div className="text-2xl mb-2">🦙</div>
-                   <div className="text-sm font-semibold text-white">Ollama</div>
-                   <div className="text-xs text-gray-500">Local AI</div>
-                 </div>
-               </div>
-               <p className="text-xs text-gray-500 mt-3">
-                 Choose your AI provider for this scan. Changes take effect immediately.
-               </p>
+             {/* API Key input only */}
+             <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mb-8 w-full max-w-4xl backdrop-blur-sm">
+               <label className="block text-sm font-semibold mb-2 text-gray-300">AI API Key <span className="text-gray-500 font-normal">(optional)</span></label>
+               <input 
+                 type="password" 
+                 value={apiKey}
+                 onChange={(e) => setApiKey(e.target.value)}
+                 placeholder="gsk_... or sk-... or AIzaSy..."
+                 className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
+               />
+               <p className="text-xs text-gray-500 mt-2">Auto-detects provider from your key. Leave blank to use local Ollama.</p>
              </div>
 
              {error && (
@@ -570,8 +422,8 @@ export default function Home() {
                 onClick={() => fileInputRef.current?.click()}
                 className={`w-full max-w-2xl p-16 rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer flex flex-col items-center justify-center gap-4 ${
                   isHovered 
-                    ? "bg-[#161b22] border-blue-500 shadow-2xl shadow-blue-500/10 scale-[1.02]" 
-                    : "bg-[#161b22]/50 border-[#30363d] hover:border-blue-500/50 hover:bg-[#161b22]"
+                    ? "bg-cyan-500/5 border-cyan-500 shadow-2xl shadow-cyan-500/10 scale-[1.02]" 
+                    : "bg-white/3 border-white/10 hover:border-cyan-500/40 hover:bg-white/5"
                 }`}
               >
                 <input 
@@ -582,8 +434,8 @@ export default function Home() {
                   onChange={handleFileChange}
                   accept=".py,.js,.ts,.cpp,.h,.zip"
                 />
-                <div className="w-20 h-20 rounded-full bg-blue-500/10 flex items-center justify-center mb-2">
-                  <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-20 h-20 rounded-full bg-cyan-500/10 flex items-center justify-center mb-2">
+                  <svg className="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                 </div>
@@ -593,18 +445,18 @@ export default function Home() {
                   <h3 className="text-xl font-bold text-gray-200">Drag & Drop source files here</h3>
                 )}
                 <p className="text-sm text-gray-500 text-center">Supports .py, .cpp, .js, or .zip archives</p>
-                <div className="mt-4 px-8 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors shadow-lg shadow-blue-500/25">
+                <div className="mt-4 px-8 py-3 rounded-lg bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold transition-all hover:scale-105">
                   Browse Files
                 </div>
             </div>
 
-            <div className="w-full max-w-2xl mt-6 flex gap-4 animate-fade-in text-gray-300">
+            <div className="w-full max-w-2xl mt-6 flex gap-4 animate-fade-in">
                <input 
                   type="text" 
                   value={githubUrl}
                   onChange={(e) => {setGithubUrl(e.target.value); setSelectedFiles(null);}}
-                  placeholder="Or enter Github repo URL (e.g. https://github.com/CodeGuard/ui)"
-                  className="flex-1 bg-[#161b22] border border-[#30363d] rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                  placeholder="Or enter Github repo URL (e.g. https://github.com/owner/repo)"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
                 />
             </div>
 
@@ -614,8 +466,8 @@ export default function Home() {
                 disabled={isScanning}
                 className={`mt-10 px-12 py-4 rounded-xl font-bold text-xl text-white transition-all shadow-xl ${
                   isScanning 
-                    ? "bg-[#30363d] cursor-not-allowed animate-pulse" 
-                    : "bg-gradient-to-r from-blue-600 to-purple-600 hover:scale-105 shadow-purple-500/20"
+                    ? "bg-white/10 cursor-not-allowed animate-pulse" 
+                    : "bg-gradient-to-r from-cyan-600 to-purple-600 hover:scale-105 shadow-purple-500/20"
                 }`}
               >
                 {isScanning ? "🔮 Agents Analyzing Code..." : "🚀 Run AI Scan"}
@@ -637,7 +489,7 @@ export default function Home() {
                    New Scan
                  </button>
                  <button 
-                    onClick={() => downloadReport(results.report_id)}
+                    onClick={() => downloadReport(results.report_id, loggedInUsername)}
                     className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-white font-bold shadow-lg shadow-purple-500/20 transition-transform hover:scale-105"
                   >
                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -646,74 +498,13 @@ export default function Home() {
                </div>
              </div>
 
-             {/* Dynamic Provider Selection for Next Scan */}
-             <div className="bg-[#161b22] p-6 rounded-2xl border border-[#30363d] mb-8">
-               <label className="block text-sm font-semibold mb-4 text-gray-300">Change AI Provider for Next Scan</label>
-               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                 <div 
-                   onClick={() => setSelectedProvider("auto")}
-                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                     selectedProvider === "auto" 
-                       ? "border-blue-500 bg-blue-500/10" 
-                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                   }`}
-                 >
-                   <div className="text-2xl mb-2">🔍</div>
-                   <div className="text-sm font-semibold text-white">Auto Detect</div>
-                   <div className="text-xs text-gray-500">From API key</div>
-                 </div>
-                 <div 
-                   onClick={() => setSelectedProvider("groq")}
-                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                     selectedProvider === "groq" 
-                       ? "border-blue-500 bg-blue-500/10" 
-                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                   }`}
-                 >
-                   <div className="text-2xl mb-2">⚡</div>
-                   <div className="text-sm font-semibold text-white">Groq</div>
-                   <div className="text-xs text-gray-500">Fast & Free</div>
-                 </div>
-                 <div 
-                   onClick={() => setSelectedProvider("openai")}
-                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                     selectedProvider === "openai" 
-                       ? "border-green-500 bg-green-500/10" 
-                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                   }`}
-                 >
-                   <div className="text-2xl mb-2">🤖</div>
-                   <div className="text-sm font-semibold text-white">OpenAI</div>
-                   <div className="text-xs text-gray-500">GPT-4o Mini</div>
-                 </div>
-                 <div 
-                   onClick={() => setSelectedProvider("gemini")}
-                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                     selectedProvider === "gemini" 
-                       ? "border-yellow-500 bg-yellow-500/10" 
-                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                   }`}
-                 >
-                   <div className="text-2xl mb-2">✨</div>
-                   <div className="text-sm font-semibold text-white">Gemini</div>
-                   <div className="text-xs text-gray-500">Google AI</div>
-                 </div>
-                 <div 
-                   onClick={() => setSelectedProvider("ollama")}
-                   className={`cursor-pointer p-4 rounded-lg border-2 transition-all duration-200 text-center ${
-                     selectedProvider === "ollama" 
-                       ? "border-purple-500 bg-purple-500/10" 
-                       : "border-[#30363d] bg-[#0d1117] hover:border-gray-500"
-                   }`}
-                 >
-                   <div className="text-2xl mb-2">🦙</div>
-                   <div className="text-sm font-semibold text-white">Ollama</div>
-                   <div className="text-xs text-gray-500">Local AI</div>
-                 </div>
+             {/* Current scan info instead of provider selector */}
+             <div className="bg-white/5 p-4 rounded-2xl border border-white/10 mb-8 flex items-center gap-4">
+               <span className="text-2xl">{getModelInfo().icon}</span>
+               <div>
+                 <div className="text-sm font-semibold text-gray-300">Analyzed with <span className={getModelInfo().color}>{getModelInfo().provider}</span> · Persona: <span className="text-cyan-300">{persona}</span></div>
+                 <div className="text-xs text-gray-500">Click &quot;New Scan&quot; to start a fresh analysis.</div>
                </div>
-               <p className="text-xs text-gray-500 mt-3">
-                 Select a different provider and click "New Scan" to analyze with the new AI model.
-               </p>
              </div>
 
              {/* Metric Cards */}

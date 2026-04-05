@@ -37,45 +37,159 @@ def process_uploaded_files(uploaded_files):
             })
     return files_to_scan
 
-def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
+def generate_pdf_report(results, stats, persona, improvement_suggestions=None, username="anonymous"):
     """
     Generates a professional PDF report using FPDF.
     Handles encoding to prevent crashes on non-Latin characters.
     """
     try:
-        logger.info(f"PDF generation started - persona: {persona}, results type: {type(results)}, suggestions: {len(improvement_suggestions) if improvement_suggestions else 0}")
+        logger.info(f"PDF generation started - persona: {persona}, username: {username}, results type: {type(results)}, suggestions: {len(improvement_suggestions) if improvement_suggestions else 0}")
         
         # Validate input data
         if not results or not isinstance(results, dict):
             logger.error("Invalid results format provided to PDF generation")
-            # Create a basic PDF with a message
             pdf = FPDF()
             pdf.add_page()
             pdf.set_font("Arial", "B", 16)
             pdf.cell(0, 20, "CodeGuard AI - Security Report", ln=True, align='C')
             pdf.set_font("Arial", "", 12)
             pdf.cell(0, 20, "Invalid scan results format.", ln=True, align='C')
-            return pdf.output(dest='S').encode('utf-8', errors='ignore')
+            pdf_bytes = pdf.output()
+            if isinstance(pdf_bytes, str):
+                pdf_bytes = pdf_bytes.encode('latin-1', errors='ignore')
+            return pdf_bytes
             
         if not stats:
             logger.warning("No stats provided, using defaults")
             stats = {"High": 0, "Medium": 0, "Low": 0}
         
         pdf = FPDF()
+
+        # ─────────────────────────────────────────────────────────────────────
+        # PAGE 1 — PROFESSIONAL COVER PAGE
+        # ─────────────────────────────────────────────────────────────────────
         pdf.add_page()
-        
+
+        # Dark background
+        pdf.set_fill_color(10, 12, 16)          # #0A0C10
+        pdf.rect(0, 0, 210, 297, 'F')
+
+        # Accent header bar (cyan-to-purple gradient simulation using two rects)
+        pdf.set_fill_color(0, 200, 220)         # cyan
+        pdf.rect(0, 0, 105, 6, 'F')
+        pdf.set_fill_color(138, 43, 226)        # purple
+        pdf.rect(105, 0, 105, 6, 'F')
+
+        # Shield icon area – simple framed box
+        pdf.set_fill_color(20, 25, 35)
+        pdf.set_draw_color(0, 200, 220)
+        pdf.set_line_width(0.8)
+        pdf.rect(70, 28, 70, 70, 'FD')
+
+        # Shield emoji / text placeholder
+        pdf.set_font("Arial", "B", 36)
+        pdf.set_text_color(0, 200, 220)
+        pdf.set_xy(70, 42)
+        pdf.cell(70, 40, "CG AI", align='C')
+
+        # Main title
+        pdf.set_font("Arial", "B", 26)
+        pdf.set_text_color(220, 230, 240)
+        pdf.set_xy(10, 110)
+        pdf.cell(190, 14, "Security Audit Report", align='C', ln=True)
+
+        pdf.set_font("Arial", "", 13)
+        pdf.set_text_color(130, 150, 165)
+        pdf.set_xy(10, 126)
+        pdf.cell(190, 10, "Powered by CodeGuard AI  |  Enterprise-Grade Analysis", align='C', ln=True)
+
+        # Divider
+        pdf.set_draw_color(50, 60, 70)
+        pdf.set_line_width(0.4)
+        pdf.line(20, 142, 190, 142)
+
+        # Metadata block
+        meta_y = 150
+        meta_items = [
+            ("Scanned By", username),
+            ("Analysis Persona", persona),
+            ("Generated", time.strftime("%Y-%m-%d %H:%M UTC")),
+            ("Overall Status", results.get("status", "UNKNOWN")),
+        ]
+        for label, value in meta_items:
+            pdf.set_font("Arial", "B", 10)
+            pdf.set_text_color(0, 200, 220)
+            pdf.set_xy(30, meta_y)
+            pdf.cell(50, 9, label + ":", ln=False)
+            pdf.set_font("Arial", "", 10)
+            # Colour-code the status value
+            if label == "Overall Status":
+                if value == "SAFE":
+                    pdf.set_text_color(50, 200, 100)
+                elif value == "VULNERABLE":
+                    pdf.set_text_color(239, 68, 68)
+                else:
+                    pdf.set_text_color(234, 179, 8)
+            else:
+                pdf.set_text_color(200, 210, 220)
+            pdf.cell(130, 9, str(value), ln=True)
+            meta_y += 10
+
+        # Stats summary boxes (H / M / L)
+        box_y = meta_y + 10
+        box_configs = [
+            ("HIGH", stats.get("High", 0), (239, 68, 68)),
+            ("MEDIUM", stats.get("Medium", 0), (234, 179, 8)),
+            ("LOW", stats.get("Low", 0), (59, 130, 246)),
+        ]
+        box_x_start = 20
+        box_w = 52
+        box_gap = 7
+        for i, (label, count, (r, g, b)) in enumerate(box_configs):
+            bx = box_x_start + i * (box_w + box_gap)
+            # Box background
+            pdf.set_fill_color(r // 5, g // 5, b // 5)
+            pdf.set_draw_color(r, g, b)
+            pdf.set_line_width(0.6)
+            pdf.rect(bx, box_y, box_w, 32, 'FD')
+            # Count
+            pdf.set_font("Arial", "B", 22)
+            pdf.set_text_color(r, g, b)
+            pdf.set_xy(bx, box_y + 4)
+            pdf.cell(box_w, 14, str(count), align='C', ln=False)
+            # Label
+            pdf.set_font("Arial", "", 9)
+            pdf.set_text_color(160, 170, 180)
+            pdf.set_xy(bx, box_y + 20)
+            pdf.cell(box_w, 8, label, align='C', ln=False)
+
+        # Footer
+        pdf.set_text_color(60, 75, 90)
+        pdf.set_font("Arial", "", 8)
+        pdf.set_xy(10, 280)
+        pdf.cell(190, 8, "CONFIDENTIAL | CodeGuard AI Security Report | For Internal Use Only", align='C')
+
+        # ─────────────────────────────────────────────────────────────────────
+        # PAGE 2 — EXECUTIVE SUMMARY
+        # ─────────────────────────────────────────────────────────────────────
+        pdf.add_page()
+        pdf.set_fill_color(255, 255, 255)
+
         # Header
         pdf.set_font("Arial", "B", 16)
+        pdf.set_text_color(30, 35, 45)
         pdf.cell(0, 10, "CodeGuard AI - Security Audit Report", ln=True, align='C')
         pdf.ln(5)
         
-        # Meta Info
+        # Sub header meta
         pdf.set_font("Arial", "", 10)
-        pdf.cell(0, 10, f"Analysis Persona: {persona} | Generated: {time.strftime('%Y-%m-%d %H:%M')}", ln=True)
+        pdf.set_text_color(100, 110, 120)
+        pdf.cell(0, 10, f"Scanned By: {username}  |  Persona: {persona}  |  Generated: {time.strftime('%Y-%m-%d %H:%M')}", ln=True)
         pdf.ln(10)
 
         # Executive Summary
         pdf.set_font("Arial", "B", 12)
+        pdf.set_text_color(30, 35, 45)
         pdf.cell(0, 10, "1. Executive Summary", ln=True)
         pdf.set_font("Arial", "", 10)
         total_files = len(results.get("findings_by_file", {}))
@@ -100,6 +214,7 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
             ax.set_ylabel('Count', fontsize=12, fontweight='bold')
             ax.set_title('Vulnerability Distribution by Severity', fontsize=14, fontweight='bold')
             ax.grid(axis='y', alpha=0.3)
+            ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
             
             for i, v in enumerate(values):
                 ax.text(i, v + 0.1, str(v), ha='center', va='bottom', fontweight='bold')
@@ -112,10 +227,10 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
             # Add chart to PDF
             pdf.add_page()
             pdf.set_font("Arial", "B", 12)
+            pdf.set_text_color(30, 35, 45)
             pdf.cell(0, 10, "2. Vulnerability Distribution Chart", ln=True)
             pdf.ln(5)
             
-            # Create temp directory if it doesn't exist
             import tempfile
             import os
             temp_dir = tempfile.gettempdir()
@@ -132,7 +247,6 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
         except Exception as e:
             logger.error(f"Failed to generate chart: {e}")
             chart_success = False
-            # Continue without chart
             pdf.add_page()
             pdf.set_font("Arial", "", 10)
             pdf.cell(0, 10, f"Chart generation failed: {str(e)}", ln=True)
@@ -140,6 +254,7 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
         # Detailed Findings by File
         pdf.add_page()
         pdf.set_font("Arial", "B", 12)
+        pdf.set_text_color(30, 35, 45)
         pdf.cell(0, 10, "3. Detailed Findings by File", ln=True)
         pdf.ln(5)
         
@@ -177,6 +292,7 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
             logger.info(f"Adding improvement suggestions section with {len(improvement_suggestions)} suggestions")
             pdf.add_page()
             pdf.set_font("Arial", "B", 12)
+            pdf.set_text_color(30, 35, 45)
             pdf.cell(0, 10, "4. Learning Recommendations & Project Improvement", ln=True)
             pdf.ln(5)
             
@@ -186,34 +302,24 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None):
                 pdf.cell(10, 8, f"{idx}.", ln=False)
                 pdf.set_font("Arial", "", 10)
                 clean_suggestion = suggestion.encode('latin-1', 'ignore').decode('latin-1')
-                # Calculate remaining width (200 - 10 for number - margin)
                 pdf.multi_cell(0, 5, clean_suggestion, x=20)
                 pdf.ln(2)
 
         logger.info("PDF generation completed successfully")
-        # Get PDF as bytes - try different methods for reliability
         try:
-            pdf_bytes = pdf.output(dest='S').encode('latin-1')
+            pdf_bytes = pdf.output()
+            if isinstance(pdf_bytes, str):
+                pdf_bytes = pdf_bytes.encode('latin-1', errors='ignore')
             logger.info(f"PDF generated successfully with {len(pdf_bytes)} bytes")
             return pdf_bytes
         except Exception as encode_error:
-            logger.warning(f"latin-1 encoding failed: {encode_error}, trying utf-8")
-            try:
-                pdf_bytes = pdf.output(dest='S').encode('utf-8')
-                logger.info(f"PDF generated successfully with utf-8 encoding, {len(pdf_bytes)} bytes")
-                return pdf_bytes
-            except Exception as utf8_error:
-                logger.error(f"utf-8 encoding also failed: {utf8_error}")
-                # Last resort: return raw string as bytes
-                pdf_string = pdf.output(dest='S')
-                pdf_bytes = pdf_string.encode('utf-8', errors='ignore')
-                logger.warning(f"Using fallback encoding, {len(pdf_bytes)} bytes")
-                return pdf_bytes
+            logger.error(f"PDF output failed: {encode_error}")
+            return None
         
     except Exception as e:
         logger.error(f"PDF generation failed with error: {str(e)}")
         logger.error(f"Error type: {type(e)}")
         import traceback
         logger.error(f"PDF generation traceback: {traceback.format_exc()}")
-        # Returns None to let UI handle the failure gracefully
         return None
+

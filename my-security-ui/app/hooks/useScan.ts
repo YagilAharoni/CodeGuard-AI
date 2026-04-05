@@ -29,7 +29,7 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
   const [results, setResults] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const uploadFile = async (files: File | FileList | File[], persona: string = 'Student', apiKey?: string, provider?: string) => {
+  const uploadFile = async (files: File | FileList | File[], persona: string = 'Student', apiKey?: string, provider?: string, username?: string) => {
     setIsScanning(true);
     setResults(null);
     setError(null);
@@ -49,6 +49,10 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
 
     if (provider) {
       formData.append('provider', provider);
+    }
+
+    if (username) {
+      formData.append('username', username);
     }
 
     try {
@@ -79,7 +83,7 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
     }
   };
 
-  const scanGithubUrl = async (githubUrl: string, persona: string = 'Student', apiKey?: string, provider?: string) => {
+  const scanGithubUrl = async (githubUrl: string, persona: string = 'Student', apiKey?: string, provider?: string, username?: string) => {
     setIsScanning(true);
     setResults(null);
     setError(null);
@@ -94,6 +98,10 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
 
     if (provider) {
       formData.append('provider', provider);
+    }
+
+    if (username) {
+      formData.append('username', username);
     }
 
     try {
@@ -124,26 +132,24 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
     }
   };
 
-  const downloadReport = async (reportId: string) => {
+  const downloadReport = async (reportId: string, username?: string) => {
     if (!reportId) return;
     
     try {
+      const params: Record<string, string> = { report_id: reportId };
+      if (username) params.username = username;
+      
       const response = await axios.get(`${apiUrl}/export-pdf`, {
-        params: { report_id: reportId },
-        responseType: 'blob', // Important: This tells axios to expect binary data
+        params,
+        responseType: 'blob',
       });
 
-      // Create a URL for the blob
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      
-      // Create a hidden link element and click it to trigger download
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `security_report_${reportId.substring(0, 8)}.pdf`);
       document.body.appendChild(link);
       link.click();
-      
-      // Cleanup
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err: any) {

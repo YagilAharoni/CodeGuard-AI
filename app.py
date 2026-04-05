@@ -540,7 +540,8 @@ async def analyze_endpoint(
     files: List[UploadFile] = File(...),
     persona: str = Form("Student"),
     api_key: Optional[str] = Form(None),
-    provider: Optional[str] = Form(None)
+    provider: Optional[str] = Form(None),
+    username: Optional[str] = Form(None)
 ):
     try:
         logger.info(f"=== ANALYZE REQUEST START ===")
@@ -595,6 +596,7 @@ async def analyze_endpoint(
             },
             "stats": combined["stats"],
             "persona": persona,
+            "username": username or "anonymous",
             "improvement_suggestions": combined.get("improvement_suggestions", [])
         }
 
@@ -606,7 +608,8 @@ async def analyze_endpoint(
             "status": combined["status"],
             "stats": combined["stats"],
             "findings": combined["findings"],
-            "findings_by_file": combined["findings_by_file"]
+            "findings_by_file": combined["findings_by_file"],
+            "username": username or "anonymous"
         }
         append_scan_history(scan_history_entry)
         
@@ -629,24 +632,39 @@ async def analyze_github_endpoint(
     github_url: str = Form(...),
     persona: str = Form("Student"),
     api_key: Optional[str] = Form(None),
-    provider: Optional[str] = Form(None)
+    provider: Optional[str] = Form(None),
+    username: Optional[str] = Form(None)
 ):
     try:
         url_parts = github_url.rstrip('/').split('/')
-        if "github.com" not in github_url or len(url_parts) < 4:
-            raise HTTPException(status_code=400, detail="Invalid Github URL")
+        if "github.com" not in github_url or len(url_parts) < 5:
+            raise HTTPException(status_code=400, detail="Invalid Github URL. Use format: https://github.com/owner/repo")
             
         owner = url_parts[-2]
-        repo = url_parts[-1]
-        zip_url = f"https://github.com/{owner}/{repo}/archive/refs/heads/main.zip"
+        repo = url_parts[-1].split('?')[0]  # strip query params
         
-        zip_response = requests.get(zip_url)
-        if zip_response.status_code == 404:
-            zip_url = f"https://github.com/{owner}/{repo}/archive/refs/heads/master.zip"
-            zip_response = requests.get(zip_url)
+        # Try branches in order: main, master
+        zip_response = None
+        tried_branches = []
+        for branch in ["main", "master"]:
+            try:
+                zip_url = f"https://github.com/{owner}/{repo}/archive/refs/heads/{branch}.zip"
+                tried_branches.append(branch)
+                resp = requests.get(zip_url, timeout=30, allow_redirects=True, headers={"User-Agent": "CodeGuard-AI/1.0"})
+                if resp.status_code == 200:
+                    zip_response = resp
+                    break
+                elif resp.status_code == 404:
+                    continue  # try next branch
+                else:
+                    logger.warning(f"Unexpected status {resp.status_code} for branch {branch}")
+                    continue
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Request error for branch {branch}: {e}")
+                continue
             
-        if zip_response.status_code != 200:
-            raise HTTPException(status_code=400, detail="Could not download repository. Ensure it is public and has a main/master branch.")
+        if zip_response is None or zip_response.status_code != 200:
+            raise HTTPException(status_code=400, detail=f"Could not download repository '{owner}/{repo}'. Ensure it is public and has a main or master branch.")
             
         content_bytes = zip_response.content
         files_to_scan = []
@@ -685,6 +703,7 @@ async def analyze_github_endpoint(
             },
             "stats": combined["stats"],
             "persona": persona,
+            "username": username or "anonymous",
             "improvement_suggestions": combined.get("improvement_suggestions", [])
         }
 
@@ -696,7 +715,9 @@ async def analyze_github_endpoint(
             "status": combined["status"],
             "stats": combined["stats"],
             "findings": combined["findings"],
-            "findings_by_file": combined["findings_by_file"]
+            "findings_by_file": combined["findings_by_file"],
+            "username": username or "anonymous",
+            "source": f"github:{owner}/{repo}"
         }
         append_scan_history(scan_history_entry)
         
@@ -713,8 +734,10 @@ async def analyze_github_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/history")
-async def get_scan_history():
+async def get_scan_history(username: Optional[str] = None):
     history = load_scan_history()
+    if username:
+        history = [entry for entry in history if entry.get("username", "anonymous") == username]
     return {"history": history}
 
 @app.get("/compare")
@@ -736,7 +759,7 @@ async def compare_scans(scan_a: str, scan_b: str):
 
 @app.get("/export-pdf")
 @limiter.limit("10/minute")
-async def export_pdf_endpoint(request: Request, report_id: str):
+async def export_pdf_endpoint(request: Request, report_id: str, username: Optional[str] = None):
     logger.info(f"=== PDF EXPORT REQUEST ===")
     logger.info(f"Report ID: {report_id}")
     
@@ -751,7 +774,8 @@ async def export_pdf_endpoint(request: Request, report_id: str):
     logger.info(f"Improvement suggestions: {cached.get('improvement_suggestions', [])}")
     
     try:
-        pdf_bytes = generate_pdf_report(cached["results"], cached["stats"], cached["persona"], cached.get("improvement_suggestions", []))
+        report_username = username or cached.get("username", "anonymous")
+        pdf_bytes = generate_pdf_report(cached["results"], cached["stats"], cached["persona"], cached.get("improvement_suggestions", []), report_username)
         logger.info(f"PDF generation result: {pdf_bytes is not None}")
         
         if not pdf_bytes:

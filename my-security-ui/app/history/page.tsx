@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import axios from "axios";
+import { useSearchParams } from "next/navigation";
 import {
   LineChart,
   Line,
@@ -20,7 +21,10 @@ const formatDate = (timestamp: string) => new Date(timestamp).toLocaleString("he
   minute: "2-digit"
 });
 
-export default function HistoryPage() {
+function HistoryPageContent() {
+  const searchParams = useSearchParams();
+  const username = searchParams.get('user') || 'anonymous';
+  
   const [history, setHistory] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedA, setSelectedA] = useState<string>("");
@@ -30,14 +34,16 @@ export default function HistoryPage() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/history");
+        const response = await axios.get("http://localhost:8000/history", {
+          params: { username }
+        });
         setHistory(response.data.history || []);
       } catch (err: any) {
         setError("Unable to retrieve scan history. Please verify the backend server is running.");
       }
     };
     fetchHistory();
-  }, []);
+  }, [username]);
 
   useEffect(() => {
     if (history.length === 0) return;
@@ -73,10 +79,10 @@ export default function HistoryPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Historic Security Dashboard</h1>
-            <p className="text-gray-500 text-sm mt-1">Management view for tracking security posture over time and improving team performance.</p>
+            <p className="text-gray-500 text-sm mt-1">Showing scans for: <span className="text-cyan-400 font-semibold">{username}</span></p>
           </div>
           <div className="flex gap-3">
-            <a href="/" className="px-4 py-2 rounded-lg border border-[#30363d] hover:bg-[#1c2128] transition">Back to Dashboard</a>
+            <a href="/dashboard" className="px-4 py-2 rounded-lg border border-[#30363d] hover:bg-[#1c2128] transition">Back to Dashboard</a>
             <a href="/history" className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition text-white">📜 History</a>
           </div>
         </div>
@@ -237,5 +243,13 @@ export default function HistoryPage() {
         </section>
       </main>
     </div>
+  );
+}
+
+export default function HistoryPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0d1117] flex items-center justify-center text-white">Loading...</div>}>
+      <HistoryPageContent />
+    </Suspense>
   );
 }
