@@ -718,22 +718,61 @@ async def analyze_github_endpoint(
     username: Optional[str] = Form(None)
 ):
     try:
-        url_parts = github_url.rstrip('/').split('/')
-        if "github.com" not in github_url or len(url_parts) < 5:
-            raise HTTPException(status_code=400, detail="Invalid Github URL. Use format: https://github.com/owner/repo")
-            
-        owner = url_parts[-2]
-        repo = url_parts[-1].split('?')[0]  # strip query params
+        # Advanced URL parsing: handle both owner/repo and owner/repo/tree/branch
+        clean_url = github_url.split('?')[0].rstrip('/')
+        url_parts = clean_url.split('/')
         
-        # Try branches in order: main, master
+        # Find the owner and repo indices
+        try:
+            github_index = next(i for i, part in enumerate(url_parts) if "github.com" in part)
+            owner = url_parts[github_index + 1]
+            repo = url_parts[github_index + 2]
+            
+            # Check for specific branch in URL (e.g., /tree/branch_name)
+            target_branch = None
+            if len(url_parts) > github_index + 4 and url_parts[github_index + 3] == "tree":
+                target_branch = url_parts[github_index + 4]
+                logger.info(f"Target branch from URL: {target_branch}")
+        except (ValueError, IndexError):
+            raise HTTPException(status_code=400, detail="Invalid GitHub URL. Use format: https://github.com/owner/repo or https://github.com/owner/repo/tree/branch")
+
         zip_response = None
         tried_branches = []
-        for branch in ["main", "master"]:
+        
+        # Determine branch to try first
+        branches_to_try = []
+        if target_branch:
+            branches_to_try.append(target_branch)
+        else:
+            # Try to fetch default branch from GitHub API
+            try:
+                api_url = f"https://api.github.com/repos/{owner}/{repo}"
+                api_resp = requests.get(api_url, timeout=10, headers={"User-Agent": "CodeGuard-AI/1.0"})
+                if api_resp.status_code == 200:
+                    repo_info = api_resp.json()
+                    default_branch = repo_info.get("default_branch")
+                    if default_branch:
+                        logger.info(f"Detected default branch: {default_branch}")
+                        branches_to_try.append(default_branch)
+                elif api_resp.status_code == 403:
+                    logger.warning("GitHub API rate limit hit, falling back to manual branch trial.")
+            except Exception as e:
+                logger.error(f"Error fetching GitHub default branch: {e}")
+        
+        # Add fallbacks
+        for b in ["main", "master"]:
+            if b not in branches_to_try:
+                branches_to_try.append(b)
+
+        logger.info(f"Attempting to download from [{owner}/{repo}] branches: {branches_to_try}")
+
+        for branch in branches_to_try:
             try:
                 zip_url = f"https://github.com/{owner}/{repo}/archive/refs/heads/{branch}.zip"
                 tried_branches.append(branch)
                 resp = requests.get(zip_url, timeout=30, allow_redirects=True, headers={"User-Agent": "CodeGuard-AI/1.0"})
                 if resp.status_code == 200:
+                    logger.info(f"✓ Found valid branch: {branch}")
                     zip_response = resp
                     break
                 elif resp.status_code == 404:
@@ -746,7 +785,7 @@ async def analyze_github_endpoint(
                 continue
             
         if zip_response is None or zip_response.status_code != 200:
-            raise HTTPException(status_code=400, detail=f"Could not download repository '{owner}/{repo}'. Ensure it is public and has a main or master branch.")
+            raise HTTPException(status_code=400, detail=f"Could not download repository '{owner}/{repo}'. Tried branches: {', '.join(tried_branches)}. Ensure it is public and valid.")
             
         content_bytes = zip_response.content
         files_to_scan = []

@@ -30,6 +30,11 @@ function HistoryPageContent() {
   const [selectedA, setSelectedA] = useState<string>("");
   const [selectedB, setSelectedB] = useState<string>("");
   const [comparison, setComparison] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -72,6 +77,10 @@ function HistoryPageContent() {
       setError("Unable to perform comparison at this time. Please verify the selected scan IDs.");
     }
   };
+
+  if (!mounted) {
+    return <div className="min-h-screen bg-[#0d1117] flex items-center justify-center text-white">Initializing History...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans pb-20">
