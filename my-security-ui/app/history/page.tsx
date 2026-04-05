@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import Head from "next/head";
 import axios from "axios";
 import {
   LineChart,
@@ -70,10 +69,6 @@ export default function HistoryPage() {
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans pb-20">
-      <Head>
-        <title>CodeGuard AI - Security Trends</title>
-      </Head>
-
       <nav className="border-b border-[#30363d] bg-[#161b22]/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div>

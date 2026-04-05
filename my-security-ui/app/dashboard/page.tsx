@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import Head from "next/head";
 import { useScan } from "../hooks/useScan";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
@@ -101,12 +100,13 @@ export default function Home() {
   const [isHovered, setIsHovered] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [githubUrl, setGithubUrl] = useState("");
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
   const [expandedDiffs, setExpandedDiffs] = useState<Record<string, boolean>>({});
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
 
   // Hook for backend connection
-  const { uploadFile, downloadReport, isScanning, results, error, clearError, clearResults } = useScan("http://localhost:8000");
+  const { uploadFile, scanGithubUrl, downloadReport, isScanning, results, error, clearError, clearResults } = useScan("http://localhost:8000");
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -218,9 +218,11 @@ export default function Home() {
   };
 
   const runAnalysis = () => {
-    if (selectedFiles) {
-      // Only pass API key for providers that need it
-      const apiKeyToPass = (selectedProvider === "ollama") ? undefined : apiKey;
+    // Only pass API key for providers that need it
+    const apiKeyToPass = (selectedProvider === "ollama") ? undefined : apiKey;
+    if (githubUrl && !selectedFiles) {
+      scanGithubUrl(githubUrl, persona, apiKeyToPass, selectedProvider);
+    } else if (selectedFiles) {
       uploadFile(selectedFiles, persona, apiKeyToPass, selectedProvider);
     }
   };
@@ -263,10 +265,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans selection:bg-blue-500/30 pb-20">
-      <Head>
-        <title>CodeGuard AI - Identity & Scan</title>
-      </Head>
-
       {/* Navbar Minimalist */}
       <nav className="border-b border-[#30363d] bg-[#161b22]/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -600,7 +598,17 @@ export default function Home() {
                 </div>
             </div>
 
-            {selectedFiles && (
+            <div className="w-full max-w-2xl mt-6 flex gap-4 animate-fade-in text-gray-300">
+               <input 
+                  type="text" 
+                  value={githubUrl}
+                  onChange={(e) => {setGithubUrl(e.target.value); setSelectedFiles(null);}}
+                  placeholder="Or enter Github repo URL (e.g. https://github.com/CodeGuard/ui)"
+                  className="flex-1 bg-[#161b22] border border-[#30363d] rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                />
+            </div>
+
+            {(selectedFiles || githubUrl) && (
               <button 
                 onClick={(e) => { e.stopPropagation(); runAnalysis(); }}
                 disabled={isScanning}

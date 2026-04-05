@@ -50,7 +50,8 @@ async def root():
             "analyze": "POST /analyze - Upload files for security analysis",
             "export_pdf": "GET /export-pdf - Download PDF report",
             "register": "POST /api/register - Register a new user",
-            "login": "POST /api/login - Login a user"
+            "login": "POST /api/login - Login a user",
+            "analyze-github": "POST /analyze-github - Analyze github repo url"
         }
     }
 
@@ -619,6 +620,96 @@ async def analyze_endpoint(
         
     except Exception as e:
         logger.error(f"Error processing analysis: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/analyze-github")
+@limiter.limit("5/minute")
+async def analyze_github_endpoint(
+    request: Request,
+    github_url: str = Form(...),
+    persona: str = Form("Student"),
+    api_key: Optional[str] = Form(None),
+    provider: Optional[str] = Form(None)
+):
+    try:
+        url_parts = github_url.rstrip('/').split('/')
+        if "github.com" not in github_url or len(url_parts) < 4:
+            raise HTTPException(status_code=400, detail="Invalid Github URL")
+            
+        owner = url_parts[-2]
+        repo = url_parts[-1]
+        zip_url = f"https://github.com/{owner}/{repo}/archive/refs/heads/main.zip"
+        
+        zip_response = requests.get(zip_url)
+        if zip_response.status_code == 404:
+            zip_url = f"https://github.com/{owner}/{repo}/archive/refs/heads/master.zip"
+            zip_response = requests.get(zip_url)
+            
+        if zip_response.status_code != 200:
+            raise HTTPException(status_code=400, detail="Could not download repository. Ensure it is public and has a main/master branch.")
+            
+        content_bytes = zip_response.content
+        files_to_scan = []
+        with zipfile.ZipFile(io.BytesIO(content_bytes)) as z:
+            for z_filename in z.namelist():
+                ext = z_filename.split('.')[-1].lower()
+                if ext in ['py', 'cpp', 'h', 'js', 'ts', 'tsx', 'jsx'] and not z_filename.startswith('__') and "/." not in z_filename and "/node_modules/" not in z_filename:
+                    with z.open(z_filename) as internal_file:
+                        try:
+                            file_content = internal_file.read().decode("utf-8")
+                            if file_content.strip():
+                                files_to_scan.append({
+                                    "name": z_filename,
+                                    "content": file_content
+                                })
+                        except UnicodeDecodeError:
+                            pass
+                            
+        files_to_scan = files_to_scan[:30] # Limit file scan
+        report_id = str(uuid.uuid4())
+        
+        if not files_to_scan:
+            return JSONResponse(status_code=400, content={"message": "No valid source files found in repo."})
+             
+        individual_results = []
+        for f in files_to_scan:
+            res = analyze_code_logic(f["name"], f["content"], api_key, persona, provider)
+            individual_results.append(res)
+        
+        combined = combine_results(individual_results)
+        
+        REPORT_CACHE[report_id] = {
+            "results": {
+                "status": combined["status"],
+                "findings_by_file": combined["findings_by_file"],
+            },
+            "stats": combined["stats"],
+            "persona": persona,
+            "improvement_suggestions": combined.get("improvement_suggestions", [])
+        }
+
+        scan_history_entry = {
+            "scan_id": report_id,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "persona": persona,
+            "provider": provider or ("auto" if api_key else "ollama"),
+            "status": combined["status"],
+            "stats": combined["stats"],
+            "findings": combined["findings"],
+            "findings_by_file": combined["findings_by_file"]
+        }
+        append_scan_history(scan_history_entry)
+        
+        return JSONResponse(content={
+            "report_id": report_id,
+            "status": combined["status"],
+            "stats": combined["stats"],
+            "findings": combined["findings"],
+            "improvement_suggestions": combined.get("improvement_suggestions", [])
+        })
+        
+    except Exception as e:
+        logger.error(f"Error processing github analysis: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/history")

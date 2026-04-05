@@ -79,6 +79,51 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
     }
   };
 
+  const scanGithubUrl = async (githubUrl: string, persona: string = 'Student', apiKey?: string, provider?: string) => {
+    setIsScanning(true);
+    setResults(null);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append('github_url', githubUrl);
+    formData.append('persona', persona);
+    
+    if (apiKey) {
+      formData.append('api_key', apiKey);
+    }
+
+    if (provider) {
+      formData.append('provider', provider);
+    }
+
+    try {
+      const response = await axios.post<ScanResult>(`${apiUrl}/analyze-github`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setResults(response.data);
+    } catch (err: any) {
+      if (axios.isAxiosError(err)) {
+        const axiosError = err as AxiosError;
+        if (axiosError.response?.status === 429) {
+          setError('Cool-down active, please wait. You are sending too many requests.');
+        } else {
+          setError(
+            (axiosError.response?.data as any)?.detail ||
+            axiosError.message ||
+            'An error occurred during github analysis.'
+          );
+        }
+      } else {
+        setError('An unexpected error occurred.');
+      }
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   const downloadReport = async (reportId: string) => {
     if (!reportId) return;
     
@@ -113,6 +158,7 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
 
   return {
     uploadFile,
+    scanGithubUrl,
     downloadReport,
     isScanning,
     results,
