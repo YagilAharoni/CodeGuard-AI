@@ -1107,5 +1107,51 @@
     "username": "yagil",
     "improvement_suggestions": [],
     "source": "local_upload"
+  },
+  {
+    "scan_id": "b766b51c-6316-46da-9c7c-4283f190f097",
+    "timestamp": "2026-04-05 21:44:01",
+    "persona": "Professional",
+    "provider": "auto",
+    "status": "VULNERABLE",
+    "stats": {
+      "High": 0,
+      "Medium": 0,
+      "Low": 2,
+      "Safe": 2,
+      "Vuln": 0,
+      "Error": 0
+    },
+    "findings": [
+      {
+        "file_name": "app.py",
+        "issue_description": "Raw Response (Could not parse proper JSON)",
+        "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
+      },
+      {
+        "file_name": "utils.py",
+        "issue_description": "Raw Response (Could not parse proper JSON)",
+        "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
+      }
+    ],
+    "findings_by_file": {
+      "app.py": [
+        {
+          "file_name": "app.py",
+          "issue_description": "Raw Response (Could not parse proper JSON)",
+          "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
+        }
+      ],
+      "utils.py": [
+        {
+          "file_name": "utils.py",
+          "issue_description": "Raw Response (Could not parse proper JSON)",
+          "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
+        }
+      ]
+    },
+    "username": "tst2",
+    "improvement_suggestions": [],
+    "source": "local_upload"
   }
 ]
