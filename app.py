@@ -212,7 +212,15 @@ def call_ollama(prompt: str, system_prompt: str) -> str:
         return response.json().get("response", "")
     except requests.exceptions.RequestException as e:
         logger.error(f"Ollama connection failed: {e}")
-        return '{"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": "unknown", "issue_description": "Failed to connect to Ollama. Ensure Ollama is running.", "suggested_fix": "Start Ollama via command line."}]}'
+        return json.dumps({
+            "status": "ERROR", 
+            "stats": {"High": 0, "Medium": 0, "Low": 0}, 
+            "findings": [{
+                "file_name": "unknown", 
+                "issue_description": f"Ollama Error: {str(e)}", 
+                "suggested_fix": "Start Ollama via command line."
+            }]
+        })
 
 def call_openai(prompt: str, system_prompt: str, api_key: str) -> str:
     """Call OpenAI API (GPT-4 or GPT-3.5)"""
@@ -231,7 +239,15 @@ def call_openai(prompt: str, system_prompt: str, api_key: str) -> str:
         return response.choices[0].message.content
     except Exception as e:
         logger.error(f"OpenAI API Error: {e}")
-        return '{"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": "unknown", "issue_description": f"OpenAI Error: {str(e)}", "suggested_fix": "Check API key or rate limits."}]}'
+        return json.dumps({
+            "status": "ERROR", 
+            "stats": {"High": 0, "Medium": 0, "Low": 0}, 
+            "findings": [{
+                "file_name": "unknown", 
+                "issue_description": f"OpenAI Error: {str(e)}", 
+                "suggested_fix": "Check API key or rate limits."
+            }]
+        })
 
 def call_gemini(prompt: str, system_prompt: str, api_key: str) -> str:
     """Call Google Gemini API"""
@@ -261,10 +277,26 @@ def call_gemini(prompt: str, system_prompt: str, api_key: str) -> str:
                     "suggested_fix": f"Raw response: {text[:500]}"
                 }]
             })
-        return '{"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": "unknown", "issue_description": "No response from Gemini", "suggested_fix": "Try again or use a different provider."}]}'
+        return json.dumps({
+            "status": "ERROR", 
+            "stats": {"High": 0, "Medium": 0, "Low": 0}, 
+            "findings": [{
+                "file_name": "unknown", 
+                "issue_description": "No response from Gemini", 
+                "suggested_fix": "Try again or use a different provider."
+            }]
+        })
     except Exception as e:
         logger.error(f"Gemini API Error: {e}")
-        return '{"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": "unknown", "issue_description": f"Gemini Error: {str(e)}", "suggested_fix": "Check API key or rate limits."}]}'
+        return json.dumps({
+            "status": "ERROR", 
+            "stats": {"High": 0, "Medium": 0, "Low": 0}, 
+            "findings": [{
+                "file_name": "unknown", 
+                "issue_description": f"Gemini Error: {str(e)}", 
+                "suggested_fix": "Check API key or rate limits."
+            }]
+        })
 
 def call_groq(prompt: str, system_prompt: str, api_key: str, temperature: float = 0.3) -> str:
     """Call Groq API"""
@@ -283,7 +315,15 @@ def call_groq(prompt: str, system_prompt: str, api_key: str, temperature: float 
         return completion.choices[0].message.content
     except Exception as e:
         logger.error(f"Groq API Error: {e}")
-        return '{"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": "unknown", "issue_description": f"Groq Error: {str(e)}", "suggested_fix": "Check API key or rate limits."}]}'
+        return json.dumps({
+            "status": "ERROR", 
+            "stats": {"High": 0, "Medium": 0, "Low": 0}, 
+            "findings": [{
+                "file_name": "unknown", 
+                "issue_description": f"Groq Error: {str(e)}", 
+                "suggested_fix": "Check API key or rate limits."
+            }]
+        })
 
 def extract_severity(issue_description: str) -> str:
     """Extract severity from the issue description."""

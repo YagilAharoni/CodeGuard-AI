@@ -37,8 +37,10 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
     const formData = new FormData();
     
     const fileArray = files instanceof File ? [files] : Array.from(files);
-    fileArray.forEach(file => {
-      formData.append('files', file);
+    fileArray.forEach((file: File) => {
+      // Use webkitRelativePath for folder structure preservation, fall back to .name for single files
+      const fileName = (file as any).webkitRelativePath || file.name;
+      formData.append('files', file, fileName);
     });
     
     formData.append('persona', persona);
