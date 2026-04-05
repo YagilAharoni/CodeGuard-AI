@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
@@ -13,6 +13,11 @@ export default function LandingPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +63,19 @@ export default function LandingPage() {
       setIsLoading(false);
     }
   };
+
+  if (!mounted) {
+    return (
+      <div className="relative min-h-screen bg-[#0A0C10] overflow-hidden flex items-center justify-center">
+        {/* Simple background shell for initial SSR render */}
+        <div className="absolute inset-0 bg-[#0A0C10]" />
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-6 py-12 flex flex-col items-center gap-8 animate-pulse">
+           <div className="w-48 h-12 bg-white/5 rounded-full" />
+           <div className="w-96 h-24 bg-white/5 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-[#0A0C10] overflow-hidden font-sans text-white flex items-center justify-center selection:bg-cyan-500/30">

@@ -354,11 +354,19 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             "{\n"
             "  'status': 'SAFE' or 'VULNERABLE',\n"
             "  'stats': {'High': 0, 'Medium': 0, 'Low': 0},\n"
-            "  'findings': [{'file_name': 'filename', 'issue_description': 'issue description', 'suggested_fix': 'recommended fix', 'source_code': 'original code sample', 'fixed_code': 'corrected code sample'}],\n"
+            "  'findings': [{\n"
+            "    'file_name': 'filename',\n"
+            "    'issue_description': 'issue title with [SEVERITY]',\n"
+            "    'root_problem': 'one-sentence explanation of the cause',\n"
+            "    'suggested_solution': 'high-level fixing approach',\n"
+            "    'fix': 'detailed code correction or remediation steps',\n"
+            "    'source_code': 'problematic snippet',\n"
+            "    'fixed_code': 'corrected snippet'\n"
+            "  }],\n"
             "  'improvement_suggestions': ['suggestion1', 'suggestion2', 'suggestion3']\n"
             "}\n\n"
             "IMPORTANT:\n"
-            "- The heart of this application is the solution for each issue. Every finding MUST include a clear, specific fix in suggested_fix.\n"
+            "- The heart of this application is the solution for each issue. Every finding MUST include a clear, specific fix.\n"
             "- If code has minor issues, mark as SAFE but list them in findings.\n"
             "- Only mark VULNERABLE if there's a severe, exploitable security risk.\n"
             "- For each finding, start the issue_description with severity in brackets: [HIGH], [MEDIUM], or [LOW].\n"
@@ -375,10 +383,18 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             "{\n"
             "  'status': 'SAFE' or 'VULNERABLE',\n"
             "  'stats': {'High': 0, 'Medium': 0, 'Low': 0},\n"
-            "  'findings': [{'file_name': 'filename', 'issue_description': 'issue description', 'suggested_fix': 'recommended fix', 'source_code': 'original code sample', 'fixed_code': 'corrected code sample'}]\n"
+            "  'findings': [{\n"
+            "    'file_name': 'filename',\n"
+            "    'issue_description': 'issue title with [SEVERITY]',\n"
+            "    'root_problem': 'one-sentence explanation of the cause',\n"
+            "    'suggested_solution': 'high-level fixing approach',\n"
+            "    'fix': 'detailed code correction or remediation steps',\n"
+            "    'source_code': 'problematic snippet',\n"
+            "    'fixed_code': 'corrected snippet'\n"
+            "  }]\n"
             "}\n\n"
             "IMPORTANT:\n"
-            "- The heart of this application is the solution for each issue. Every finding MUST include a clear, specific fix in suggested_fix.\n"
+            "- The heart of this application is the solution for each issue. Every finding MUST include a clear, specific fix.\n"
             "- If there is ANY risk, lack of validation, hardcoded secrets, or best practice violation, mark VULNERABLE.\n"
             "- Count issues by severity: High, Medium, Low.\n"
             "- For each finding, start the issue_description with severity in brackets: [HIGH], [MEDIUM], or [LOW].\n"
@@ -400,7 +416,7 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
         f"4. Provide 'Recommended Code Fixes' for every vulnerability. This is the heart of the application.\n"
         f"   Each finding must include a real, actionable suggested_fix with code examples or exact remediation steps.\n"
         f"   Where possible, include 'source_code' with the problematic snippet and 'fixed_code' with the corrected version.\n"
-        f"5. Explain the root cause of each vulnerability in one sentence.\n"
+        f"5. Break down every vulnerability into 'Root Problem', 'Suggested Solution', and 'Fix'.\n"
         f"{'6. Suggest 2-3 ways to improve this project (for learning purposes).' if 'Student' in persona else ''}\n\n"
         f"Code Content:\n"
         f"---\n"
@@ -825,11 +841,15 @@ async def export_pdf_endpoint(request: Request, report_id: str, username: Option
             logger.error("PDF generation returned None")
             raise HTTPException(status_code=500, detail="Failed to generate PDF")
             
-        logger.info(f"PDF size: {len(pdf_bytes)} bytes")
+        # Download filename format: Security Report YYYY-MM-DD HH-mm-ss.pdf
+        report_timestamp = time.strftime("%Y-%m-%d %H-%M-%S")
+        filename = f"Security Report {report_timestamp}.pdf"
+        
+        logger.info(f"PDF size: {len(pdf_bytes)} bytes. Exporting as: {filename}")
         return StreamingResponse(
             io.BytesIO(pdf_bytes),
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=security_report_{report_id[:8]}.pdf"}
+            headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
         )
         
     except Exception as e:

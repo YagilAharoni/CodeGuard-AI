@@ -279,9 +279,35 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
                         pdf.cell(0, 6, f"Issue {idx}: {safe_desc}", ln=True)
                         
                         pdf.set_font("Arial", "", 8)
-                        suggested_fix = finding.get('suggested_fix', 'No fix suggested')
-                        safe_fix = suggested_fix.encode('latin-1', 'ignore').decode('latin-1')
-                        pdf.multi_cell(0, 4, f"Fix: {safe_fix}")
+                        # Root Problem
+                        root_prob = finding.get('root_problem')
+                        if root_prob:
+                            pdf.set_font("Arial", "B", 8)
+                            pdf.set_text_color(100, 30, 30)
+                            pdf.cell(30, 5, "Root Problem:", ln=False)
+                            pdf.set_font("Arial", "", 8)
+                            pdf.set_text_color(30, 35, 45)
+                            pdf.multi_cell(0, 5, root_prob.encode('latin-1', 'ignore').decode('latin-1'))
+                        
+                        # Suggested Solution
+                        sug_sol = finding.get('suggested_solution')
+                        if sug_sol:
+                            pdf.set_font("Arial", "B", 8)
+                            pdf.set_text_color(30, 100, 30)
+                            pdf.cell(30, 5, "Suggested Solution:", ln=False)
+                            pdf.set_font("Arial", "", 8)
+                            pdf.set_text_color(30, 35, 45)
+                            pdf.multi_cell(0, 5, sug_sol.encode('latin-1', 'ignore').decode('latin-1'))
+                        
+                        # Remediation Fix
+                        fix = finding.get('fix') or finding.get('suggested_fix', 'No fix suggested')
+                        pdf.set_font("Arial", "B", 8)
+                        pdf.set_text_color(30, 35, 100)
+                        pdf.cell(30, 5, "Remediation / Fix:", ln=False)
+                        pdf.set_font("Arial", "", 8)
+                        pdf.set_text_color(30, 35, 45)
+                        pdf.multi_cell(0, 5, fix.encode('latin-1', 'ignore').decode('latin-1'))
+                        
                         pdf.ln(2)
                 
                 pdf.line(10, pdf.get_y(), 200, pdf.get_y())
