@@ -26,14 +26,18 @@ import zipfile
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# --- Environments & Health ---
+ENV_MODE = os.getenv("ENV_MODE", "development")
+DEBUG_MODE = ENV_MODE == "development"
+
 limiter = Limiter(key_func=get_remote_address)
-app = FastAPI(title="CodeGuard AI Backend API")
+app = FastAPI(title="CodeGuard AI Backend API", debug=DEBUG_MODE)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust this in production
+    allow_origins=os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -485,7 +489,7 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             # Auto-detection based on API key prefix
             if api_key and str(api_key).strip():  # Better null/empty check
                 api_key_str = str(api_key).strip()
-                logger.info(f"[{filename}] API Key received and not empty: {api_key_str[:15]}...")
+                logger.info(f"[{filename}] API Key received and not empty: {api_key_str[:4]}...")
                 logger.info(f"[{filename}] Checking API key prefix...")
                 
                 if api_key_str.startswith("gsk_"):
@@ -596,6 +600,10 @@ def process_file_content(files: List[UploadFile]) -> List[Dict]:
             try:
                 with zipfile.ZipFile(io.BytesIO(content_bytes)) as z:
                     for z_filename in z.namelist():
+                        # Basic path traversal protection
+                        if ".." in z_filename or z_filename.startswith("/"):
+                            continue
+                            
                         ext = z_filename.split('.')[-1].lower()
                         if ext in ['py', 'cpp', 'h', 'js', 'ts', 'tsx', 'jsx'] and not z_filename.startswith('__'):
                             with z.open(z_filename) as internal_file:

@@ -1,1157 +1,215 @@
 [
-  {
-    "scan_id": "df6125d3-832a-4006-8048-20502edde993",
-    "timestamp": "2026-04-05 20:56:12",
-    "persona": "Professional",
-    "provider": "auto",
-    "status": "VULNERABLE",
-    "stats": {
-      "High": 2,
-      "Medium": 1,
-      "Low": 2,
-      "Safe": 0,
-      "Vuln": 2,
-      "Error": 0
+    {
+        "scan_id": "df6125d3-832a-4006-8048-20502edde993",
+        "timestamp": "2026-04-05 20:56:12",
+        "persona": "Professional",
+        "provider": "auto",
+        "status": "VULNERABLE",
+        "stats": {
+            "High": 2,
+            "Medium": 1,
+            "Low": 2,
+            "Safe": 0,
+            "Vuln": 2,
+            "Error": 0
+        },
+        "findings": [
+            {
+                "file_name": "HW6_318725405_213478142_Q1.cpp",
+                "issue_description": "[HIGH] Potential memory leak due to missing delete statements for dynamically allocated memory",
+                "suggested_fix": "Add delete statements to free the memory allocated by new",
+                "source_code": "Node* newNode = new Node();",
+                "fixed_code": "Node* newNode = new Node(); // ... later, when newNode is no longer needed: delete newNode;",
+                "root_cause": "The code allocates memory using new but does not free it using delete, leading to a memory leak."
+            },
+            {
+                "file_name": "HW6_318725405_213478142_Q1.cpp",
+                "issue_description": "[HIGH] Use of using namespace std; can lead to naming conflicts",
+                "suggested_fix": "Use the std namespace prefix for standard library functions and objects, or import only the necessary names",
+                "source_code": "using namespace std;",
+                "fixed_code": "using std::cout; using std::endl;",
+                "root_cause": "The using namespace std; directive can lead to naming conflicts with user-defined names."
+            },
+            {
+                "file_name": "HW6_318725405_213478142_Q1.cpp",
+                "issue_description": "[MEDIUM] Missing error handling for null pointer dereferences",
+                "suggested_fix": "Add null checks before dereferencing pointers",
+                "source_code": "Node* tail = list2; while (tail->next != NULL) {",
+                "fixed_code": "if (list2 == NULL) { return false; } Node* tail = list2; while (tail != NULL && tail->next != NULL) {",
+                "root_cause": "The code does not check for null pointers before dereferencing them, which can lead to crashes or undefined behavior."
+            },
+            {
+                "file_name": "HW6_318725405_213478142_Q1.cpp",
+                "issue_description": "[LOW] Magic numbers are used in the code",
+                "suggested_fix": "Replace magic numbers with named constants",
+                "source_code": "Node* l1 = createNode(1); l1->next = createNode(2); l1->next->next = createNode(3);",
+                "fixed_code": "const int FIRST_NODE_VALUE = 1; const int SECOND_NODE_VALUE = 2; const int THIRD_NODE_VALUE = 3; Node* l1 = createNode(FIRST_NODE_VALUE); l1->next = createNode(SECOND_NODE_VALUE); l1->next->next = createNode(THIRD_NODE_VALUE);",
+                "root_cause": "The code uses magic numbers, which can make it harder to understand and maintain."
+            },
+            {
+                "file_name": "HW6_318725405_213478142_Q2.cpp",
+                "issue_description": "[LOW] Using 'using namespace std;' can lead to naming conflicts and pollute the global namespace.",
+                "suggested_fix": "Remove 'using namespace std;' and use the 'std::' prefix for standard library elements.",
+                "source_code": "using namespace std;",
+                "fixed_code": "using std::cout; using std::endl;",
+                "root_cause": "The code uses 'using namespace std;' which can cause naming conflicts."
+            }
+        ],
+        "findings_by_file": {
+            "HW6_318725405_213478142_Q1.cpp": [
+                {
+                    "file_name": "HW6_318725405_213478142_Q1.cpp",
+                    "issue_description": "[HIGH] Potential memory leak due to missing delete statements for dynamically allocated memory",
+                    "suggested_fix": "Add delete statements to free the memory allocated by new",
+                    "source_code": "Node* newNode = new Node();",
+                    "fixed_code": "Node* newNode = new Node(); // ... later, when newNode is no longer needed: delete newNode;",
+                    "root_cause": "The code allocates memory using new but does not free it using delete, leading to a memory leak."
+                },
+                {
+                    "file_name": "HW6_318725405_213478142_Q1.cpp",
+                    "issue_description": "[HIGH] Use of using namespace std; can lead to naming conflicts",
+                    "suggested_fix": "Use the std namespace prefix for standard library functions and objects, or import only the necessary names",
+                    "source_code": "using namespace std;",
+                    "fixed_code": "using std::cout; using std::endl;",
+                    "root_cause": "The using namespace std; directive can lead to naming conflicts with user-defined names."
+                },
+                {
+                    "file_name": "HW6_318725405_213478142_Q1.cpp",
+                    "issue_description": "[MEDIUM] Missing error handling for null pointer dereferences",
+                    "suggested_fix": "Add null checks before dereferencing pointers",
+                    "source_code": "Node* tail = list2; while (tail->next != NULL) {",
+                    "fixed_code": "if (list2 == NULL) { return false; } Node* tail = list2; while (tail != NULL && tail->next != NULL) {",
+                    "root_cause": "The code does not check for null pointers before dereferencing them, which can lead to crashes or undefined behavior."
+                },
+                {
+                    "file_name": "HW6_318725405_213478142_Q1.cpp",
+                    "issue_description": "[LOW] Magic numbers are used in the code",
+                    "suggested_fix": "Replace magic numbers with named constants",
+                    "source_code": "Node* l1 = createNode(1); l1->next = createNode(2); l1->next->next = createNode(3);",
+                    "fixed_code": "const int FIRST_NODE_VALUE = 1; const int SECOND_NODE_VALUE = 2; const int THIRD_NODE_VALUE = 3; Node* l1 = createNode(FIRST_NODE_VALUE); l1->next = createNode(SECOND_NODE_VALUE); l1->next->next = createNode(THIRD_NODE_VALUE);",
+                    "root_cause": "The code uses magic numbers, which can make it harder to understand and maintain."
+                }
+            ],
+            "HW6_318725405_213478142_Q2.cpp": [
+                {
+                    "file_name": "HW6_318725405_213478142_Q2.cpp",
+                    "issue_description": "[LOW] Using 'using namespace std;' can lead to naming conflicts and pollute the global namespace.",
+                    "suggested_fix": "Remove 'using namespace std;' and use the 'std::' prefix for standard library elements.",
+                    "source_code": "using namespace std;",
+                    "fixed_code": "using std::cout; using std::endl;",
+                    "root_cause": "The code uses 'using namespace std;' which can cause naming conflicts."
+                }
+            ]
+        }
     },
-    "findings": [
-      {
-        "file_name": "HW6_318725405_213478142_Q1.cpp",
-        "issue_description": "[HIGH] Potential memory leak due to missing delete statements for dynamically allocated memory",
-        "suggested_fix": "Add delete statements to free the memory allocated by new",
-        "source_code": "Node* newNode = new Node();",
-        "fixed_code": "Node* newNode = new Node(); // ... later, when newNode is no longer needed: delete newNode;",
-        "root_cause": "The code allocates memory using new but does not free it using delete, leading to a memory leak."
-      },
-      {
-        "file_name": "HW6_318725405_213478142_Q1.cpp",
-        "issue_description": "[HIGH] Use of using namespace std; can lead to naming conflicts",
-        "suggested_fix": "Use the std namespace prefix for standard library functions and objects, or import only the necessary names",
-        "source_code": "using namespace std;",
-        "fixed_code": "using std::cout; using std::endl;",
-        "root_cause": "The using namespace std; directive can lead to naming conflicts with user-defined names."
-      },
-      {
-        "file_name": "HW6_318725405_213478142_Q1.cpp",
-        "issue_description": "[MEDIUM] Missing error handling for null pointer dereferences",
-        "suggested_fix": "Add null checks before dereferencing pointers",
-        "source_code": "Node* tail = list2; while (tail->next != NULL) {",
-        "fixed_code": "if (list2 == NULL) { return false; } Node* tail = list2; while (tail != NULL && tail->next != NULL) {",
-        "root_cause": "The code does not check for null pointers before dereferencing them, which can lead to crashes or undefined behavior."
-      },
-      {
-        "file_name": "HW6_318725405_213478142_Q1.cpp",
-        "issue_description": "[LOW] Magic numbers are used in the code",
-        "suggested_fix": "Replace magic numbers with named constants",
-        "source_code": "Node* l1 = createNode(1); l1->next = createNode(2); l1->next->next = createNode(3);",
-        "fixed_code": "const int FIRST_NODE_VALUE = 1; const int SECOND_NODE_VALUE = 2; const int THIRD_NODE_VALUE = 3; Node* l1 = createNode(FIRST_NODE_VALUE); l1->next = createNode(SECOND_NODE_VALUE); l1->next->next = createNode(THIRD_NODE_VALUE);",
-        "root_cause": "The code uses magic numbers, which can make it harder to understand and maintain."
-      },
-      {
-        "file_name": "HW6_318725405_213478142_Q2.cpp",
-        "issue_description": "[LOW] Using 'using namespace std;' can lead to naming conflicts and pollute the global namespace.",
-        "suggested_fix": "Remove 'using namespace std;' and use the 'std::' prefix for standard library elements.",
-        "source_code": "using namespace std;",
-        "fixed_code": "using std::cout; using std::endl;",
-        "root_cause": "The code uses 'using namespace std;' which can cause naming conflicts."
-      }
-    ],
-    "findings_by_file": {
-      "HW6_318725405_213478142_Q1.cpp": [
-        {
-          "file_name": "HW6_318725405_213478142_Q1.cpp",
-          "issue_description": "[HIGH] Potential memory leak due to missing delete statements for dynamically allocated memory",
-          "suggested_fix": "Add delete statements to free the memory allocated by new",
-          "source_code": "Node* newNode = new Node();",
-          "fixed_code": "Node* newNode = new Node(); // ... later, when newNode is no longer needed: delete newNode;",
-          "root_cause": "The code allocates memory using new but does not free it using delete, leading to a memory leak."
+    {
+        "scan_id": "28523b9f-d1a1-4988-95ea-75b051682e5d",
+        "timestamp": "2026-04-05 20:59:29",
+        "persona": "Professional",
+        "provider": "auto",
+        "status": "ERROR",
+        "stats": {
+            "High": 0,
+            "Medium": 0,
+            "Low": 1,
+            "Safe": 0,
+            "Vuln": 0,
+            "Error": 1
         },
-        {
-          "file_name": "HW6_318725405_213478142_Q1.cpp",
-          "issue_description": "[HIGH] Use of using namespace std; can lead to naming conflicts",
-          "suggested_fix": "Use the std namespace prefix for standard library functions and objects, or import only the necessary names",
-          "source_code": "using namespace std;",
-          "fixed_code": "using std::cout; using std::endl;",
-          "root_cause": "The using namespace std; directive can lead to naming conflicts with user-defined names."
-        },
-        {
-          "file_name": "HW6_318725405_213478142_Q1.cpp",
-          "issue_description": "[MEDIUM] Missing error handling for null pointer dereferences",
-          "suggested_fix": "Add null checks before dereferencing pointers",
-          "source_code": "Node* tail = list2; while (tail->next != NULL) {",
-          "fixed_code": "if (list2 == NULL) { return false; } Node* tail = list2; while (tail != NULL && tail->next != NULL) {",
-          "root_cause": "The code does not check for null pointers before dereferencing them, which can lead to crashes or undefined behavior."
-        },
-        {
-          "file_name": "HW6_318725405_213478142_Q1.cpp",
-          "issue_description": "[LOW] Magic numbers are used in the code",
-          "suggested_fix": "Replace magic numbers with named constants",
-          "source_code": "Node* l1 = createNode(1); l1->next = createNode(2); l1->next->next = createNode(3);",
-          "fixed_code": "const int FIRST_NODE_VALUE = 1; const int SECOND_NODE_VALUE = 2; const int THIRD_NODE_VALUE = 3; Node* l1 = createNode(FIRST_NODE_VALUE); l1->next = createNode(SECOND_NODE_VALUE); l1->next->next = createNode(THIRD_NODE_VALUE);",
-          "root_cause": "The code uses magic numbers, which can make it harder to understand and maintain."
+        "findings": [
+            {
+                "file_name": "unknown",
+                "issue_description": "Failed to connect to Ollama. Ensure Ollama is running.",
+                "suggested_fix": "Start Ollama via command line."
+            }
+        ],
+        "findings_by_file": {
+            "unknown": [
+                {
+                    "file_name": "unknown",
+                    "issue_description": "Failed to connect to Ollama. Ensure Ollama is running.",
+                    "suggested_fix": "Start Ollama via command line."
+                }
+            ]
         }
-      ],
-      "HW6_318725405_213478142_Q2.cpp": [
-        {
-          "file_name": "HW6_318725405_213478142_Q2.cpp",
-          "issue_description": "[LOW] Using 'using namespace std;' can lead to naming conflicts and pollute the global namespace.",
-          "suggested_fix": "Remove 'using namespace std;' and use the 'std::' prefix for standard library elements.",
-          "source_code": "using namespace std;",
-          "fixed_code": "using std::cout; using std::endl;",
-          "root_cause": "The code uses 'using namespace std;' which can cause naming conflicts."
-        }
-      ]
+    },
+    {
+        "scan_id": "recent-test-id",
+        "timestamp": "2026-04-03 21:24:34",
+        "username": "testuser"
+    },
+    {
+        "scan_id": "new-test-id",
+        "timestamp": "2026-04-05 21:24:38",
+        "username": "testuser"
+    },
+    {
+        "scan_id": "69edea33-8331-4e81-b851-a80915119be6",
+        "timestamp": "2026-04-05 21:25:32",
+        "username": "testuser_verify",
+        "persona": "Student",
+        "status": "VULNERABLE",
+        "stats": {
+            "High": 1,
+            "Medium": 0,
+            "Low": 1
+        },
+        "findings_by_file": {
+            "main.py": [
+                {
+                    "issue_description": "SQL Injection",
+                    "suggested_fix": "Use ORM"
+                }
+            ]
+        },
+        "improvement_suggestions": [
+            "Practice safe coding"
+        ]
+    },
+    {
+        "scan_id": "b766b51c-6316-46da-9c7c-4283f190f097",
+        "timestamp": "2026-04-05 21:44:01",
+        "persona": "Professional",
+        "provider": "auto",
+        "status": "VULNERABLE",
+        "stats": {
+            "High": 0,
+            "Medium": 0,
+            "Low": 2,
+            "Safe": 2,
+            "Vuln": 0,
+            "Error": 0
+        },
+        "findings": [
+            {
+                "file_name": "app.py",
+                "issue_description": "Raw Response (Could not parse proper JSON)",
+                "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
+            },
+            {
+                "file_name": "utils.py",
+                "issue_description": "Raw Response (Could not parse proper JSON)",
+                "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
+            }
+        ],
+        "findings_by_file": {
+            "app.py": [
+                {
+                    "file_name": "app.py",
+                    "issue_description": "Raw Response (Could not parse proper JSON)",
+                    "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
+                }
+            ],
+            "utils.py": [
+                {
+                    "file_name": "utils.py",
+                    "issue_description": "Raw Response (Could not parse proper JSON)",
+                    "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
+                }
+            ]
+        },
+        "username": "tst2",
+        "improvement_suggestions": [],
+        "source": "local_upload"
     }
-  },
-  {
-    "scan_id": "28523b9f-d1a1-4988-95ea-75b051682e5d",
-    "timestamp": "2026-04-05 20:59:29",
-    "persona": "Professional",
-    "provider": "auto",
-    "status": "ERROR",
-    "stats": {
-      "High": 0,
-      "Medium": 0,
-      "Low": 1,
-      "Safe": 0,
-      "Vuln": 0,
-      "Error": 1
-    },
-    "findings": [
-      {
-        "file_name": "unknown",
-        "issue_description": "Failed to connect to Ollama. Ensure Ollama is running.",
-        "suggested_fix": "Start Ollama via command line."
-      }
-    ],
-    "findings_by_file": {
-      "unknown": [
-        {
-          "file_name": "unknown",
-          "issue_description": "Failed to connect to Ollama. Ensure Ollama is running.",
-          "suggested_fix": "Start Ollama via command line."
-        }
-      ]
-    }
-  },
-  {
-    "scan_id": "6a402233-9f01-4f2e-b04a-60e5efed9dda",
-    "timestamp": "2026-04-05 21:16:15",
-    "persona": "Student",
-    "provider": "auto",
-    "status": "VULNERABLE",
-    "stats": {
-      "High": 1,
-      "Medium": 2,
-      "Low": 2,
-      "Safe": 1,
-      "Vuln": 1,
-      "Error": 0
-    },
-    "findings": [
-      {
-        "file_name": "app.py",
-        "issue_description": "[HIGH] Hardcoded API keys and lack of input validation",
-        "suggested_fix": "Use environment variables for API keys and validate all user inputs",
-        "source_code": "api_key = \"sk-...\"",
-        "fixed_code": "import os\napi_key = os.environ.get('API_KEY')"
-      },
-      {
-        "file_name": "app.py",
-        "issue_description": "[MEDIUM] Missing error handling for API calls",
-        "suggested_fix": "Implement try-except blocks for API calls to handle potential errors",
-        "source_code": "response = requests.post(...)",
-        "fixed_code": "try:\n    response = requests.post(...)\nexcept requests.exceptions.RequestException as e:\n    logger.error(f\"API call failed: {e}\")"
-      },
-      {
-        "file_name": "utils.py",
-        "issue_description": "[MEDIUM] Insecure use of temporary directory for chart generation",
-        "suggested_fix": "Use a secure method to generate and store temporary files",
-        "source_code": "temp_image = os.path.join(tempfile.gettempdir(), 'vuln_chart.png')",
-        "fixed_code": "import secrets; temp_image = os.path.join(tempfile.gettempdir(), f'{secrets.token_urlsafe(8)}.png')"
-      },
-      {
-        "file_name": "app.py",
-        "issue_description": "[LOW] Potential ZIP file parsing vulnerabilities",
-        "suggested_fix": "Use a secure ZIP file parsing library and validate file contents",
-        "source_code": "with zipfile.ZipFile(io.BytesIO(content_bytes)) as z:",
-        "fixed_code": "import zipfile\nwith zipfile.ZipFile(io.BytesIO(content_bytes), 'r') as z:"
-      },
-      {
-        "file_name": "utils.py",
-        "issue_description": "[LOW] Potential issue with file handling in process_uploaded_files function",
-        "suggested_fix": "Add error handling for file operations to prevent crashes",
-        "source_code": "with z.open(filename) as internal_file:",
-        "fixed_code": "try: with z.open(filename) as internal_file: ... except Exception as e: logger.error(f'Error reading file {filename}: {e}')"
-      }
-    ],
-    "findings_by_file": {
-      "app.py": [
-        {
-          "file_name": "app.py",
-          "issue_description": "[HIGH] Hardcoded API keys and lack of input validation",
-          "suggested_fix": "Use environment variables for API keys and validate all user inputs",
-          "source_code": "api_key = \"sk-...\"",
-          "fixed_code": "import os\napi_key = os.environ.get('API_KEY')"
-        },
-        {
-          "file_name": "app.py",
-          "issue_description": "[MEDIUM] Missing error handling for API calls",
-          "suggested_fix": "Implement try-except blocks for API calls to handle potential errors",
-          "source_code": "response = requests.post(...)",
-          "fixed_code": "try:\n    response = requests.post(...)\nexcept requests.exceptions.RequestException as e:\n    logger.error(f\"API call failed: {e}\")"
-        },
-        {
-          "file_name": "app.py",
-          "issue_description": "[LOW] Potential ZIP file parsing vulnerabilities",
-          "suggested_fix": "Use a secure ZIP file parsing library and validate file contents",
-          "source_code": "with zipfile.ZipFile(io.BytesIO(content_bytes)) as z:",
-          "fixed_code": "import zipfile\nwith zipfile.ZipFile(io.BytesIO(content_bytes), 'r') as z:"
-        }
-      ],
-      "utils.py": [
-        {
-          "file_name": "utils.py",
-          "issue_description": "[MEDIUM] Insecure use of temporary directory for chart generation",
-          "suggested_fix": "Use a secure method to generate and store temporary files",
-          "source_code": "temp_image = os.path.join(tempfile.gettempdir(), 'vuln_chart.png')",
-          "fixed_code": "import secrets; temp_image = os.path.join(tempfile.gettempdir(), f'{secrets.token_urlsafe(8)}.png')"
-        },
-        {
-          "file_name": "utils.py",
-          "issue_description": "[LOW] Potential issue with file handling in process_uploaded_files function",
-          "suggested_fix": "Add error handling for file operations to prevent crashes",
-          "source_code": "with z.open(filename) as internal_file:",
-          "fixed_code": "try: with z.open(filename) as internal_file: ... except Exception as e: logger.error(f'Error reading file {filename}: {e}')"
-        }
-      ]
-    },
-    "username": "yagil"
-  },
-  {
-    "scan_id": "f735ba82-114f-4917-9253-0891618db4c5",
-    "timestamp": "2026-04-05 21:18:06",
-    "persona": "Student",
-    "provider": "auto",
-    "status": "VULNERABLE",
-    "stats": {
-      "High": 1,
-      "Medium": 2,
-      "Low": 3,
-      "Safe": 1,
-      "Vuln": 1,
-      "Error": 0
-    },
-    "findings": [
-      {
-        "file_name": "HW5_318725405__213478142_Q2.cpp",
-        "issue_description": "[HIGH] Potential buffer overflow in the cin statement for team name and score",
-        "suggested_fix": "Use std::string instead of char array to avoid buffer overflow",
-        "source_code": "cin >> team_name;",
-        "fixed_code": "std::string team_name; std::cin >> team_name;"
-      },
-      {
-        "file_name": "HW5_318725405__213478142_Q2.cpp",
-        "issue_description": "[MEDIUM] Memory leak in case of exception in memory allocation",
-        "suggested_fix": "Use smart pointers or containers to manage memory",
-        "source_code": "Teams[i] = new char[team_name_size];",
-        "fixed_code": "std::vector<std::string> Teams(num_of_teams);"
-      },
-      {
-        "file_name": "HW5_318725405__213478142_Q2.cpp",
-        "issue_description": "[MEDIUM] Potential null pointer dereference in calcAndSort function",
-        "suggested_fix": "Check for null pointer before dereferencing",
-        "source_code": "sortedScores[i] = calculateScore(Scores[i]);",
-        "fixed_code": "if (Scores[i] != nullptr) { sortedScores[i] = calculateScore(Scores[i]); }"
-      },
-      {
-        "file_name": "HW5_318725405__213478142_Q1.cpp",
-        "issue_description": "[LOW] The code uses a fixed-size array for team names and scores, which could lead to buffer overflow issues if the number of teams exceeds the defined maximum.",
-        "suggested_fix": "Use dynamic memory allocation or std::vector to handle variable-sized arrays.",
-        "source_code": "char teamsList[][MAX_STR_LEN] = {\"Team_A\", \"Team_B\", \"Team_C\"};",
-        "fixed_code": "std::vector<std::string> teamsList = {\"Team_A\", \"Team_B\", \"Team_C\"};"
-      },
-      {
-        "file_name": "HW5_318725405__213478142_Q1.cpp",
-        "issue_description": "[LOW] The code uses C-style strings and manual memory management, which can lead to memory leaks or corruption.",
-        "suggested_fix": "Use std::string instead of C-style strings and smart pointers for memory management.",
-        "source_code": "char* Teams[MAX_TEAMS];",
-        "fixed_code": "std::vector<std::string> teams;"
-      },
-      {
-        "file_name": "HW5_318725405__213478142_Q2.cpp",
-        "issue_description": "[LOW] Using magic numbers in the code",
-        "suggested_fix": "Define constants for magic numbers",
-        "source_code": "char team_name[MAX_STR_LEN];",
-        "fixed_code": "const int MAX_TEAM_NAME_LENGTH = 11; char team_name[MAX_TEAM_NAME_LENGTH];"
-      }
-    ],
-    "findings_by_file": {
-      "HW5_318725405__213478142_Q2.cpp": [
-        {
-          "file_name": "HW5_318725405__213478142_Q2.cpp",
-          "issue_description": "[HIGH] Potential buffer overflow in the cin statement for team name and score",
-          "suggested_fix": "Use std::string instead of char array to avoid buffer overflow",
-          "source_code": "cin >> team_name;",
-          "fixed_code": "std::string team_name; std::cin >> team_name;"
-        },
-        {
-          "file_name": "HW5_318725405__213478142_Q2.cpp",
-          "issue_description": "[MEDIUM] Memory leak in case of exception in memory allocation",
-          "suggested_fix": "Use smart pointers or containers to manage memory",
-          "source_code": "Teams[i] = new char[team_name_size];",
-          "fixed_code": "std::vector<std::string> Teams(num_of_teams);"
-        },
-        {
-          "file_name": "HW5_318725405__213478142_Q2.cpp",
-          "issue_description": "[MEDIUM] Potential null pointer dereference in calcAndSort function",
-          "suggested_fix": "Check for null pointer before dereferencing",
-          "source_code": "sortedScores[i] = calculateScore(Scores[i]);",
-          "fixed_code": "if (Scores[i] != nullptr) { sortedScores[i] = calculateScore(Scores[i]); }"
-        },
-        {
-          "file_name": "HW5_318725405__213478142_Q2.cpp",
-          "issue_description": "[LOW] Using magic numbers in the code",
-          "suggested_fix": "Define constants for magic numbers",
-          "source_code": "char team_name[MAX_STR_LEN];",
-          "fixed_code": "const int MAX_TEAM_NAME_LENGTH = 11; char team_name[MAX_TEAM_NAME_LENGTH];"
-        }
-      ],
-      "HW5_318725405__213478142_Q1.cpp": [
-        {
-          "file_name": "HW5_318725405__213478142_Q1.cpp",
-          "issue_description": "[LOW] The code uses a fixed-size array for team names and scores, which could lead to buffer overflow issues if the number of teams exceeds the defined maximum.",
-          "suggested_fix": "Use dynamic memory allocation or std::vector to handle variable-sized arrays.",
-          "source_code": "char teamsList[][MAX_STR_LEN] = {\"Team_A\", \"Team_B\", \"Team_C\"};",
-          "fixed_code": "std::vector<std::string> teamsList = {\"Team_A\", \"Team_B\", \"Team_C\"};"
-        },
-        {
-          "file_name": "HW5_318725405__213478142_Q1.cpp",
-          "issue_description": "[LOW] The code uses C-style strings and manual memory management, which can lead to memory leaks or corruption.",
-          "suggested_fix": "Use std::string instead of C-style strings and smart pointers for memory management.",
-          "source_code": "char* Teams[MAX_TEAMS];",
-          "fixed_code": "std::vector<std::string> teams;"
-        }
-      ]
-    },
-    "username": "yagil"
-  },
-  {
-    "scan_id": "recent-test-id",
-    "timestamp": "2026-04-03 21:24:34",
-    "username": "testuser"
-  },
-  {
-    "scan_id": "new-test-id",
-    "timestamp": "2026-04-05 21:24:38",
-    "username": "testuser"
-  },
-  {
-    "scan_id": "4e20823a-50df-4338-b104-ad5b8f325c98",
-    "timestamp": "2026-04-05 21:25:27",
-    "persona": "Professional",
-    "provider": "auto",
-    "status": "VULNERABLE",
-    "stats": {
-      "High": 2,
-      "Medium": 1,
-      "Low": 2,
-      "Safe": 0,
-      "Vuln": 2,
-      "Error": 0
-    },
-    "findings": [
-      {
-        "file_name": "HW6_318725405_213478142_Q1.cpp",
-        "issue_description": "[HIGH] Potential memory leak due to missing delete statements for dynamically allocated memory",
-        "suggested_fix": "Add delete statements to free the memory allocated by new",
-        "source_code": "Node* newNode = new Node();",
-        "fixed_code": "Node* newNode = new Node(); // ... later, when newNode is no longer needed: delete newNode;",
-        "root_cause": "The code allocates memory using new but does not free it using delete, leading to a potential memory leak."
-      },
-      {
-        "file_name": "HW6_318725405_213478142_Q1.cpp",
-        "issue_description": "[HIGH] Use of using namespace std; can lead to naming conflicts",
-        "suggested_fix": "Use the std namespace prefix for standard library functions and objects instead of using namespace std;",
-        "source_code": "using namespace std;",
-        "fixed_code": "std::cout << \"lists (1->2->3 vs 3->2->1)\" << std::endl;",
-        "root_cause": "The using namespace std; directive can cause naming conflicts with user-defined functions and variables."
-      },
-      {
-        "file_name": "HW6_318725405_213478142_Q1.cpp",
-        "issue_description": "[MEDIUM] Missing input validation in the mirror function",
-        "suggested_fix": "Add input validation to check for null pointers and handle them accordingly",
-        "source_code": "bool mirror(Node* list1, Node* list2);",
-        "fixed_code": "bool mirror(Node* list1, Node* list2) { if (list1 == nullptr || list2 == nullptr) { return false; } // ... }",
-        "root_cause": "The mirror function does not check for null pointers, which can lead to null pointer dereferences and crashes."
-      },
-      {
-        "file_name": "HW6_318725405_213478142_Q1.cpp",
-        "issue_description": "[LOW] Magic numbers are used in the code",
-        "suggested_fix": "Replace magic numbers with named constants to improve code readability and maintainability",
-        "source_code": "Node* l1 = createNode(1);",
-        "fixed_code": "const int FIRST_NODE_VALUE = 1; Node* l1 = createNode(FIRST_NODE_VALUE);",
-        "root_cause": "Magic numbers make the code less readable and more prone to errors."
-      },
-      {
-        "file_name": "HW6_318725405_213478142_Q2.cpp",
-        "issue_description": "[LOW] Using 'using namespace std;' can lead to naming conflicts and pollute the global namespace.",
-        "suggested_fix": "Instead of 'using namespace std;', import only the necessary standard library components, e.g., 'using std::cout;'.",
-        "source_code": "using namespace std;",
-        "fixed_code": "using std::cout;",
-        "root_cause": "The code uses 'using namespace std;' which can cause naming conflicts."
-      }
-    ],
-    "findings_by_file": {
-      "HW6_318725405_213478142_Q1.cpp": [
-        {
-          "file_name": "HW6_318725405_213478142_Q1.cpp",
-          "issue_description": "[HIGH] Potential memory leak due to missing delete statements for dynamically allocated memory",
-          "suggested_fix": "Add delete statements to free the memory allocated by new",
-          "source_code": "Node* newNode = new Node();",
-          "fixed_code": "Node* newNode = new Node(); // ... later, when newNode is no longer needed: delete newNode;",
-          "root_cause": "The code allocates memory using new but does not free it using delete, leading to a potential memory leak."
-        },
-        {
-          "file_name": "HW6_318725405_213478142_Q1.cpp",
-          "issue_description": "[HIGH] Use of using namespace std; can lead to naming conflicts",
-          "suggested_fix": "Use the std namespace prefix for standard library functions and objects instead of using namespace std;",
-          "source_code": "using namespace std;",
-          "fixed_code": "std::cout << \"lists (1->2->3 vs 3->2->1)\" << std::endl;",
-          "root_cause": "The using namespace std; directive can cause naming conflicts with user-defined functions and variables."
-        },
-        {
-          "file_name": "HW6_318725405_213478142_Q1.cpp",
-          "issue_description": "[MEDIUM] Missing input validation in the mirror function",
-          "suggested_fix": "Add input validation to check for null pointers and handle them accordingly",
-          "source_code": "bool mirror(Node* list1, Node* list2);",
-          "fixed_code": "bool mirror(Node* list1, Node* list2) { if (list1 == nullptr || list2 == nullptr) { return false; } // ... }",
-          "root_cause": "The mirror function does not check for null pointers, which can lead to null pointer dereferences and crashes."
-        },
-        {
-          "file_name": "HW6_318725405_213478142_Q1.cpp",
-          "issue_description": "[LOW] Magic numbers are used in the code",
-          "suggested_fix": "Replace magic numbers with named constants to improve code readability and maintainability",
-          "source_code": "Node* l1 = createNode(1);",
-          "fixed_code": "const int FIRST_NODE_VALUE = 1; Node* l1 = createNode(FIRST_NODE_VALUE);",
-          "root_cause": "Magic numbers make the code less readable and more prone to errors."
-        }
-      ],
-      "HW6_318725405_213478142_Q2.cpp": [
-        {
-          "file_name": "HW6_318725405_213478142_Q2.cpp",
-          "issue_description": "[LOW] Using 'using namespace std;' can lead to naming conflicts and pollute the global namespace.",
-          "suggested_fix": "Instead of 'using namespace std;', import only the necessary standard library components, e.g., 'using std::cout;'.",
-          "source_code": "using namespace std;",
-          "fixed_code": "using std::cout;",
-          "root_cause": "The code uses 'using namespace std;' which can cause naming conflicts."
-        }
-      ]
-    },
-    "username": "yagil",
-    "improvement_suggestions": [],
-    "source": "local_upload"
-  },
-  {
-    "scan_id": "69edea33-8331-4e81-b851-a80915119be6",
-    "timestamp": "2026-04-05 21:25:32",
-    "username": "testuser_verify",
-    "persona": "Student",
-    "status": "VULNERABLE",
-    "stats": {
-      "High": 1,
-      "Medium": 0,
-      "Low": 1
-    },
-    "findings_by_file": {
-      "main.py": [
-        {
-          "issue_description": "SQL Injection",
-          "suggested_fix": "Use ORM"
-        }
-      ]
-    },
-    "improvement_suggestions": [
-      "Practice safe coding"
-    ]
-  },
-  {
-    "scan_id": "872df47a-bbbe-49e7-8537-cc29bd19075b",
-    "timestamp": "2026-04-05 21:33:08",
-    "persona": "Professional",
-    "provider": "auto",
-    "status": "VULNERABLE",
-    "stats": {
-      "High": 6,
-      "Medium": 7,
-      "Low": 5,
-      "Safe": 0,
-      "Vuln": 5,
-      "Error": 0
-    },
-    "findings": [
-      {
-        "file_name": "HW4_318725405_213478142_Q1.cpp",
-        "issue_description": "[HIGH] Potential buffer overflow due to lack of input validation in the sortArray function",
-        "suggested_fix": "Add input validation to ensure the array size does not exceed the defined constant N",
-        "source_code": "void sortArray(int array[][N], int size){...}",
-        "fixed_code": "void sortArray(int array[][N], int size){ if(size > N) { cout << \"Error: Array size exceeds maximum size\"; return; } ...}",
-        "root_cause": "The lack of input validation in the sortArray function can lead to a buffer overflow if the array size exceeds the defined constant N."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q2.cpp",
-        "issue_description": "[HIGH] Potential integer overflow in the calculation of the mid index in the binary search function",
-        "suggested_fix": "Use a safer method to calculate the mid index, such as mid = left + (right - left) / 2",
-        "source_code": "mid = (right + left) / 2;",
-        "fixed_code": "mid = left + (right - left) / 2;",
-        "root_cause": "The current calculation can cause an integer overflow when the sum of right and left is greater than the maximum integer value"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q3.cpp",
-        "issue_description": "[HIGH] Potential buffer overflow vulnerability due to lack of input validation in the mystr function",
-        "suggested_fix": "Validate the input strings to prevent buffer overflow attacks. Use safer functions like strncmp or std::string::compare.",
-        "source_code": "int mystr(char s[], char t[]){...}",
-        "fixed_code": "int mystr(const char* s, const char* t){ int s_size = strlen(s); int t_size = strlen(t); if (s_size < 1 || t_size < 1) { return -1; } ...}",
-        "root_cause": "The code lacks input validation, making it vulnerable to buffer overflow attacks."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q4.cpp",
-        "issue_description": "[HIGH] Potential buffer overflow vulnerability due to the use of strcpy or other unbounded string functions is mitigated here but lack of input validation is still a major concern.",
-        "suggested_fix": "Always validate and sanitize user inputs to prevent potential security vulnerabilities.",
-        "source_code": "char arr[35] = { \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \" };",
-        "fixed_code": "const char* arr = \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \"; // use const and avoid direct array initialization",
-        "root_cause": "Lack of input validation and potential for buffer overflow due to unbounded string functions."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q5.cpp",
-        "issue_description": "[HIGH] Potential buffer overflow vulnerability in converToLanguageB function",
-        "suggested_fix": "Validate user input to prevent buffer overflow. Use std::string instead of char array for dynamic memory allocation.",
-        "source_code": "char new_str[MAX_SIZE *3];",
-        "fixed_code": "std::string new_str;",
-        "root_cause": "The code uses a fixed-size char array to store user input, which can lead to buffer overflow if the input exceeds the array size."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q5.cpp",
-        "issue_description": "[HIGH] Potential buffer overflow vulnerability in convertToPigLatin function",
-        "suggested_fix": "Validate user input to prevent buffer overflow. Use std::string instead of char array for dynamic memory allocation.",
-        "source_code": "char word[MAX_SIZE];",
-        "fixed_code": "std::string word;",
-        "root_cause": "The code uses a fixed-size char array to store user input, which can lead to buffer overflow if the input exceeds the array size."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q1.cpp",
-        "issue_description": "[MEDIUM] Using namespace std can lead to naming conflicts",
-        "suggested_fix": "Use the std namespace only when necessary, instead of importing the entire namespace",
-        "source_code": "using namespace std;",
-        "fixed_code": "using std::cout; using std::endl;",
-        "root_cause": "The using namespace std directive can lead to naming conflicts if there are other libraries or functions with the same names."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q2.cpp",
-        "issue_description": "[MEDIUM] Lack of input validation for the user-provided number to search",
-        "suggested_fix": "Add input validation to ensure the user-provided number is within the valid range of the array",
-        "source_code": "cin >> num_to_search;",
-        "fixed_code": "cin >> num_to_search; if (num_to_search < 0 || num_to_search > SIZE - 1) { cout << \"Invalid input\"; return 1; }",
-        "root_cause": "The lack of input validation can cause the program to access an out-of-bounds index in the array"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q3.cpp",
-        "issue_description": "[MEDIUM] Using deprecated function strlen, which can lead to security issues",
-        "suggested_fix": "Use the safer and more modern std::string::size() function instead of strlen.",
-        "source_code": "int s_size =strlen(s), t_size = strlen(t);",
-        "fixed_code": "int s_size = std::string(s).size(); int t_size = std::string(t).size();",
-        "root_cause": "The code uses a deprecated function, which can lead to security issues."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q4.cpp",
-        "issue_description": "[MEDIUM] Using 'using namespace std;' can lead to naming conflicts and pollute the global namespace.",
-        "suggested_fix": "Avoid using 'using namespace std;' and instead use the std:: prefix for standard library elements.",
-        "source_code": "using namespace std;",
-        "fixed_code": "using std::cout; // import only necessary elements",
-        "root_cause": "Using 'using namespace std;' can lead to naming conflicts."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q5.cpp",
-        "issue_description": "[MEDIUM] Missing input validation in main function",
-        "suggested_fix": "Add input validation to ensure user input is within the expected range.",
-        "source_code": "cin >> user_choice;",
-        "fixed_code": "if (!(cin >> user_choice)) { cout << \"Invalid input\"; return 1; }",
-        "root_cause": "The code does not validate user input, which can lead to unexpected behavior or crashes."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q5.cpp",
-        "issue_description": "[MEDIUM] Using deprecated function cin.getline",
-        "suggested_fix": "Use std::getline instead of cin.getline for safer and more efficient input.",
-        "source_code": "cin.getline(str, MAX_SIZE);",
-        "fixed_code": "std::getline(std::cin, str);",
-        "root_cause": "The code uses a deprecated function, which can lead to compatibility issues and security vulnerabilities."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q5.cpp",
-        "issue_description": "[MEDIUM] Missing error handling in converToLanguageB function",
-        "suggested_fix": "Add error handling to handle potential exceptions or errors.",
-        "source_code": "cin.getline(str, MAX_SIZE);",
-        "fixed_code": "if (!std::getline(std::cin, str)) { cout << \"Error reading input\"; return 1; }",
-        "root_cause": "The code does not handle potential errors or exceptions, which can lead to crashes or unexpected behavior."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q1.cpp",
-        "issue_description": "[LOW] Magic number used in the code",
-        "suggested_fix": "Replace the magic number with a named constant",
-        "source_code": "#define N 3",
-        "fixed_code": "const int ARRAY_SIZE = 3;",
-        "root_cause": "The use of magic numbers can make the code less readable and maintainable."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q2.cpp",
-        "issue_description": "[LOW] Using the entire std namespace can lead to naming conflicts",
-        "suggested_fix": "Use the std namespace only for the necessary functions, such as using std::cout instead of using namespace std",
-        "source_code": "using namespace std;",
-        "fixed_code": "using std::cout; using std::cin;",
-        "root_cause": "The use of the entire std namespace can lead to naming conflicts with other libraries or user-defined functions"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q3.cpp",
-        "issue_description": "[LOW] Using namespace std can lead to naming conflicts",
-        "suggested_fix": "Avoid using namespace std and instead use the std:: prefix for standard library functions.",
-        "source_code": "using namespace std;",
-        "fixed_code": "std::cout << ...; std::string ...;",
-        "root_cause": "The code uses a using directive, which can lead to naming conflicts."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q4.cpp",
-        "issue_description": "[LOW] Magic numbers are used in the code, which can make it harder to understand and maintain.",
-        "suggested_fix": "Replace magic numbers with named constants to improve code readability and maintainability.",
-        "source_code": "char arr[35]",
-        "fixed_code": "const int MAX_LENGTH = 35; char arr[MAX_LENGTH];",
-        "root_cause": "Magic numbers are used without clear explanation."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q5.cpp",
-        "issue_description": "[LOW] Using magic numbers in code",
-        "suggested_fix": "Define constants for magic numbers to improve code readability and maintainability.",
-        "source_code": "char sentence[MAX_SIZE];",
-        "fixed_code": "const int MAX_SENTENCE_LENGTH = 100; char sentence[MAX_SENTENCE_LENGTH];",
-        "root_cause": "The code uses magic numbers, which can make the code harder to understand and maintain."
-      }
-    ],
-    "findings_by_file": {
-      "HW4_318725405_213478142_Q1.cpp": [
-        {
-          "file_name": "HW4_318725405_213478142_Q1.cpp",
-          "issue_description": "[HIGH] Potential buffer overflow due to lack of input validation in the sortArray function",
-          "suggested_fix": "Add input validation to ensure the array size does not exceed the defined constant N",
-          "source_code": "void sortArray(int array[][N], int size){...}",
-          "fixed_code": "void sortArray(int array[][N], int size){ if(size > N) { cout << \"Error: Array size exceeds maximum size\"; return; } ...}",
-          "root_cause": "The lack of input validation in the sortArray function can lead to a buffer overflow if the array size exceeds the defined constant N."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q1.cpp",
-          "issue_description": "[MEDIUM] Using namespace std can lead to naming conflicts",
-          "suggested_fix": "Use the std namespace only when necessary, instead of importing the entire namespace",
-          "source_code": "using namespace std;",
-          "fixed_code": "using std::cout; using std::endl;",
-          "root_cause": "The using namespace std directive can lead to naming conflicts if there are other libraries or functions with the same names."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q1.cpp",
-          "issue_description": "[LOW] Magic number used in the code",
-          "suggested_fix": "Replace the magic number with a named constant",
-          "source_code": "#define N 3",
-          "fixed_code": "const int ARRAY_SIZE = 3;",
-          "root_cause": "The use of magic numbers can make the code less readable and maintainable."
-        }
-      ],
-      "HW4_318725405_213478142_Q2.cpp": [
-        {
-          "file_name": "HW4_318725405_213478142_Q2.cpp",
-          "issue_description": "[HIGH] Potential integer overflow in the calculation of the mid index in the binary search function",
-          "suggested_fix": "Use a safer method to calculate the mid index, such as mid = left + (right - left) / 2",
-          "source_code": "mid = (right + left) / 2;",
-          "fixed_code": "mid = left + (right - left) / 2;",
-          "root_cause": "The current calculation can cause an integer overflow when the sum of right and left is greater than the maximum integer value"
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q2.cpp",
-          "issue_description": "[MEDIUM] Lack of input validation for the user-provided number to search",
-          "suggested_fix": "Add input validation to ensure the user-provided number is within the valid range of the array",
-          "source_code": "cin >> num_to_search;",
-          "fixed_code": "cin >> num_to_search; if (num_to_search < 0 || num_to_search > SIZE - 1) { cout << \"Invalid input\"; return 1; }",
-          "root_cause": "The lack of input validation can cause the program to access an out-of-bounds index in the array"
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q2.cpp",
-          "issue_description": "[LOW] Using the entire std namespace can lead to naming conflicts",
-          "suggested_fix": "Use the std namespace only for the necessary functions, such as using std::cout instead of using namespace std",
-          "source_code": "using namespace std;",
-          "fixed_code": "using std::cout; using std::cin;",
-          "root_cause": "The use of the entire std namespace can lead to naming conflicts with other libraries or user-defined functions"
-        }
-      ],
-      "HW4_318725405_213478142_Q3.cpp": [
-        {
-          "file_name": "HW4_318725405_213478142_Q3.cpp",
-          "issue_description": "[HIGH] Potential buffer overflow vulnerability due to lack of input validation in the mystr function",
-          "suggested_fix": "Validate the input strings to prevent buffer overflow attacks. Use safer functions like strncmp or std::string::compare.",
-          "source_code": "int mystr(char s[], char t[]){...}",
-          "fixed_code": "int mystr(const char* s, const char* t){ int s_size = strlen(s); int t_size = strlen(t); if (s_size < 1 || t_size < 1) { return -1; } ...}",
-          "root_cause": "The code lacks input validation, making it vulnerable to buffer overflow attacks."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q3.cpp",
-          "issue_description": "[MEDIUM] Using deprecated function strlen, which can lead to security issues",
-          "suggested_fix": "Use the safer and more modern std::string::size() function instead of strlen.",
-          "source_code": "int s_size =strlen(s), t_size = strlen(t);",
-          "fixed_code": "int s_size = std::string(s).size(); int t_size = std::string(t).size();",
-          "root_cause": "The code uses a deprecated function, which can lead to security issues."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q3.cpp",
-          "issue_description": "[LOW] Using namespace std can lead to naming conflicts",
-          "suggested_fix": "Avoid using namespace std and instead use the std:: prefix for standard library functions.",
-          "source_code": "using namespace std;",
-          "fixed_code": "std::cout << ...; std::string ...;",
-          "root_cause": "The code uses a using directive, which can lead to naming conflicts."
-        }
-      ],
-      "HW4_318725405_213478142_Q4.cpp": [
-        {
-          "file_name": "HW4_318725405_213478142_Q4.cpp",
-          "issue_description": "[HIGH] Potential buffer overflow vulnerability due to the use of strcpy or other unbounded string functions is mitigated here but lack of input validation is still a major concern.",
-          "suggested_fix": "Always validate and sanitize user inputs to prevent potential security vulnerabilities.",
-          "source_code": "char arr[35] = { \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \" };",
-          "fixed_code": "const char* arr = \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \"; // use const and avoid direct array initialization",
-          "root_cause": "Lack of input validation and potential for buffer overflow due to unbounded string functions."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q4.cpp",
-          "issue_description": "[MEDIUM] Using 'using namespace std;' can lead to naming conflicts and pollute the global namespace.",
-          "suggested_fix": "Avoid using 'using namespace std;' and instead use the std:: prefix for standard library elements.",
-          "source_code": "using namespace std;",
-          "fixed_code": "using std::cout; // import only necessary elements",
-          "root_cause": "Using 'using namespace std;' can lead to naming conflicts."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q4.cpp",
-          "issue_description": "[LOW] Magic numbers are used in the code, which can make it harder to understand and maintain.",
-          "suggested_fix": "Replace magic numbers with named constants to improve code readability and maintainability.",
-          "source_code": "char arr[35]",
-          "fixed_code": "const int MAX_LENGTH = 35; char arr[MAX_LENGTH];",
-          "root_cause": "Magic numbers are used without clear explanation."
-        }
-      ],
-      "HW4_318725405_213478142_Q5.cpp": [
-        {
-          "file_name": "HW4_318725405_213478142_Q5.cpp",
-          "issue_description": "[HIGH] Potential buffer overflow vulnerability in converToLanguageB function",
-          "suggested_fix": "Validate user input to prevent buffer overflow. Use std::string instead of char array for dynamic memory allocation.",
-          "source_code": "char new_str[MAX_SIZE *3];",
-          "fixed_code": "std::string new_str;",
-          "root_cause": "The code uses a fixed-size char array to store user input, which can lead to buffer overflow if the input exceeds the array size."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q5.cpp",
-          "issue_description": "[HIGH] Potential buffer overflow vulnerability in convertToPigLatin function",
-          "suggested_fix": "Validate user input to prevent buffer overflow. Use std::string instead of char array for dynamic memory allocation.",
-          "source_code": "char word[MAX_SIZE];",
-          "fixed_code": "std::string word;",
-          "root_cause": "The code uses a fixed-size char array to store user input, which can lead to buffer overflow if the input exceeds the array size."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q5.cpp",
-          "issue_description": "[MEDIUM] Missing input validation in main function",
-          "suggested_fix": "Add input validation to ensure user input is within the expected range.",
-          "source_code": "cin >> user_choice;",
-          "fixed_code": "if (!(cin >> user_choice)) { cout << \"Invalid input\"; return 1; }",
-          "root_cause": "The code does not validate user input, which can lead to unexpected behavior or crashes."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q5.cpp",
-          "issue_description": "[MEDIUM] Using deprecated function cin.getline",
-          "suggested_fix": "Use std::getline instead of cin.getline for safer and more efficient input.",
-          "source_code": "cin.getline(str, MAX_SIZE);",
-          "fixed_code": "std::getline(std::cin, str);",
-          "root_cause": "The code uses a deprecated function, which can lead to compatibility issues and security vulnerabilities."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q5.cpp",
-          "issue_description": "[MEDIUM] Missing error handling in converToLanguageB function",
-          "suggested_fix": "Add error handling to handle potential exceptions or errors.",
-          "source_code": "cin.getline(str, MAX_SIZE);",
-          "fixed_code": "if (!std::getline(std::cin, str)) { cout << \"Error reading input\"; return 1; }",
-          "root_cause": "The code does not handle potential errors or exceptions, which can lead to crashes or unexpected behavior."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q5.cpp",
-          "issue_description": "[LOW] Using magic numbers in code",
-          "suggested_fix": "Define constants for magic numbers to improve code readability and maintainability.",
-          "source_code": "char sentence[MAX_SIZE];",
-          "fixed_code": "const int MAX_SENTENCE_LENGTH = 100; char sentence[MAX_SENTENCE_LENGTH];",
-          "root_cause": "The code uses magic numbers, which can make the code harder to understand and maintain."
-        }
-      ]
-    },
-    "username": "yagil",
-    "improvement_suggestions": [],
-    "source": "local_upload"
-  },
-  {
-    "scan_id": "c873c02a-e995-41b3-95d4-484134dac526",
-    "timestamp": "2026-04-05 21:34:06",
-    "persona": "Professional",
-    "provider": "auto",
-    "status": "VULNERABLE",
-    "stats": {
-      "High": 7,
-      "Medium": 7,
-      "Low": 4,
-      "Safe": 0,
-      "Vuln": 5,
-      "Error": 0
-    },
-    "findings": [
-      {
-        "file_name": "HW4_318725405_213478142_Q1.cpp",
-        "issue_description": "[HIGH] Potential buffer overflow due to lack of input validation in the sortArray function",
-        "suggested_fix": "Add input validation to ensure the array size does not exceed the defined constant N",
-        "source_code": "void sortArray(int array[][N], int size){...}",
-        "fixed_code": "void sortArray(int array[][N], int size){ if(size > N) { cout << \"Error: Array size exceeds maximum size\"; return; } ...}",
-        "root_cause": "The lack of input validation in the sortArray function can lead to a potential buffer overflow"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q2.cpp",
-        "issue_description": "[HIGH] Potential integer overflow in the calculation of the mid index in the binary search function",
-        "suggested_fix": "Use a safer method to calculate the mid index, such as mid = left + (right - left) / 2",
-        "source_code": "mid = (right + left) / 2;",
-        "fixed_code": "mid = left + (right - left) / 2;",
-        "root_cause": "The current calculation can cause an integer overflow when the sum of right and left is greater than the maximum value that can be stored in an integer"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q3.cpp",
-        "issue_description": "[HIGH] Potential buffer overflow vulnerability due to lack of bounds checking in the mystr function",
-        "suggested_fix": "Add bounds checking to prevent buffer overflow",
-        "source_code": "int mystr(char s[], char t[]){...}",
-        "fixed_code": "int mystr(const char *s, const char *t){\n    size_t s_size = strlen(s), t_size = strlen(t);\n    if (s_size == 0 || t_size == 0) {\n        return -1;\n    }\n    if (t_size > s_size) {\n        return 0;\n    }\n    int count = 0;\n    for (size_t i = 0; i <= s_size - t_size; i++) {\n        bool found = true;\n        size_t index = 0;\n        while(index < t_size && found)  {\n            if (s[i + index] != t[index]) {\n                found = false;\n            }\n            else {\n                index++;\n            }\n        }\n        if (found) {\n            count++;\n        }\n    }\n    return count;\n}",
-        "root_cause": "Lack of bounds checking in the mystr function"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q3.cpp",
-        "issue_description": "[HIGH] Potential null pointer dereference due to lack of null checks in the mystr function",
-        "suggested_fix": "Add null checks to prevent null pointer dereference",
-        "source_code": "int mystr(char s[], char t[]){...}",
-        "fixed_code": "int mystr(const char *s, const char *t){\n    if (s == NULL || t == NULL) {\n        return -1;\n    }\n    size_t s_size = strlen(s), t_size = strlen(t);\n    if (s_size == 0 || t_size == 0) {\n        return -1;\n    }\n    if (t_size > s_size) {\n        return 0;\n    }\n    int count = 0;\n    for (size_t i = 0; i <= s_size - t_size; i++) {\n        bool found = true;\n        size_t index = 0;\n        while(index < t_size && found)  {\n            if (s[i + index] != t[index]) {\n                found = false;\n            }\n            else {\n                index++;\n            }\n        }\n        if (found) {\n            count++;\n        }\n    }\n    return count;\n}",
-        "root_cause": "Lack of null checks in the mystr function"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q4.cpp",
-        "issue_description": "[HIGH] Potential buffer overflow vulnerability due to the use of a fixed-size array and lack of bounds checking in the printDecrypted function.",
-        "suggested_fix": "Use std::string instead of char arrays and validate user input to prevent buffer overflows.",
-        "source_code": "char arr[35] = { \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \" };",
-        "fixed_code": "std::string arr = \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \";"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q5.cpp",
-        "issue_description": "[HIGH] Potential buffer overflow vulnerability in converToLanguageB function",
-        "suggested_fix": "Use std::string instead of char arrays to avoid buffer overflow",
-        "source_code": "char new_str[MAX_SIZE *3];",
-        "fixed_code": "std::string new_str;",
-        "root_cause": "The use of fixed-size char arrays can lead to buffer overflow when the input exceeds the expected size."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q5.cpp",
-        "issue_description": "[HIGH] Potential buffer overflow vulnerability in convertToPigLatin function",
-        "suggested_fix": "Use std::string instead of char arrays to avoid buffer overflow",
-        "source_code": "char word[MAX_SIZE];",
-        "fixed_code": "std::string word;",
-        "root_cause": "The use of fixed-size char arrays can lead to buffer overflow when the input exceeds the expected size."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q1.cpp",
-        "issue_description": "[MEDIUM] Using namespace std can lead to naming conflicts and pollute the global namespace",
-        "suggested_fix": "Use the std namespace only where necessary, instead of importing the entire namespace",
-        "source_code": "using namespace std;",
-        "fixed_code": "using std::cout; using std::endl;",
-        "root_cause": "The using namespace std directive can lead to naming conflicts and pollute the global namespace"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q2.cpp",
-        "issue_description": "[MEDIUM] Lack of input validation for the user-provided number to search",
-        "suggested_fix": "Add input validation to ensure the user-provided number is within the valid range of the array",
-        "source_code": "cin >> num_to_search;",
-        "fixed_code": "cin >> num_to_search; if (num_to_search < 0 || num_to_search > SIZE - 1) { cout << \"Invalid input\"; return 1; }",
-        "root_cause": "The lack of input validation can cause the program to access an out-of-bounds index in the array"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q3.cpp",
-        "issue_description": "[MEDIUM] Potential information disclosure due to use of deprecated string.h header",
-        "suggested_fix": "Use the cstring header instead of string.h",
-        "source_code": "#include <string.h>",
-        "fixed_code": "#include <cstring>",
-        "root_cause": "Use of deprecated string.h header"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q4.cpp",
-        "issue_description": "[MEDIUM] Insecure use of namespace std, which can lead to naming conflicts and make the code harder to maintain.",
-        "suggested_fix": "Use the std:: prefix for standard library functions and objects instead of importing the entire namespace.",
-        "source_code": "using namespace std;",
-        "fixed_code": "std::cout, std::string, etc."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q5.cpp",
-        "issue_description": "[MEDIUM] Missing input validation in converToLanguageB function",
-        "suggested_fix": "Add input validation to check for null or empty input",
-        "source_code": "cin.getline(str, MAX_SIZE);",
-        "fixed_code": "if (cin.getline(str, MAX_SIZE)) { // input validation }",
-        "root_cause": "The lack of input validation can lead to unexpected behavior or crashes when invalid input is provided."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q5.cpp",
-        "issue_description": "[MEDIUM] Missing input validation in convertToPigLatin function",
-        "suggested_fix": "Add input validation to check for null or empty input",
-        "source_code": "cin.getline(str, MAX_SIZE);",
-        "fixed_code": "if (cin.getline(str, MAX_SIZE)) { // input validation }",
-        "root_cause": "The lack of input validation can lead to unexpected behavior or crashes when invalid input is provided."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q5.cpp",
-        "issue_description": "[MEDIUM] Using namespace std can lead to naming conflicts",
-        "suggested_fix": "Use the std:: prefix instead of using namespace std",
-        "source_code": "using namespace std;",
-        "fixed_code": "std::cout, std::string, etc.",
-        "root_cause": "The use of using namespace std can lead to naming conflicts with other libraries or custom code."
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q1.cpp",
-        "issue_description": "[LOW] Magic number used in the code, which can make the code less readable and maintainable",
-        "suggested_fix": "Replace the magic number with a named constant",
-        "source_code": "#define N 3",
-        "fixed_code": "#define ARRAY_SIZE 3",
-        "root_cause": "The use of magic numbers can make the code less readable and maintainable"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q2.cpp",
-        "issue_description": "[LOW] Using the entire std namespace can lead to naming conflicts",
-        "suggested_fix": "Use the std namespace only for the necessary functions, such as using std::cout instead of using namespace std",
-        "source_code": "using namespace std;",
-        "fixed_code": "using std::cout; using std::cin;",
-        "root_cause": "The use of the entire std namespace can lead to naming conflicts with other libraries or user-defined functions"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q4.cpp",
-        "issue_description": "[LOW] Magic numbers are used in the code, which can make it harder to understand and maintain.",
-        "suggested_fix": "Define named constants for magic numbers to improve code readability and maintainability.",
-        "source_code": "char arr[35]",
-        "fixed_code": "const int ARRAY_SIZE = 35; char arr[ARRAY_SIZE];"
-      },
-      {
-        "file_name": "HW4_318725405_213478142_Q5.cpp",
-        "issue_description": "[LOW] Magic number used in code",
-        "suggested_fix": "Define a constant for the magic number",
-        "source_code": "#define MAX_SIZE 100",
-        "fixed_code": "const int MAX_SIZE = 100;",
-        "root_cause": "The use of magic numbers can make the code harder to understand and maintain."
-      }
-    ],
-    "findings_by_file": {
-      "HW4_318725405_213478142_Q1.cpp": [
-        {
-          "file_name": "HW4_318725405_213478142_Q1.cpp",
-          "issue_description": "[HIGH] Potential buffer overflow due to lack of input validation in the sortArray function",
-          "suggested_fix": "Add input validation to ensure the array size does not exceed the defined constant N",
-          "source_code": "void sortArray(int array[][N], int size){...}",
-          "fixed_code": "void sortArray(int array[][N], int size){ if(size > N) { cout << \"Error: Array size exceeds maximum size\"; return; } ...}",
-          "root_cause": "The lack of input validation in the sortArray function can lead to a potential buffer overflow"
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q1.cpp",
-          "issue_description": "[MEDIUM] Using namespace std can lead to naming conflicts and pollute the global namespace",
-          "suggested_fix": "Use the std namespace only where necessary, instead of importing the entire namespace",
-          "source_code": "using namespace std;",
-          "fixed_code": "using std::cout; using std::endl;",
-          "root_cause": "The using namespace std directive can lead to naming conflicts and pollute the global namespace"
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q1.cpp",
-          "issue_description": "[LOW] Magic number used in the code, which can make the code less readable and maintainable",
-          "suggested_fix": "Replace the magic number with a named constant",
-          "source_code": "#define N 3",
-          "fixed_code": "#define ARRAY_SIZE 3",
-          "root_cause": "The use of magic numbers can make the code less readable and maintainable"
-        }
-      ],
-      "HW4_318725405_213478142_Q2.cpp": [
-        {
-          "file_name": "HW4_318725405_213478142_Q2.cpp",
-          "issue_description": "[HIGH] Potential integer overflow in the calculation of the mid index in the binary search function",
-          "suggested_fix": "Use a safer method to calculate the mid index, such as mid = left + (right - left) / 2",
-          "source_code": "mid = (right + left) / 2;",
-          "fixed_code": "mid = left + (right - left) / 2;",
-          "root_cause": "The current calculation can cause an integer overflow when the sum of right and left is greater than the maximum value that can be stored in an integer"
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q2.cpp",
-          "issue_description": "[MEDIUM] Lack of input validation for the user-provided number to search",
-          "suggested_fix": "Add input validation to ensure the user-provided number is within the valid range of the array",
-          "source_code": "cin >> num_to_search;",
-          "fixed_code": "cin >> num_to_search; if (num_to_search < 0 || num_to_search > SIZE - 1) { cout << \"Invalid input\"; return 1; }",
-          "root_cause": "The lack of input validation can cause the program to access an out-of-bounds index in the array"
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q2.cpp",
-          "issue_description": "[LOW] Using the entire std namespace can lead to naming conflicts",
-          "suggested_fix": "Use the std namespace only for the necessary functions, such as using std::cout instead of using namespace std",
-          "source_code": "using namespace std;",
-          "fixed_code": "using std::cout; using std::cin;",
-          "root_cause": "The use of the entire std namespace can lead to naming conflicts with other libraries or user-defined functions"
-        }
-      ],
-      "HW4_318725405_213478142_Q3.cpp": [
-        {
-          "file_name": "HW4_318725405_213478142_Q3.cpp",
-          "issue_description": "[HIGH] Potential buffer overflow vulnerability due to lack of bounds checking in the mystr function",
-          "suggested_fix": "Add bounds checking to prevent buffer overflow",
-          "source_code": "int mystr(char s[], char t[]){...}",
-          "fixed_code": "int mystr(const char *s, const char *t){\n    size_t s_size = strlen(s), t_size = strlen(t);\n    if (s_size == 0 || t_size == 0) {\n        return -1;\n    }\n    if (t_size > s_size) {\n        return 0;\n    }\n    int count = 0;\n    for (size_t i = 0; i <= s_size - t_size; i++) {\n        bool found = true;\n        size_t index = 0;\n        while(index < t_size && found)  {\n            if (s[i + index] != t[index]) {\n                found = false;\n            }\n            else {\n                index++;\n            }\n        }\n        if (found) {\n            count++;\n        }\n    }\n    return count;\n}",
-          "root_cause": "Lack of bounds checking in the mystr function"
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q3.cpp",
-          "issue_description": "[HIGH] Potential null pointer dereference due to lack of null checks in the mystr function",
-          "suggested_fix": "Add null checks to prevent null pointer dereference",
-          "source_code": "int mystr(char s[], char t[]){...}",
-          "fixed_code": "int mystr(const char *s, const char *t){\n    if (s == NULL || t == NULL) {\n        return -1;\n    }\n    size_t s_size = strlen(s), t_size = strlen(t);\n    if (s_size == 0 || t_size == 0) {\n        return -1;\n    }\n    if (t_size > s_size) {\n        return 0;\n    }\n    int count = 0;\n    for (size_t i = 0; i <= s_size - t_size; i++) {\n        bool found = true;\n        size_t index = 0;\n        while(index < t_size && found)  {\n            if (s[i + index] != t[index]) {\n                found = false;\n            }\n            else {\n                index++;\n            }\n        }\n        if (found) {\n            count++;\n        }\n    }\n    return count;\n}",
-          "root_cause": "Lack of null checks in the mystr function"
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q3.cpp",
-          "issue_description": "[MEDIUM] Potential information disclosure due to use of deprecated string.h header",
-          "suggested_fix": "Use the cstring header instead of string.h",
-          "source_code": "#include <string.h>",
-          "fixed_code": "#include <cstring>",
-          "root_cause": "Use of deprecated string.h header"
-        }
-      ],
-      "HW4_318725405_213478142_Q4.cpp": [
-        {
-          "file_name": "HW4_318725405_213478142_Q4.cpp",
-          "issue_description": "[HIGH] Potential buffer overflow vulnerability due to the use of a fixed-size array and lack of bounds checking in the printDecrypted function.",
-          "suggested_fix": "Use std::string instead of char arrays and validate user input to prevent buffer overflows.",
-          "source_code": "char arr[35] = { \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \" };",
-          "fixed_code": "std::string arr = \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \";"
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q4.cpp",
-          "issue_description": "[MEDIUM] Insecure use of namespace std, which can lead to naming conflicts and make the code harder to maintain.",
-          "suggested_fix": "Use the std:: prefix for standard library functions and objects instead of importing the entire namespace.",
-          "source_code": "using namespace std;",
-          "fixed_code": "std::cout, std::string, etc."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q4.cpp",
-          "issue_description": "[LOW] Magic numbers are used in the code, which can make it harder to understand and maintain.",
-          "suggested_fix": "Define named constants for magic numbers to improve code readability and maintainability.",
-          "source_code": "char arr[35]",
-          "fixed_code": "const int ARRAY_SIZE = 35; char arr[ARRAY_SIZE];"
-        }
-      ],
-      "HW4_318725405_213478142_Q5.cpp": [
-        {
-          "file_name": "HW4_318725405_213478142_Q5.cpp",
-          "issue_description": "[HIGH] Potential buffer overflow vulnerability in converToLanguageB function",
-          "suggested_fix": "Use std::string instead of char arrays to avoid buffer overflow",
-          "source_code": "char new_str[MAX_SIZE *3];",
-          "fixed_code": "std::string new_str;",
-          "root_cause": "The use of fixed-size char arrays can lead to buffer overflow when the input exceeds the expected size."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q5.cpp",
-          "issue_description": "[HIGH] Potential buffer overflow vulnerability in convertToPigLatin function",
-          "suggested_fix": "Use std::string instead of char arrays to avoid buffer overflow",
-          "source_code": "char word[MAX_SIZE];",
-          "fixed_code": "std::string word;",
-          "root_cause": "The use of fixed-size char arrays can lead to buffer overflow when the input exceeds the expected size."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q5.cpp",
-          "issue_description": "[MEDIUM] Missing input validation in converToLanguageB function",
-          "suggested_fix": "Add input validation to check for null or empty input",
-          "source_code": "cin.getline(str, MAX_SIZE);",
-          "fixed_code": "if (cin.getline(str, MAX_SIZE)) { // input validation }",
-          "root_cause": "The lack of input validation can lead to unexpected behavior or crashes when invalid input is provided."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q5.cpp",
-          "issue_description": "[MEDIUM] Missing input validation in convertToPigLatin function",
-          "suggested_fix": "Add input validation to check for null or empty input",
-          "source_code": "cin.getline(str, MAX_SIZE);",
-          "fixed_code": "if (cin.getline(str, MAX_SIZE)) { // input validation }",
-          "root_cause": "The lack of input validation can lead to unexpected behavior or crashes when invalid input is provided."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q5.cpp",
-          "issue_description": "[MEDIUM] Using namespace std can lead to naming conflicts",
-          "suggested_fix": "Use the std:: prefix instead of using namespace std",
-          "source_code": "using namespace std;",
-          "fixed_code": "std::cout, std::string, etc.",
-          "root_cause": "The use of using namespace std can lead to naming conflicts with other libraries or custom code."
-        },
-        {
-          "file_name": "HW4_318725405_213478142_Q5.cpp",
-          "issue_description": "[LOW] Magic number used in code",
-          "suggested_fix": "Define a constant for the magic number",
-          "source_code": "#define MAX_SIZE 100",
-          "fixed_code": "const int MAX_SIZE = 100;",
-          "root_cause": "The use of magic numbers can make the code harder to understand and maintain."
-        }
-      ]
-    },
-    "username": "yagil",
-    "improvement_suggestions": [],
-    "source": "local_upload"
-  },
-  {
-    "scan_id": "b766b51c-6316-46da-9c7c-4283f190f097",
-    "timestamp": "2026-04-05 21:44:01",
-    "persona": "Professional",
-    "provider": "auto",
-    "status": "VULNERABLE",
-    "stats": {
-      "High": 0,
-      "Medium": 0,
-      "Low": 2,
-      "Safe": 2,
-      "Vuln": 0,
-      "Error": 0
-    },
-    "findings": [
-      {
-        "file_name": "app.py",
-        "issue_description": "Raw Response (Could not parse proper JSON)",
-        "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
-      },
-      {
-        "file_name": "utils.py",
-        "issue_description": "Raw Response (Could not parse proper JSON)",
-        "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
-      }
-    ],
-    "findings_by_file": {
-      "app.py": [
-        {
-          "file_name": "app.py",
-          "issue_description": "Raw Response (Could not parse proper JSON)",
-          "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
-        }
-      ],
-      "utils.py": [
-        {
-          "file_name": "utils.py",
-          "issue_description": "Raw Response (Could not parse proper JSON)",
-          "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
-        }
-      ]
-    },
-    "username": "tst2",
-    "improvement_suggestions": [],
-    "source": "local_upload"
-  }
 ]
