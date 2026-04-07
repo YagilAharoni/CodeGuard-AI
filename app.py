@@ -4,6 +4,11 @@ import os
 import time
 import uuid
 import threading
+from dotenv import load_dotenv
+
+# Load environment variables from .env file (for local development)
+load_dotenv()
+
 from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, Request, Form, UploadFile, File
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -30,6 +35,16 @@ logger = logging.getLogger(__name__)
 # --- Environments & Health ---
 ENV_MODE = os.getenv("ENV_MODE", "development")
 DEBUG_MODE = ENV_MODE == "development"
+
+# --- Resource Limits ---
+MAX_FILES_PER_SCAN = 20          # Maximum number of files allowed per scan
+MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB per individual file
+MAX_TOTAL_SCAN_SIZE = 10 * 1024 * 1024  # 10 MB total across all files
+
+# --- Server-side Default AI Key ---
+# Users don't need their own API key — the server provides a Groq key as default.
+# Set DEFAULT_GROQ_API_KEY in your Railway environment variables.
+DEFAULT_GROQ_API_KEY = os.getenv("DEFAULT_GROQ_API_KEY", "")
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="CodeGuard AI Backend API", debug=DEBUG_MODE)
@@ -677,7 +692,7 @@ def process_file_content(files: List[UploadFile]) -> List[Dict]:
     return files_to_scan
 
 @app.post("/analyze")
-@limiter.limit("5/minute")
+@limiter.limit("10/hour")
 async def analyze_endpoint(
     request: Request,
     files: List[UploadFile] = File(...),
@@ -688,12 +703,12 @@ async def analyze_endpoint(
 ):
     try:
         logger.info(f"=== ANALYZE REQUEST START ===")
-        logger.info(f"API Key received: {api_key}")
-        logger.info(f"API Key type: {type(api_key)}")
-        logger.info(f"API Key is None: {api_key is None}")
-        logger.info(f"API Key is empty: {api_key == ''}")
-        if api_key:
-            logger.info(f"API Key first 20 chars: {api_key[:20]}")
+        # Resolve effective API key: user-supplied > server default
+        effective_key = (api_key or "").strip() or DEFAULT_GROQ_API_KEY or ""
+        using_server_key = bool(not (api_key or "").strip() and DEFAULT_GROQ_API_KEY)
+        logger.info(f"API Key source: {'user-supplied' if not using_server_key else 'server-default-groq'}")
+        if effective_key:
+            logger.info(f"Effective API Key first 10 chars: {effective_key[:10]}...")
         logger.info(f"Persona: {persona}")
         logger.info(f"Provider: {provider}")
         
@@ -709,8 +724,8 @@ async def analyze_endpoint(
              
         individual_results = []
         for f in files_to_scan:
-            logger.info(f"Analyzing file: {f['name']} with API KEY: {api_key[:10] if api_key else 'NONE'}...")
-            res = analyze_code_logic(f["name"], f["content"], api_key, persona, provider)
+            logger.info(f"Analyzing file: {f['name']} with key: {effective_key[:10] if effective_key else 'NONE'}...")
+            res = analyze_code_logic(f["name"], f["content"], effective_key, persona, provider)
             individual_results.append(res)
         
         # Combine all individual results into a single report
@@ -772,7 +787,7 @@ async def analyze_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/analyze-github")
-@limiter.limit("5/minute")
+@limiter.limit("10/hour")
 async def analyze_github_endpoint(
     request: Request,
     github_url: str = Form(...),
@@ -781,6 +796,8 @@ async def analyze_github_endpoint(
     provider: Optional[str] = Form(None),
     username: Optional[str] = Form(None)
 ):
+    # Resolve effective API key: user-supplied > server default
+    api_key = (api_key or "").strip() or DEFAULT_GROQ_API_KEY or ""
     try:
         # Advanced URL parsing: handle both owner/repo and owner/repo/tree/branch
         clean_url = github_url.split('?')[0].rstrip('/')
@@ -1019,6 +1036,206 @@ async def export_pdf_endpoint(request: Request, report_id: str, username: Option
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
 
+# ---------------------------------------------------------------------------
+# Dependency Vulnerability Scanner
+# ---------------------------------------------------------------------------
+import re as _re
+
+def parse_dependencies(files_content: List[Dict]) -> Dict[str, List[str]]:
+    """
+    Parse import/require/include statements from source files.
+    Returns a dict: { 'PyPI': [...], 'npm': [...], 'C/C++': [...] }
+    """
+    ecosystems: Dict[str, set] = {"PyPI": set(), "npm": set(), "C/C++": set()}
+    
+    for file_entry in files_content:
+        name = file_entry.get("name", "")
+        content = file_entry.get("content", "")
+        ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+        
+        if ext == "py":
+            # import X, from X import Y
+            for m in _re.finditer(r'^(?:import|from)\s+([\w\.]+)', content, _re.MULTILINE):
+                pkg = m.group(1).split(".")[0]  # top-level package only
+                if pkg and not pkg.startswith("_"):
+                    ecosystems["PyPI"].add(pkg)
+        elif ext in ("js", "ts", "jsx", "tsx"):
+            # require('X') or import ... from 'X'
+            for m in _re.finditer(r'''(?:require|from)\s*[\('"]([^\./\'"][^\'"]*)[\'"]''', content):
+                pkg = m.group(1).split("/")[0]  # strip sub-paths
+                if pkg:
+                    ecosystems["npm"].add(pkg)
+        elif ext in ("cpp", "c", "h"):
+            # #include <X> or #include "X"
+            for m in _re.finditer(r'#include\s*[<"]([^>"]+)[>"]', content):
+                ecosystems["C/C++"].add(m.group(1))
+    
+    return {k: sorted(v) for k, v in ecosystems.items() if v}
+
+
+def query_osv_batch(packages: List[Dict]) -> List[Dict]:
+    """Query OSV.dev batch API for vulnerability data."""
+    if not packages:
+        return []
+    try:
+        payload = {"queries": packages}
+        resp = requests.post(
+            "https://api.osv.dev/v1/querybatch",
+            json=payload,
+            timeout=15
+        )
+        resp.raise_for_status()
+        return resp.json().get("results", [])
+    except Exception as e:
+        logger.error(f"OSV.dev query failed: {e}")
+        return []
+
+
+# Standard library packages to skip (not real dependencies)
+STD_LIB_SKIP = {
+    # Python
+    "os", "sys", "json", "time", "re", "io", "uuid", "threading", "logging",
+    "typing", "datetime", "pathlib", "collections", "itertools", "functools",
+    "math", "random", "string", "hashlib", "hmac", "base64", "struct",
+    "copy", "abc", "enum", "dataclasses", "contextlib", "traceback",
+    "urllib", "http", "socket", "ssl", "email", "html", "xml", "csv",
+    "sqlite3", "pickle", "shelve", "gzip", "zipfile", "tarfile",
+    "subprocess", "shutil", "tempfile", "glob", "fnmatch", "stat",
+    "platform", "argparse", "inspect", "ast", "dis", "importlib",
+    "unittest", "doctest", "pdb", "profile", "timeit", "gc",
+    # C/C++ standard headers
+    "stdio.h", "stdlib.h", "string.h", "math.h", "time.h", "stdint.h",
+    "stdbool.h", "stddef.h", "limits.h", "float.h", "ctype.h",
+    "assert.h", "errno.h", "signal.h", "setjmp.h", "locale.h",
+    "iostream", "vector", "string", "map", "set", "algorithm",
+    "memory", "functional", "utility", "tuple", "array", "list",
+    "queue", "stack", "deque", "bitset", "chrono", "thread", "mutex",
+    "fstream", "sstream", "iomanip", "stdexcept", "exception", "typeinfo",
+    # Node/browser built-ins
+    "fs", "path", "os", "http", "https", "url", "crypto", "events",
+    "stream", "buffer", "util", "net", "dns", "child_process", "cluster",
+    "readline", "repl", "vm", "zlib", "assert", "timers", "console",
+    "process", "module", "require",
+}
+
+
+@app.post("/scan-dependencies")
+@limiter.limit("10/hour")
+async def scan_dependencies_endpoint(
+    request: Request,
+    files: List[UploadFile] = File(...),
+):
+    """Parse imports from uploaded files and check OSV.dev for known CVEs."""
+    try:
+        files_content = process_file_content(files)
+        if not files_content:
+            return JSONResponse(status_code=400, content={"message": "No parseable files found."})
+        
+        ecosystem_map = parse_dependencies(files_content)
+        logger.info(f"Detected ecosystems/packages: { {k: len(v) for k, v in ecosystem_map.items()} }")
+        
+        # Build OSV batch queries
+        queries = []
+        query_meta = []  # keep track of which pkg/ecosystem each query maps to
+        
+        osv_ecosystem_map = {"PyPI": "PyPI", "npm": "npm", "C/C++": ""}
+        
+        for ecosystem, pkgs in ecosystem_map.items():
+            osv_eco = osv_ecosystem_map.get(ecosystem, "")
+            for pkg in pkgs:
+                if pkg.lower() in STD_LIB_SKIP:
+                    continue
+                if osv_eco:
+                    queries.append({"package": {"name": pkg, "ecosystem": osv_eco}})
+                else:
+                    # C/C++ — search by package name only (no ecosystem)
+                    queries.append({"package": {"name": pkg}})
+                query_meta.append({"package": pkg, "ecosystem": ecosystem})
+        
+        osv_results = query_osv_batch(queries)
+        
+        # Build response
+        vulnerable = []
+        safe = []
+        
+        for i, result in enumerate(osv_results):
+            if i >= len(query_meta):
+                break
+            meta = query_meta[i]
+            advisories_raw = result.get("vulns", [])
+            
+            if advisories_raw:
+                advisories = []
+                for vuln in advisories_raw[:5]:  # cap at 5 per package
+                    severity = "UNKNOWN"
+                    # Try to extract severity from CVSS
+                    for sev_entry in vuln.get("severity", []):
+                        score_str = sev_entry.get("score", "")
+                        if score_str:
+                            try:
+                                score = float(score_str)
+                                if score >= 9.0: severity = "CRITICAL"
+                                elif score >= 7.0: severity = "HIGH"
+                                elif score >= 4.0: severity = "MEDIUM"
+                                else: severity = "LOW"
+                            except (ValueError, TypeError):
+                                pass
+                            break
+                    # Fallback: check database-specific severity
+                    if severity == "UNKNOWN":
+                        db_sev = vuln.get("database_specific", {}).get("severity", "")
+                        if db_sev:
+                            severity = db_sev.upper()
+                    
+                    # Get fixed version from affected ranges
+                    fixed_in = None
+                    for affected in vuln.get("affected", []):
+                        for r in affected.get("ranges", []):
+                            for event in r.get("events", []):
+                                if "fixed" in event:
+                                    fixed_in = event["fixed"]
+                                    break
+                            if fixed_in:
+                                break
+                        if fixed_in:
+                            break
+                    
+                    advisories.append({
+                        "id": vuln.get("id", ""),
+                        "summary": vuln.get("summary", "No summary available.")[:200],
+                        "severity": severity,
+                        "fixed_in": fixed_in,
+                        "url": f"https://osv.dev/vulnerability/{vuln.get('id', '')}"
+                    })
+                
+                vulnerable.append({
+                    "package": meta["package"],
+                    "ecosystem": meta["ecosystem"],
+                    "advisory_count": len(advisories_raw),
+                    "advisories": advisories
+                })
+            else:
+                safe.append({"package": meta["package"], "ecosystem": meta["ecosystem"]})
+        
+        # Packages that were skipped (stdlib)
+        skipped_count = sum(
+            1 for eco_pkgs in ecosystem_map.values()
+            for p in eco_pkgs if p.lower() in STD_LIB_SKIP
+        )
+        
+        return JSONResponse(content={
+            "vulnerable": vulnerable,
+            "safe": safe,
+            "skipped_stdlib_count": skipped_count,
+            "total_checked": len(queries),
+        })
+    
+    except Exception as e:
+        logger.error(f"Dependency scan error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=(ENV_MODE == "development"))

@@ -1,9 +1,8 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
-import { useScan } from "../hooks/useScan";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-
+import { useScan, DependencyScanResult, VulnerablePackage } from "../hooks/useScan";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 const getSeverityColor = (severity: string): string => {
   const upper = severity.toUpperCase();
   if (upper.includes("HIGH")) return "text-red-500";
@@ -27,6 +26,197 @@ const getSeverityBadgeColor = (severity: string): string => {
   if (upper.includes("ERROR")) return "bg-orange-500/30 text-orange-400";
   return "bg-blue-500/30 text-blue-400";
 };
+
+// --- Severity badge for CVE severity levels ---
+const getCveSeverityBadge = (severity: string) => {
+  const s = severity.toUpperCase();
+  if (s === "CRITICAL") return "bg-red-900/60 text-red-300 border border-red-500/40";
+  if (s === "HIGH") return "bg-red-500/20 text-red-400 border border-red-500/30";
+  if (s === "MEDIUM") return "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30";
+  if (s === "LOW") return "bg-blue-500/20 text-blue-400 border border-blue-500/30";
+  return "bg-gray-500/20 text-gray-400 border border-gray-500/30";
+};
+
+// --- Dependency Audit Panel ---
+const DependencyAuditPanel = ({
+  files,
+  scanDependencies,
+  isDepScanning,
+  depResults,
+}: {
+  files: FileList | null;
+  scanDependencies: (files: FileList) => void;
+  isDepScanning: boolean;
+  depResults: DependencyScanResult | null;
+}) => {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  const togglePkg = (pkg: string) => {
+    const next = new Set(expanded);
+    if (next.has(pkg)) next.delete(pkg); else next.add(pkg);
+    setExpanded(next);
+  };
+
+  return (
+    <div className="mb-10 rounded-2xl border border-[#30363d] overflow-hidden bg-[#0d1117]">
+      {/* Header */}
+      <div className="flex items-center justify-between p-5 bg-[#161b22] border-b border-[#30363d]">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500/30 to-red-600/30 border border-orange-500/30 flex items-center justify-center">
+            <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.618 5.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016zM12 9v2m0 4h.01" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-white">Dependency CVE Audit</h3>
+            <p className="text-xs text-gray-500">Real-time vulnerability check via OSV.dev database</p>
+          </div>
+        </div>
+        {files && (
+          <button
+            id="dep-scan-btn"
+            onClick={() => scanDependencies(files)}
+            disabled={isDepScanning}
+            className={`px-5 py-2 rounded-lg font-bold text-sm transition-all border ${
+              isDepScanning
+                ? "bg-white/5 border-white/10 text-gray-500 cursor-not-allowed animate-pulse"
+                : "bg-gradient-to-r from-orange-600/80 to-red-600/80 border-orange-500/40 text-white hover:scale-105 shadow-lg shadow-orange-500/10"
+            }`}
+          >
+            {isDepScanning ? "⏳ Scanning..." : "🔍 Scan Dependencies"}
+          </button>
+        )}
+      </div>
+
+      {/* Not yet scanned */}
+      {!depResults && !isDepScanning && (
+        <div className="p-8 text-center">
+          <div className="text-3xl mb-3 opacity-40">📦</div>
+          <p className="text-gray-500 text-sm">Click <span className="text-orange-400 font-semibold">Scan Dependencies</span> to check all detected packages against the OSV.dev CVE database.</p>
+          <p className="text-xs text-gray-600 mt-1">Supports Python (PyPI), JavaScript/TypeScript (npm), and C/C++ imports.</p>
+        </div>
+      )}
+
+      {/* Scanning loader */}
+      {isDepScanning && (
+        <div className="p-8 text-center">
+          <div className="flex items-center justify-center gap-3 text-orange-400">
+            <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+            </svg>
+            <span className="text-sm font-semibold">Querying OSV.dev database...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Results */}
+      {depResults && !isDepScanning && (
+        <div className="p-5 space-y-4">
+          {/* Summary bar */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
+              <div className="text-2xl font-black text-red-400">{depResults.vulnerable.length}</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">Vulnerable</div>
+            </div>
+            <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-center">
+              <div className="text-2xl font-black text-green-400">{depResults.safe.length}</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">Clean</div>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
+              <div className="text-2xl font-black text-gray-300">{depResults.total_checked}</div>
+              <div className="text-xs text-gray-500 uppercase tracking-wide">Checked</div>
+            </div>
+          </div>
+
+          {/* Vulnerable packages */}
+          {depResults.vulnerable.length > 0 ? (
+            <div className="space-y-3">
+              <h4 className="text-sm font-bold text-red-400 uppercase tracking-wider flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.8)]"></span>
+                Vulnerable Packages ({depResults.vulnerable.length})
+              </h4>
+              {depResults.vulnerable.map((pkg: VulnerablePackage) => (
+                <div key={pkg.package} className="rounded-xl border border-red-500/20 overflow-hidden">
+                  <button
+                    onClick={() => togglePkg(pkg.package)}
+                    className="w-full flex items-center justify-between p-3 bg-red-500/5 hover:bg-red-500/10 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <svg className={`w-4 h-4 text-gray-400 transition-transform ${expanded.has(pkg.package) ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                      <span className="font-mono text-sm font-bold text-white">{pkg.package}</span>
+                      <span className="text-xs text-gray-500 px-2 py-0.5 bg-white/5 rounded">{pkg.ecosystem}</span>
+                    </div>
+                    <span className="text-xs font-bold px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30">
+                      {pkg.advisory_count} CVE{pkg.advisory_count !== 1 ? 's' : ''}
+                    </span>
+                  </button>
+                  {expanded.has(pkg.package) && (
+                    <div className="p-3 space-y-2 border-t border-red-500/10">
+                      {pkg.advisories.map((adv) => (
+                        <div key={adv.id} className="p-3 rounded-lg bg-[#0d1117] border border-[#30363d] flex flex-col gap-1.5">
+                          <div className="flex items-start justify-between gap-2">
+                            <a
+                              href={adv.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-mono text-xs text-cyan-400 hover:text-cyan-300 underline underline-offset-2 shrink-0"
+                            >
+                              {adv.id}
+                            </a>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded ${getCveSeverityBadge(adv.severity)}`}>
+                              {adv.severity}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-400 leading-relaxed">{adv.summary}</p>
+                          {adv.fixed_in && (
+                            <p className="text-xs text-green-400 font-semibold">✓ Fixed in: v{adv.fixed_in}</p>
+                          )}
+                        </div>
+                      ))}
+                      {pkg.advisory_count > 5 && (
+                        <p className="text-xs text-gray-500 text-center pt-1">...and {pkg.advisory_count - 5} more advisory(s).<a href={`https://osv.dev/list?q=${pkg.package}&ecosystem=${pkg.ecosystem}`} target="_blank" rel="noopener noreferrer" className="text-cyan-400 ml-1 hover:underline">View all on OSV.dev</a></p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-5 rounded-xl bg-green-500/5 border border-green-500/20 text-center">
+              <div className="text-2xl mb-1">✅</div>
+              <p className="text-green-400 text-sm font-semibold">No known vulnerabilities found in detected packages!</p>
+            </div>
+          )}
+
+          {/* Safe packages inline list */}
+          {depResults.safe.length > 0 && (
+            <div>
+              <h4 className="text-xs font-bold text-green-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                Clean Packages ({depResults.safe.length})
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {depResults.safe.map((p) => (
+                  <span key={p.package} className="text-xs font-mono px-2 py-1 bg-green-500/5 border border-green-500/10 rounded text-green-400/70">
+                    {p.package}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {depResults.skipped_stdlib_count > 0 && (
+            <p className="text-xs text-gray-600 text-right">{depResults.skipped_stdlib_count} stdlib/built-in package(s) skipped.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 const VulnerabilityChart = ({ stats }: { stats: any }) => {
   const allChartData = [
@@ -124,7 +314,7 @@ export default function Home() {
   const [history, setHistory] = useState<any[]>([]);
 
   // Hook for backend connection
-  const { uploadFile, scanGithubUrl, downloadReport, isScanning, results, error, clearError, clearResults } = useScan("http://localhost:8000");
+  const { uploadFile, scanGithubUrl, downloadReport, scanDependencies, isScanning, isDepScanning, results, depResults, error, clearError, clearResults } = useScan();
 
   const fetchHistory = async () => {
     const stored = localStorage.getItem('codeguard_user');
@@ -132,7 +322,8 @@ export default function Home() {
     try {
       const user = JSON.parse(stored);
       const userToFetch = user.username || "anonymous";
-      const response = await axios.get("http://localhost:8000/history", {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await axios.get(`${apiBase}/history`, {
         params: { username: userToFetch },
         headers: { 'X-User': userToFetch }
       });
@@ -627,6 +818,14 @@ export default function Home() {
 
              {/* Vulnerability Charts */}
              <VulnerabilityChart stats={results.stats} />
+
+             {/* Dependency Audit Panel */}
+             <DependencyAuditPanel
+               files={selectedFiles}
+               scanDependencies={scanDependencies}
+               isDepScanning={isDepScanning}
+               depResults={depResults}
+             />
 
              <div className="mt-6 mb-4 rounded-xl bg-[#161b22] border border-blue-500/20 p-4 text-sm text-blue-200">
                <strong className="text-blue-300">Auto-Fix Mode:</strong> Review suggested fixes with one-click copy and preview the original vs fixed code when available.

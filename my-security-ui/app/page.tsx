@@ -25,12 +25,13 @@ export default function LandingPage() {
     setIsLoading(true);
 
     try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const endpoint = isLogin ? "/api/login" : "/api/register";
       const payload = isLogin 
         ? { login: email || username, password } 
         : { username, email, password };
 
-      const res = await fetch(`http://localhost:8000${endpoint}`, {
+      const res = await fetch(`${apiBase}${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

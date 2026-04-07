@@ -24,10 +24,41 @@ export interface ScanResult {
   improvement_suggestions?: string[];
 }
 
-export const useScan = (apiUrl: string = 'http://localhost:8000') => {
+export interface DependencyAdvisory {
+  id: string;
+  summary: string;
+  severity: string;
+  fixed_in: string | null;
+  url: string;
+}
+
+export interface VulnerablePackage {
+  package: string;
+  ecosystem: string;
+  advisory_count: number;
+  advisories: DependencyAdvisory[];
+}
+
+export interface SafePackage {
+  package: string;
+  ecosystem: string;
+}
+
+export interface DependencyScanResult {
+  vulnerable: VulnerablePackage[];
+  safe: SafePackage[];
+  skipped_stdlib_count: number;
+  total_checked: number;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+export const useScan = (apiUrl: string = API_URL) => {
   const [isScanning, setIsScanning] = useState(false);
   const [results, setResults] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [depResults, setDepResults] = useState<DependencyScanResult | null>(null);
+  const [isDepScanning, setIsDepScanning] = useState(false);
 
   const uploadFile = async (files: File | FileList | File[], persona: string = 'Student', apiKey?: string, provider?: string, username?: string) => {
     setIsScanning(true);
@@ -169,14 +200,41 @@ export const useScan = (apiUrl: string = 'http://localhost:8000') => {
     }
   };
 
+  const scanDependencies = async (files: File | FileList | File[]) => {
+    setIsDepScanning(true);
+    setDepResults(null);
+    const formData = new FormData();
+    const fileArray = files instanceof File ? [files] : Array.from(files);
+    fileArray.forEach((file: File) => {
+      formData.append('files', file, (file as any).webkitRelativePath || file.name);
+    });
+    try {
+      const response = await axios.post<DependencyScanResult>(`${apiUrl}/scan-dependencies`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setDepResults(response.data);
+    } catch (err: any) {
+      if (axios.isAxiosError(err) && err.response?.status === 429) {
+        setError('Rate limit reached. Please wait before scanning dependencies.');
+      } else {
+        setError('Dependency scan failed. Please try again.');
+      }
+    } finally {
+      setIsDepScanning(false);
+    }
+  };
+
   return {
     uploadFile,
     scanGithubUrl,
     downloadReport,
+    scanDependencies,
     isScanning,
+    isDepScanning,
     results,
+    depResults,
     error,
     clearError: () => setError(null),
-    clearResults: () => setResults(null)
+    clearResults: () => { setResults(null); setDepResults(null); }
   };
 };

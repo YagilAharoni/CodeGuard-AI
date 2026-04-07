@@ -39,7 +39,8 @@ function HistoryPageContent() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/history", {
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const response = await axios.get(`${apiBase}/history`, {
           params: { username },
           headers: { 'X-User': username }
         });
@@ -69,7 +70,8 @@ function HistoryPageContent() {
     }
 
     try {
-      const response = await axios.get("http://localhost:8000/compare", {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await axios.get(`${apiBase}/compare`, {
         params: { scan_a: selectedA, scan_b: selectedB },
         headers: { 'X-User': username }
       });
