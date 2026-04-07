@@ -492,6 +492,32 @@ export default function Home() {
     return grouped;
   }, [results]);
 
+  // Auto-expand all findings and fixes when results arrive
+  useEffect(() => {
+    if (results?.findings && results.findings.length > 0) {
+      const fileNames = Object.keys(groupedFindings);
+      setExpandedFiles(new Set(fileNames));
+      
+      const diffKeys: Record<string, boolean> = {};
+      results.findings.forEach((finding: any, idx: number) => {
+        const fileName = finding.file_name || "unknown";
+        // We need to find the index within that specific file's findings 
+        // because getFindingKey is used with mapped findings per file
+      });
+      
+      // Actually, looking at the render logic (line 906):
+      // findings.map((finding: any, idx: number) => ... getFindingKey(fileName, idx))
+      // It uses the index of the finding WITHIN the file group.
+      
+      Object.entries(groupedFindings).forEach(([fileName, fileFindings]) => {
+        fileFindings.forEach((_, idx) => {
+          diffKeys[getFindingKey(fileName, idx)] = true;
+        });
+      });
+      setExpandedDiffs(diffKeys);
+    }
+  }, [results, groupedFindings]);
+
   return (
     <div className="relative min-h-screen bg-[#0A0C10] text-white font-sans selection:bg-cyan-500/30 pb-20 overflow-hidden">
 

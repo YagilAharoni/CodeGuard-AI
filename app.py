@@ -61,6 +61,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 @app.get("/")
@@ -454,18 +455,18 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             "You are a helpful Security Tutor for students. Your goal is to encourage learning and growth. "
             "You MUST respond with ONLY valid JSON (no markdown, no extra text) following this exact schema:\n"
             "{\n"
-            "  'status': 'SAFE' or 'VULNERABLE',\n"
-            "  'stats': {'High': 0, 'Medium': 0, 'Low': 0},\n"
-            "  'findings': [{\n"
-            "    'file_name': 'filename',\n"
-            "    'issue_description': 'issue title with [SEVERITY]',\n"
-            "    'root_problem': 'one-sentence explanation of the cause',\n"
-            "    'suggested_solution': 'high-level fixing approach',\n"
-            "    'fix': 'detailed code correction or remediation steps',\n"
-            "    'source_code': 'problematic snippet',\n"
-            "    'fixed_code': 'corrected snippet'\n"
+            "  \"status\": \"SAFE\" or \"VULNERABLE\",\n"
+            "  \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0},\n"
+            "  \"findings\": [{\n"
+            "    \"file_name\": \"filename\",\n"
+            "    \"issue_description\": \"issue title with [SEVERITY]\",\n"
+            "    \"root_problem\": \"one-sentence explanation of the cause\",\n"
+            "    \"suggested_solution\": \"high-level fixing approach\",\n"
+            "    \"suggested_fix\": \"detailed code correction or remediation steps\",\n"
+            "    \"source_code\": \"problematic snippet\",\n"
+            "    \"fixed_code\": \"corrected snippet\"\n"
             "  }],\n"
-            "  'improvement_suggestions': ['suggestion1', 'suggestion2', 'suggestion3']\n"
+            "  \"improvement_suggestions\": [\"suggestion1\", \"suggestion2\", \"suggestion3\"]\n"
             "}\n\n"
             "IMPORTANT:\n"
             "- The heart of this application is the solution for each issue. Every finding MUST include a clear, specific fix.\n"
@@ -483,16 +484,16 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             "You are a Senior Lead Cyber-Security Auditor. Be RUTHLESS and thorough. "
             "You MUST respond with ONLY valid JSON (no markdown, no extra text) following this exact schema:\n"
             "{\n"
-            "  'status': 'SAFE' or 'VULNERABLE',\n"
-            "  'stats': {'High': 0, 'Medium': 0, 'Low': 0},\n"
-            "  'findings': [{\n"
-            "    'file_name': 'filename',\n"
-            "    'issue_description': 'issue title with [SEVERITY]',\n"
-            "    'root_problem': 'one-sentence explanation of the cause',\n"
-            "    'suggested_solution': 'high-level fixing approach',\n"
-            "    'fix': 'detailed code correction or remediation steps',\n"
-            "    'source_code': 'problematic snippet',\n"
-            "    'fixed_code': 'corrected snippet'\n"
+            "  \"status\": \"SAFE\" or \"VULNERABLE\",\n"
+            "  \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0},\n"
+            "  \"findings\": [{\n"
+            "    \"file_name\": \"filename\",\n"
+            "    \"issue_description\": \"issue title with [SEVERITY]\",\n"
+            "    \"root_problem\": \"one-sentence explanation of the cause\",\n"
+            "    \"suggested_solution\": \"high-level fixing approach\",\n"
+            "    \"suggested_fix\": \"detailed code correction or remediation steps\",\n"
+            "    \"source_code\": \"problematic snippet\",\n"
+            "    \"fixed_code\": \"corrected snippet\"\n"
             "  }]\n"
             "}\n\n"
             "IMPORTANT:\n"
@@ -512,14 +513,11 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
         f"File: {filename}\n"
         f"Persona Context: {persona}\n\n"
         f"Report Requirements:\n"
-        f"1. Start your response with either '[STATUS: SAFE]' or '[STATUS: VULNERABLE]'.\n"
-        f"2. Provide a 'Security Summary'.\n"
-        f"3. List 'Vulnerability Details' - for each issue, start with severity level (HIGH/MEDIUM/LOW) in brackets.\n"
-        f"4. Provide 'Recommended Code Fixes' for every vulnerability. This is the heart of the application.\n"
-        f"   Each finding must include a real, actionable suggested_fix with code examples or exact remediation steps.\n"
-        f"   Where possible, include 'source_code' with the problematic snippet and 'fixed_code' with the corrected version.\n"
-        f"5. Break down every vulnerability into 'Root Problem', 'Suggested Solution', and 'Fix'.\n"
-        f"{'6. Suggest 2-3 ways to improve this project (for learning purposes).' if 'Student' in persona else ''}\n\n"
+        f"1. Identify every security vulnerability and best-practice violation.\n"
+        f"2. For each issue, provide a clear 'Root Problem', 'Suggested Solution', and'Suggested Fix'.\n"
+        f"3. Each 'Suggested Fix' MUST include real, actionable code examples or exact remediation steps.\n"
+        f"4. Where possible, include 'source_code' with the problematic snippet and 'fixed_code' with the corrected version.\n"
+        f"{'5. Suggest 2-3 ways to improve this project (for learning purposes).' if 'Student' in persona else ''}\n\n"
         f"Code Content:\n"
         f"---\n"
         f"{content}\n"
@@ -816,6 +814,8 @@ async def analyze_github_endpoint(
             github_index = next(i for i, part in enumerate(url_parts) if "github.com" in part)
             owner = url_parts[github_index + 1]
             repo = url_parts[github_index + 2]
+            if repo.endswith(".git"):
+                repo = repo[:-4]
             
             # Check for specific branch in URL (e.g., /tree/branch_name)
             target_branch = None

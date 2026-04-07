@@ -37,6 +37,21 @@ def process_uploaded_files(uploaded_files):
             })
     return files_to_scan
 
+def sanitize_text(text):
+    """
+    Sanitize text to be compatible with Latin-1 encoding (standard FPDF fonts).
+    Strips emojis and other non-Latin-1 characters.
+    """
+    if not text:
+        return ""
+    try:
+        # Convert to string if not already
+        s = str(text)
+        # Encode to latin-1 while ignoring errors, then decode back
+        return s.encode('latin-1', 'ignore').decode('latin-1')
+    except Exception:
+        return ""
+
 def generate_pdf_report(results, stats, persona, improvement_suggestions=None, username="anonymous"):
     """
     Generates a professional PDF report using FPDF.
@@ -120,7 +135,7 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
             pdf.set_font("Arial", "B", 10)
             pdf.set_text_color(0, 200, 220)
             pdf.set_xy(30, meta_y)
-            pdf.cell(50, 9, label + ":", ln=False)
+            pdf.cell(50, 9, sanitize_text(label) + ":", ln=False)
             pdf.set_font("Arial", "", 10)
             # Colour-code the status value
             if label == "Overall Status":
@@ -132,7 +147,7 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
                     pdf.set_text_color(234, 179, 8)
             else:
                 pdf.set_text_color(200, 210, 220)
-            pdf.cell(130, 9, str(value), ln=True)
+            pdf.cell(130, 9, sanitize_text(value), ln=True)
             meta_y += 10
 
         # Stats summary boxes (H / M / L)
@@ -194,7 +209,7 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
         pdf.set_font("Arial", "", 10)
         total_files = len(results.get("findings_by_file", {}))
         pdf.cell(0, 8, f"Total Files Analyzed: {total_files}", ln=True)
-        pdf.cell(0, 8, f"Overall Status: {results.get('status', 'UNKNOWN')}", ln=True)
+        pdf.cell(0, 8, f"Overall Status: {sanitize_text(results.get('status', 'UNKNOWN'))}", ln=True)
         pdf.cell(0, 8, f"High Risk Vulnerabilities: {stats.get('High', 0)}", ln=True)
         pdf.cell(0, 8, f"Medium Risk Vulnerabilities: {stats.get('Medium', 0)}", ln=True)
         pdf.cell(0, 8, f"Low Risk Vulnerabilities: {stats.get('Low', 0)}", ln=True)
@@ -265,7 +280,7 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
         else:
             for file_name, findings in findings_by_file.items():
                 pdf.set_font("Arial", "B", 11)
-                safe_name = file_name.encode('latin-1', 'ignore').decode('latin-1')
+                safe_name = sanitize_text(file_name)
                 finding_count = len(findings)
                 status = "SAFE" if finding_count == 0 else "VULNERABLE"
                 pdf.cell(0, 10, f"File: {safe_name} [{status}] - {finding_count} issue{'s' if finding_count != 1 else ''}", ln=True)
@@ -275,8 +290,7 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
                     for idx, finding in enumerate(findings, 1):
                         pdf.set_font("Arial", "B", 9)
                         issue_desc = finding.get('issue_description', 'No description')
-                        safe_desc = issue_desc.encode('latin-1', 'ignore').decode('latin-1')
-                        pdf.cell(0, 6, f"Issue {idx}: {safe_desc}", ln=True)
+                        pdf.cell(0, 6, f"Issue {idx}: {sanitize_text(issue_desc)}", ln=True)
                         
                         pdf.set_font("Arial", "", 8)
                         # Root Problem
@@ -287,7 +301,7 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
                             pdf.cell(30, 5, "Root Problem:", ln=False)
                             pdf.set_font("Arial", "", 8)
                             pdf.set_text_color(30, 35, 45)
-                            pdf.multi_cell(0, 5, root_prob.encode('latin-1', 'ignore').decode('latin-1'))
+                            pdf.multi_cell(160, 5, sanitize_text(root_prob))
                         
                         # Suggested Solution
                         sug_sol = finding.get('suggested_solution')
@@ -297,16 +311,16 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
                             pdf.cell(30, 5, "Suggested Solution:", ln=False)
                             pdf.set_font("Arial", "", 8)
                             pdf.set_text_color(30, 35, 45)
-                            pdf.multi_cell(0, 5, sug_sol.encode('latin-1', 'ignore').decode('latin-1'))
+                            pdf.multi_cell(160, 5, sanitize_text(sug_sol))
                         
                         # Remediation Fix
-                        fix = finding.get('fix') or finding.get('suggested_fix', 'No fix suggested')
+                        fix = finding.get('suggested_fix') or finding.get('fix', 'No fix suggested')
                         pdf.set_font("Arial", "B", 8)
                         pdf.set_text_color(30, 35, 100)
                         pdf.cell(30, 5, "Remediation / Fix:", ln=False)
                         pdf.set_font("Arial", "", 8)
                         pdf.set_text_color(30, 35, 45)
-                        pdf.multi_cell(0, 5, fix.encode('latin-1', 'ignore').decode('latin-1'))
+                        pdf.multi_cell(160, 5, sanitize_text(fix))
                         
                         pdf.ln(2)
                 
@@ -328,9 +342,8 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
                 pdf.set_x(10)
                 pdf.cell(10, 8, f"{idx}.", ln=False)
                 pdf.set_font("Arial", "", 10)
-                clean_suggestion = suggestion.encode('latin-1', 'ignore').decode('latin-1')
                 pdf.set_x(20)
-                pdf.multi_cell(0, 5, clean_suggestion)
+                pdf.multi_cell(170, 5, sanitize_text(suggestion))
                 pdf.ln(2)
 
         logger.info("PDF generation completed successfully")

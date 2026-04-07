@@ -185,7 +185,28 @@ export const useScan = (apiUrl: string = API_URL) => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `security_report_${reportId.substring(0, 8)}.pdf`);
+      
+      // Try to get filename from Content-Disposition header
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `security_report_${reportId.substring(0, 8)}.pdf`;
+      
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) {
+          filename = match[1];
+        }
+      } else {
+        // Fallback to a date-based name if header is missing
+        const now = new Date();
+        const timestamp = now.getFullYear() + "-" + 
+                          String(now.getMonth() + 1).padStart(2, '0') + "-" + 
+                          String(now.getDate()).padStart(2, '0') + "_" + 
+                          String(now.getHours()).padStart(2, '0') + "-" + 
+                          String(now.getMinutes()).padStart(2, '0');
+        filename = `Security_Report_${timestamp}.pdf`;
+      }
+      
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
