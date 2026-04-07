@@ -6,7 +6,7 @@ uvicorn[standard]
 python-multipart
 slowapi
 openai
-google-generativeai
+google-genai
 bcrypt
 pillow
 python-dotenv

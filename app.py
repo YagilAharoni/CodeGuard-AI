@@ -25,7 +25,7 @@ from slowapi.errors import RateLimitExceeded
 
 import groq
 from openai import OpenAI
-import google.generativeai as genai
+from google import genai
 from utils import generate_pdf_report
 import zipfile
 
@@ -304,14 +304,18 @@ def call_openai(prompt: str, system_prompt: str, api_key: str) -> str:
         })
 
 def call_gemini(prompt: str, system_prompt: str, api_key: str) -> str:
-    """Call Google Gemini API"""
+    """Call Google Gemini API using the new google-genai SDK"""
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-pro')
+        client = genai.Client(api_key=api_key)
         combined_prompt = f"{system_prompt}\n\n{prompt}"
-        response = model.generate_content(combined_prompt)
         
-        # Extract JSON from response
+        # Use gemini-1.5-flash for better performance and cost-efficiency
+        response = client.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=combined_prompt
+        )
+        
+        # Extract content from response
         if response.text:
             text = response.text.strip()
             # Try to parse JSON directly
