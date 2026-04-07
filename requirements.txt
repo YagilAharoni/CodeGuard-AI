@@ -10,3 +10,4 @@ google-generativeai
 bcrypt
 pillow
 python-dotenv
+matplotlib
