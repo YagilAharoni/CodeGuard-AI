@@ -1,30 +1,35 @@
 "use client";
-import React, { useEffect, useState, Suspense } from "react";
+
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { useSearchParams } from "next/navigation";
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
 } from "recharts";
+import { useRouter } from "next/navigation";
+import AppShell from "../components/AppShell";
+import { getAuthHeaders, getStoredUser, isAuthenticated } from "../lib/auth";
+import { validateScanId } from "../lib/validation";
 
-const formatDate = (timestamp: string) => new Date(timestamp).toLocaleString("he-IL", {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit"
-});
+const formatDate = (timestamp: string) =>
+  new Date(timestamp).toLocaleString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 function HistoryPageContent() {
-  const searchParams = useSearchParams();
-  const username = searchParams.get('user') || 'anonymous';
-  
+  const router = useRouter();
+  const username = getStoredUser()?.username || "anonymous";
+
   const [history, setHistory] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedA, setSelectedA] = useState<string>("");
@@ -34,34 +39,41 @@ function HistoryPageContent() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (!isAuthenticated()) {
+      router.replace("/");
+    }
+  }, [router]);
 
   useEffect(() => {
+    if (!mounted || !isAuthenticated()) return;
+
     const fetchHistory = async () => {
       try {
-        const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const response = await axios.get(`${apiBase}/history`, {
-          params: { username },
-          headers: { 'X-User': username }
+          headers: {
+            ...getAuthHeaders(),
+          },
         });
         setHistory(response.data.history || []);
-      } catch (err: any) {
-        setError("Unable to retrieve scan history. Please verify the backend server is running.");
+      } catch {
+        setError("Unable to retrieve scan history. Please login again.");
       }
     };
+
     fetchHistory();
-  }, [username]);
+  }, [mounted]);
 
-  useEffect(() => {
-    if (history.length === 0) return;
-  }, [history]);
-
-  const chartData = history.map((entry) => ({
-    timestamp: formatDate(entry.timestamp),
-    High: entry.stats?.High || 0,
-    Medium: entry.stats?.Medium || 0,
-    Low: entry.stats?.Low || 0,
-  }));
+  const chartData = useMemo(
+    () =>
+      history.map((entry) => ({
+        timestamp: formatDate(entry.timestamp),
+        High: entry.stats?.High || 0,
+        Medium: entry.stats?.Medium || 0,
+        Low: entry.stats?.Low || 0,
+      })),
+    [history],
+  );
 
   const compareScans = async () => {
     if (!selectedA || !selectedB) {
@@ -69,199 +81,151 @@ function HistoryPageContent() {
       return;
     }
 
+    if (!validateScanId(selectedA) || !validateScanId(selectedB)) {
+      setError("Invalid scan ID selection.");
+      return;
+    }
+
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const response = await axios.get(`${apiBase}/compare`, {
         params: { scan_a: selectedA, scan_b: selectedB },
-        headers: { 'X-User': username }
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
       setComparison(response.data);
       setError(null);
-    } catch (err: any) {
-      setError("Unable to perform comparison at this time. Please verify the selected scan IDs.");
+    } catch {
+      setError("Unable to compare these scans.");
     }
   };
 
   if (!mounted) {
-    return <div className="min-h-screen bg-[#0d1117] flex items-center justify-center text-white">Initializing History...</div>;
+    return <div className="min-h-screen bg-[#0d1117]" />;
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] font-sans pb-20">
-      <nav className="border-b border-[#30363d] bg-[#161b22]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Historic Security Dashboard</h1>
-            <p className="text-gray-500 text-sm mt-1">Showing scans for: <span className="text-cyan-400 font-semibold">{username}</span></p>
-          </div>
-          <div className="flex gap-3">
-            <a href="/dashboard" className="px-4 py-2 rounded-lg border border-[#30363d] hover:bg-[#1c2128] transition">Back to Dashboard</a>
-            <a href="/history" className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 transition text-white">📜 History</a>
-          </div>
-        </div>
-      </nav>
+    <AppShell title="Scan History" subtitle={`Account: ${username}`}>
+      <div className="space-y-8">
+        {error && <div className="rounded-xl bg-red-500/10 border border-red-500/30 p-4 text-red-200">{error}</div>}
 
-      <main className="max-w-6xl mx-auto px-6 py-10 space-y-10">
-        {error && (
-          <div className="rounded-xl bg-red-500/10 border border-red-500/30 p-4 text-red-200">
-            {error}
-          </div>
-        )}
-
-        <section className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-3xl border border-[#30363d] bg-[#161b22] p-6">
-            <h2 className="text-xl font-semibold text-white mb-3">Management</h2>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              A leadership view for tracking vulnerability reduction and ensuring remediation progress over time.
-            </p>
-          </div>
-          <div className="rounded-3xl border border-[#30363d] bg-[#161b22] p-6">
-            <h2 className="text-xl font-semibold text-white mb-3">Saved Scans</h2>
-            <p className="text-gray-400 text-sm">Total scans: {history.length}</p>
-            <p className="text-gray-400 text-sm">Latest scan: {history[0]?.timestamp ? formatDate(history[0].timestamp) : "Not available"}</p>
-          </div>
-          <div className="rounded-3xl border border-[#30363d] bg-[#161b22] p-6">
-            <h2 className="text-xl font-semibold text-white mb-3">Verification</h2>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              Version comparison confirms that previously reported security gaps are closed in the latest scan.
+        <section className="rounded-3xl border border-white/10 bg-[#111722]/80 p-6 md:p-7 backdrop-blur-md relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(130deg,rgba(255,255,255,0.04),transparent_35%,rgba(0,240,255,0.06)_70%,transparent)]" />
+          <div className="relative z-10">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-cyan-300 mb-2">Timeline Intelligence</div>
+            <h2 className="text-3xl md:text-4xl font-black text-white leading-tight">Track Security Progress Over Time</h2>
+            <p className="text-sm text-gray-400 mt-2 max-w-3xl">
+              Compare scan snapshots, monitor risk movement, and verify whether remediation is reducing your attack surface.
             </p>
           </div>
         </section>
 
-        <section className="rounded-3xl border border-[#30363d] bg-[#161b22] p-6">
-          <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold">Security Trends</h2>
-              <p className="text-gray-500">Trend analysis of vulnerability counts across all saved scans.</p>
-            </div>
+        <section className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-[#30363d] bg-[#161b22]/85 p-5 backdrop-blur-sm relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(120deg,rgba(255,255,255,0.02),transparent_45%,rgba(34,211,238,0.05)_90%)]" />
+            <div className="text-xs text-gray-400 uppercase tracking-wide">Total Scans</div>
+            <div className="text-3xl font-black text-white mt-2">{history.length}</div>
           </div>
-          <div className="w-full" style={{ minHeight: 420, height: 420 }}>
-            <ResponsiveContainer width="100%" height={420} minHeight={420}>
-              <LineChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+          <div className="rounded-2xl border border-[#30363d] bg-[#161b22]/85 p-5 backdrop-blur-sm relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(120deg,rgba(255,255,255,0.02),transparent_45%,rgba(168,85,247,0.05)_90%)]" />
+            <div className="text-xs text-gray-400 uppercase tracking-wide">Latest Scan</div>
+            <div className="text-sm text-gray-200 mt-2">{history[0]?.timestamp ? formatDate(history[0].timestamp) : "Not available"}</div>
+          </div>
+          <div className="rounded-2xl border border-[#30363d] bg-[#161b22]/85 p-5 backdrop-blur-sm relative overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(120deg,rgba(255,255,255,0.02),transparent_45%,rgba(59,130,246,0.05)_90%)]" />
+            <div className="text-xs text-gray-400 uppercase tracking-wide">Status Mix</div>
+            <div className="text-sm text-gray-200 mt-2">{history.filter((h) => h.status === "SAFE").length} safe / {history.filter((h) => h.status !== "SAFE").length} vulnerable</div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-[#30363d] bg-[#161b22]/85 p-6 backdrop-blur-sm relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none opacity-35 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.12)_1px,transparent_0)] [background-size:14px_14px]" />
+          <h2 className="text-xl font-bold text-white mb-4">Vulnerability Trend</h2>
+          <div style={{ minHeight: 360, height: 360 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
                 <CartesianGrid stroke="#30363d" strokeDasharray="3 3" />
-                <XAxis dataKey="timestamp" stroke="#8b949e" tick={{ fill: '#c9d1d9', fontSize: 12 }} />
-                <YAxis stroke="#8b949e" tick={{ fill: '#c9d1d9', fontSize: 12 }} />
-                <Tooltip cursor={{ stroke: '#2563eb', strokeWidth: 1 }} contentStyle={{ backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: 8, color: '#c9d1d9' }} />
-                <Legend wrapperStyle={{ color: '#c9d1d9' }} />
-                <Line type="monotone" dataKey="High" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="Medium" stroke="#eab308" strokeWidth={2} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="Low" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
+                <XAxis dataKey="timestamp" stroke="#8b949e" tick={{ fill: "#c9d1d9", fontSize: 12 }} />
+                <YAxis stroke="#8b949e" tick={{ fill: "#c9d1d9", fontSize: 12 }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#0d1117",
+                    border: "1px solid #30363d",
+                    borderRadius: 8,
+                    color: "#c9d1d9",
+                  }}
+                />
+                <Legend />
+                <Line type="monotone" dataKey="High" stroke="#ef4444" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="Medium" stroke="#eab308" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="Low" stroke="#3b82f6" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </section>
 
-        <section className="rounded-3xl border border-[#30363d] bg-[#161b22] p-6">
-          <h2 className="text-2xl font-bold mb-4">Version Comparison</h2>
-          <div className="grid gap-4 md:grid-cols-3 mb-6">
-            <select value={selectedA} onChange={(e) => setSelectedA(e.target.value)} className="w-full rounded-xl border border-[#30363d] bg-[#0d1117] p-3 text-white">
+        <section className="rounded-3xl border border-[#30363d] bg-[#161b22]/85 p-6 space-y-4 backdrop-blur-sm relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(140deg,rgba(255,255,255,0.03),transparent_35%,rgba(34,211,238,0.04)_80%,transparent)]" />
+          <h2 className="text-xl font-bold text-white">Compare Two Scans</h2>
+          <div className="grid gap-3 md:grid-cols-3">
+            <select
+              value={selectedA}
+              onChange={(e) => setSelectedA(e.target.value)}
+              className="w-full rounded-xl border border-[#30363d] bg-[#0d1117] p-3 text-white"
+            >
               <option value="">Select first scan</option>
               {history.map((entry) => (
-                <option key={entry.scan_id} value={entry.scan_id}>
-                  {entry.timestamp} • {entry.status}
+                <option key={`a-${entry.scan_id}`} value={entry.scan_id}>
+                  {entry.timestamp} | {entry.status}
                 </option>
               ))}
             </select>
-            <select value={selectedB} onChange={(e) => setSelectedB(e.target.value)} className="w-full rounded-xl border border-[#30363d] bg-[#0d1117] p-3 text-white">
+            <select
+              value={selectedB}
+              onChange={(e) => setSelectedB(e.target.value)}
+              className="w-full rounded-xl border border-[#30363d] bg-[#0d1117] p-3 text-white"
+            >
               <option value="">Select second scan</option>
               {history.map((entry) => (
-                <option key={entry.scan_id} value={entry.scan_id}>
-                  {entry.timestamp} • {entry.status}
+                <option key={`b-${entry.scan_id}`} value={entry.scan_id}>
+                  {entry.timestamp} | {entry.status}
                 </option>
               ))}
             </select>
-            <button onClick={compareScans} className="w-full rounded-xl bg-purple-600 px-4 py-3 text-white font-semibold hover:bg-purple-500 transition">
-              Compare Scans
+            <button
+              onClick={compareScans}
+              className="w-full rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 px-4 py-3 text-white font-semibold hover:from-cyan-500 hover:to-purple-500 transition"
+            >
+              Compare
             </button>
           </div>
 
           {comparison && (
-            <div className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4">
-                  <div className="text-sm text-gray-400">Previous Scan</div>
-                  <div className="mt-2 text-white font-bold">{comparison.scan_a.timestamp}</div>
-                  <div className="text-sm text-gray-400">Status: {comparison.scan_a.status}</div>
-                </div>
-                <div className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4">
-                  <div className="text-sm text-gray-400">Current Scan</div>
-                  <div className="mt-2 text-white font-bold">{comparison.scan_b.timestamp}</div>
-                  <div className="text-sm text-gray-400">Status: {comparison.scan_b.status}</div>
-                </div>
-                <div className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4">
-                  <div className="text-sm text-gray-400">Change Summary</div>
-                  <div className="mt-2 text-white font-bold">{comparison.comparison.resolved_count} resolved</div>
-                  <div className="text-sm text-gray-400">{comparison.comparison.new_count} new</div>
-                </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-xl border border-[#30363d] bg-[#0d1117] p-4">
+                <div className="text-xs text-gray-400 uppercase">Resolved</div>
+                <div className="text-2xl font-black text-green-400 mt-1">{comparison.comparison.resolved_count}</div>
               </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4">
-                  <h3 className="text-lg font-semibold mb-3">Resolved Issues</h3>
-                  {comparison.comparison.resolved_issues.length === 0 ? (
-                    <p className="text-gray-400">No resolved issues were found.</p>
-                  ) : (
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      {comparison.comparison.resolved_issues.slice(0, 5).map((item: any, idx: number) => (
-                        <li key={idx}>{item.file_name}: {item.issue_description}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                <div className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4">
-                  <h3 className="text-lg font-semibold mb-3">New Issues</h3>
-                  {comparison.comparison.new_issues.length === 0 ? (
-                    <p className="text-gray-400">No new issues were detected.</p>
-                  ) : (
-                    <ul className="space-y-2 text-sm text-gray-300">
-                      {comparison.comparison.new_issues.slice(0, 5).map((item: any, idx: number) => (
-                        <li key={idx}>{item.file_name}: {item.issue_description}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+              <div className="rounded-xl border border-[#30363d] bg-[#0d1117] p-4">
+                <div className="text-xs text-gray-400 uppercase">New</div>
+                <div className="text-2xl font-black text-red-400 mt-1">{comparison.comparison.new_count}</div>
+              </div>
+              <div className="rounded-xl border border-[#30363d] bg-[#0d1117] p-4">
+                <div className="text-xs text-gray-400 uppercase">Unchanged</div>
+                <div className="text-2xl font-black text-blue-400 mt-1">{comparison.comparison.unchanged_count}</div>
               </div>
             </div>
           )}
         </section>
-
-        <section className="rounded-3xl border border-[#30363d] bg-[#161b22] p-6">
-          <h2 className="text-2xl font-bold mb-4">Recent Scans</h2>
-          <div className="space-y-4">
-            {history.length === 0 ? (
-              <div className="rounded-2xl bg-[#0d1117] p-6 text-gray-400">No scans have been recorded yet.</div>
-            ) : (
-              history.map((entry) => (
-                <div key={entry.scan_id} className="rounded-2xl border border-[#30363d] bg-[#0d1117] p-4 grid gap-2 md:grid-cols-4">
-                  <div>
-                    <div className="text-sm text-gray-400">Date</div>
-                    <div className="text-white">{formatDate(entry.timestamp)}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-400">Status</div>
-                    <div className="text-white">{entry.status}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-400">High / Medium / Low</div>
-                    <div className="text-white">{entry.stats.High} / {entry.stats.Medium} / {entry.stats.Low}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-400">Scan ID</div>
-                    <div className="text-gray-300 text-xs font-mono truncate">{entry.scan_id}</div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 
 export default function HistoryPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0d1117] flex items-center justify-center text-white">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#0d1117]" />}>
       <HistoryPageContent />
     </Suspense>
   );

@@ -4,13 +4,20 @@ import os
 import time
 import uuid
 import threading
+import asyncio
+import base64
+import hashlib
+import hmac
+import re
+import difflib
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # Load environment variables from .env file (for local development)
 load_dotenv()
 
 from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, Depends, HTTPException, Request, Form, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, Request, Form, UploadFile, File, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -45,6 +52,27 @@ MAX_TOTAL_SCAN_SIZE = 10 * 1024 * 1024  # 10 MB total across all files
 # Users don't need their own API key — the server provides a Groq key as default.
 # Set DEFAULT_GROQ_API_KEY in your Railway environment variables.
 DEFAULT_GROQ_API_KEY = os.getenv("DEFAULT_GROQ_API_KEY", "")
+ALLOW_CLIENT_API_KEYS = os.getenv("ALLOW_CLIENT_API_KEYS", "true").strip().lower() == "true"
+
+# --- Auth Token Settings ---
+AUTH_TOKEN_SECRET = os.getenv("AUTH_TOKEN_SECRET", "dev-change-this-secret")
+AUTH_TOKEN_TTL_SECONDS = int(os.getenv("AUTH_TOKEN_TTL_SECONDS", "28800"))
+
+# --- Input Validation Limits ---
+MAX_USERNAME_LEN = 32
+MAX_LOGIN_LEN = 128
+MAX_EMAIL_LEN = 254
+MAX_PASSWORD_LEN = 128
+MAX_API_KEY_LEN = 256
+MAX_PROVIDER_LEN = 20
+MAX_PERSONA_LEN = 32
+MAX_GITHUB_URL_LEN = 300
+MAX_REPORT_ID_LEN = 64
+MAX_SCAN_ID_LEN = 64
+
+ALLOWED_PERSONAS = {"Student", "Professional"}
+ALLOWED_PROVIDERS = {"auto", "groq", "openai", "gemini"}
+SUPPORTED_CODE_EXTENSIONS = {"py", "cpp", "h", "c", "js", "ts", "tsx", "jsx", "tf", "tfvars"}
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="CodeGuard AI Backend API", debug=DEBUG_MODE)
@@ -100,6 +128,162 @@ def init_db():
 
 init_db()
 
+
+def _b64url_encode(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
+
+
+def _b64url_decode(data: str) -> bytes:
+    padding = "=" * (-len(data) % 4)
+    return base64.urlsafe_b64decode(data + padding)
+
+
+def create_auth_token(username: str) -> str:
+    now = int(time.time())
+    header = {"alg": "HS256", "typ": "JWT"}
+    payload = {
+        "sub": username,
+        "iat": now,
+        "exp": now + AUTH_TOKEN_TTL_SECONDS,
+    }
+
+    encoded_header = _b64url_encode(json.dumps(header, separators=(",", ":")).encode("utf-8"))
+    encoded_payload = _b64url_encode(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
+    signing_input = f"{encoded_header}.{encoded_payload}"
+    signature = hmac.new(AUTH_TOKEN_SECRET.encode("utf-8"), signing_input.encode("utf-8"), hashlib.sha256).digest()
+    encoded_signature = _b64url_encode(signature)
+    return f"{signing_input}.{encoded_signature}"
+
+
+def verify_auth_token(token: str) -> Optional[str]:
+    try:
+        parts = token.split(".")
+        if len(parts) != 3:
+            return None
+
+        encoded_header, encoded_payload, encoded_signature = parts
+        signing_input = f"{encoded_header}.{encoded_payload}"
+        expected_signature = hmac.new(
+            AUTH_TOKEN_SECRET.encode("utf-8"),
+            signing_input.encode("utf-8"),
+            hashlib.sha256,
+        ).digest()
+
+        if not hmac.compare_digest(_b64url_decode(encoded_signature), expected_signature):
+            return None
+
+        payload_raw = _b64url_decode(encoded_payload)
+        payload = json.loads(payload_raw.decode("utf-8"))
+
+        if int(payload.get("exp", 0)) < int(time.time()):
+            return None
+
+        username = payload.get("sub")
+        if not isinstance(username, str) or not username.strip():
+            return None
+
+        return username.strip()
+    except Exception:
+        return None
+
+
+def get_bearer_token(request: Request) -> Optional[str]:
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header:
+        return None
+    if not auth_header.lower().startswith("bearer "):
+        return None
+    token = auth_header.split(" ", 1)[1].strip()
+    return token or None
+
+
+def get_optional_authenticated_user(request: Request) -> Optional[str]:
+    token = get_bearer_token(request)
+    if not token:
+        return None
+    username = verify_auth_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return username
+
+
+def get_authenticated_user(request: Request) -> str:
+    username = get_optional_authenticated_user(request)
+    if not username:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return username
+
+
+def _validate_text_field(raw: Optional[str], field_name: str, max_len: int, required: bool = False) -> str:
+    value = (raw or "").strip()
+    if required and not value:
+        raise HTTPException(status_code=400, detail=f"{field_name} is required")
+    if len(value) > max_len:
+        raise HTTPException(status_code=400, detail=f"{field_name} is too long")
+    return value
+
+
+def _validate_optional_username(raw: Optional[str]) -> Optional[str]:
+    if raw is None:
+        return None
+    username = _validate_text_field(raw, "username", MAX_USERNAME_LEN, required=False)
+    if not username:
+        return None
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{3,32}", username):
+        raise HTTPException(status_code=400, detail="Username must be 3-32 characters and contain only letters, numbers, ., _, or -")
+    return username
+
+
+def _validate_persona(raw: Optional[str]) -> str:
+    persona = _validate_text_field(raw, "persona", MAX_PERSONA_LEN, required=True)
+    if persona not in ALLOWED_PERSONAS:
+        raise HTTPException(status_code=400, detail=f"Invalid persona. Allowed values: {', '.join(sorted(ALLOWED_PERSONAS))}")
+    return persona
+
+
+def _validate_provider(raw: Optional[str]) -> Optional[str]:
+    if raw is None:
+        return None
+    provider = _validate_text_field(raw, "provider", MAX_PROVIDER_LEN, required=False).lower()
+    if not provider:
+        return None
+    if provider not in ALLOWED_PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"Invalid provider. Allowed values: {', '.join(sorted(ALLOWED_PROVIDERS))}")
+    return provider
+
+
+def _validate_api_key(raw: Optional[str]) -> Optional[str]:
+    if raw is None:
+        return None
+    api_key = _validate_text_field(raw, "api_key", MAX_API_KEY_LEN, required=False)
+    if not api_key:
+        return None
+    if any(ch.isspace() for ch in api_key):
+        raise HTTPException(status_code=400, detail="API key must not contain whitespace")
+    return api_key
+
+
+def _validate_github_url(raw: str) -> str:
+    url = _validate_text_field(raw, "github_url", MAX_GITHUB_URL_LEN, required=True)
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"}:
+        raise HTTPException(status_code=400, detail="GitHub URL must start with http:// or https://")
+    if parsed.netloc.lower() not in {"github.com", "www.github.com"}:
+        raise HTTPException(status_code=400, detail="Only github.com URLs are allowed")
+    parts = [p for p in parsed.path.split("/") if p]
+    if len(parts) < 2:
+        raise HTTPException(status_code=400, detail="GitHub URL must include owner and repository")
+    return url
+
+
+def _validate_uuid_field(raw: str, field_name: str, max_len: int) -> str:
+    value = _validate_text_field(raw, field_name, max_len, required=True)
+    try:
+        parsed_uuid = uuid.UUID(value)
+        return str(parsed_uuid)
+    except Exception:
+        raise HTTPException(status_code=400, detail=f"Invalid {field_name} format")
+
 class RegisterRequest(BaseModel):
     username: str
     email: str
@@ -110,35 +294,54 @@ class LoginRequest(BaseModel):
     password: str
 
 @app.post("/api/register")
-async def register(req: RegisterRequest):
+@limiter.limit("10/minute")
+async def register(request: Request, req: RegisterRequest):
+    username = _validate_text_field(req.username, "username", MAX_USERNAME_LEN, required=True)
+    email = _validate_text_field(req.email, "email", MAX_EMAIL_LEN, required=True).lower()
+    password = _validate_text_field(req.password, "password", MAX_PASSWORD_LEN, required=True)
+
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{3,32}", username):
+        raise HTTPException(status_code=400, detail="Username must be 3-32 characters and contain only letters, numbers, ., _, or -")
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+    if len(password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     
     # check if user exists
-    c.execute("SELECT id FROM users WHERE username = ? OR email = ?", (req.username, req.email))
+    c.execute("SELECT id FROM users WHERE username = ? OR email = ?", (username, email))
     if c.fetchone():
         conn.close()
         raise HTTPException(status_code=400, detail="Username or email already exists")
     
     # hash password
     salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(req.password.encode('utf-8'), salt)
+    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
     
     c.execute("""
         INSERT INTO users (username, email, password_hash)
         VALUES (?, ?, ?)
-    """, (req.username, req.email, hashed.decode('utf-8')))
+    """, (username, email, hashed.decode('utf-8')))
     conn.commit()
     conn.close()
     
     return {"message": "User registered successfully"}
 
 @app.post("/api/login")
-async def login(req: LoginRequest):
+@limiter.limit("20/minute")
+async def login(request: Request, req: LoginRequest):
+    login_value = _validate_text_field(req.login, "login", MAX_LOGIN_LEN, required=True)
+    password = _validate_text_field(req.password, "password", MAX_PASSWORD_LEN, required=True)
+
+    if not login_value or not password:
+        raise HTTPException(status_code=400, detail="Login and password are required")
+
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     
-    c.execute("SELECT id, username, password_hash FROM users WHERE username = ? OR email = ?", (req.login, req.login))
+    c.execute("SELECT id, username, password_hash FROM users WHERE username = ? OR email = ?", (login_value, login_value.lower()))
     user = c.fetchone()
     conn.close()
     
@@ -146,11 +349,15 @@ async def login(req: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid credentials")
         
     user_id, username, stored_hash = user
-    if not bcrypt.checkpw(req.password.encode('utf-8'), stored_hash.encode('utf-8')):
+    if not bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    token = create_auth_token(username)
         
     return {
         "message": "Login successful",
+        "token": token,
+        "expires_in": AUTH_TOKEN_TTL_SECONDS,
         "user": {
             "id": user_id,
             "username": username
@@ -161,6 +368,296 @@ async def login(req: LoginRequest):
 REPORT_CACHE: Dict[str, Dict[str, Any]] = {}
 HISTORY_FILE = "scan_history.json"
 history_lock = threading.Lock()
+scan_task_lock = threading.Lock()
+
+# Async scan task storage and websocket subscriptions.
+SCAN_TASKS: Dict[str, Dict[str, Any]] = {}
+SCAN_SUBSCRIBERS: Dict[str, List[WebSocket]] = {}
+
+
+def _utc_timestamp() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def is_supported_source_file(filename: str) -> bool:
+    if not filename:
+        return False
+    normalized = filename.strip().lower().split("/")[-1]
+    if normalized in {"dockerfile", "containerfile"}:
+        return True
+    if "." not in normalized:
+        return False
+    ext = normalized.rsplit(".", 1)[-1]
+    return ext in SUPPORTED_CODE_EXTENSIONS
+
+
+def sanitize_scan_finding(finding: Dict[str, Any], filename: str) -> Dict[str, Any]:
+    issue_description = str(finding.get("issue_description", "")).strip()
+    if not issue_description:
+        issue_description = "[LOW] Issue reported without description"
+    elif not issue_description.startswith("["):
+        issue_description = f"[LOW] {issue_description}"
+
+    return {
+        "file_name": str(finding.get("file_name") or filename),
+        "issue_description": issue_description,
+        "root_problem": str(finding.get("root_problem", "")).strip(),
+        "suggested_solution": str(finding.get("suggested_solution", "")).strip(),
+        "suggested_fix": str(finding.get("suggested_fix", "")).strip() or "Apply secure validation, output encoding, and least-privilege controls.",
+        "source_code": str(finding.get("source_code", "")).strip(),
+        "fixed_code": str(finding.get("fixed_code", "")).strip(),
+    }
+
+
+def build_static_issue(
+    filename: str,
+    severity: str,
+    title: str,
+    root_problem: str,
+    suggested_solution: str,
+    suggested_fix: str,
+    source_code: str = "",
+    fixed_code: str = "",
+) -> Dict[str, Any]:
+    return {
+        "file_name": filename,
+        "issue_description": f"[{severity}] {title}",
+        "root_problem": root_problem,
+        "suggested_solution": suggested_solution,
+        "suggested_fix": suggested_fix,
+        "source_code": source_code,
+        "fixed_code": fixed_code,
+        "detected_by": "sast",
+    }
+
+
+def run_lightweight_sast(filename: str, content: str) -> List[Dict[str, Any]]:
+    findings: List[Dict[str, Any]] = []
+    lowered = content.lower()
+
+    # Hardcoded secret patterns.
+    secret_patterns = [
+        r"(?i)api[_-]?key\s*=\s*[\"'][A-Za-z0-9_\-]{16,}[\"']",
+        r"(?i)secret\s*=\s*[\"'][^\"']{12,}[\"']",
+        r"(?i)password\s*=\s*[\"'][^\"']{8,}[\"']",
+        r"(?i)token\s*=\s*[\"'][A-Za-z0-9_\-\.]{16,}[\"']",
+    ]
+    for pattern in secret_patterns:
+        match = re.search(pattern, content)
+        if match:
+            findings.append(
+                build_static_issue(
+                    filename=filename,
+                    severity="HIGH",
+                    title="Hardcoded secret detected",
+                    root_problem="Sensitive credential material appears directly in source code.",
+                    suggested_solution="Move secrets to environment variables or a managed secret store.",
+                    suggested_fix="Replace hardcoded credential literals with runtime secret retrieval and rotate exposed keys.",
+                    source_code=match.group(0),
+                )
+            )
+            break
+
+    # Python eval/exec misuse.
+    if filename.lower().endswith(".py") and re.search(r"\b(eval|exec)\s*\(", content):
+        findings.append(
+            build_static_issue(
+                filename=filename,
+                severity="HIGH",
+                title="Dynamic code execution risk",
+                root_problem="Use of eval/exec can execute untrusted input and lead to remote code execution.",
+                suggested_solution="Use safe parsers and explicit mappings instead of dynamic execution.",
+                suggested_fix="Replace eval/exec with controlled dispatch tables or ast.literal_eval for trusted literal parsing.",
+            )
+        )
+
+    # SQL injection heuristics.
+    if re.search(r"(?i)(select|insert|update|delete).*(\+|%\s*s|\.format\()", content):
+        findings.append(
+            build_static_issue(
+                filename=filename,
+                severity="HIGH",
+                title="Possible SQL injection",
+                root_problem="SQL query string interpolation may allow attacker-controlled input to alter queries.",
+                suggested_solution="Use parameterized queries or ORM parameter binding for all dynamic values.",
+                suggested_fix="Refactor query construction to parameterized placeholders and pass values separately via driver APIs.",
+            )
+        )
+
+    # JavaScript/TypeScript dangerous sinks.
+    if any(filename.lower().endswith(ext) for ext in (".js", ".ts", ".jsx", ".tsx")):
+        if "dangerouslysetinnerhtml" in lowered or "innerhtml =" in lowered:
+            findings.append(
+                build_static_issue(
+                    filename=filename,
+                    severity="MEDIUM",
+                    title="Potential cross-site scripting sink",
+                    root_problem="Direct HTML injection sink is present and may render unsanitized data.",
+                    suggested_solution="Use safe templating and sanitize all untrusted HTML before rendering.",
+                    suggested_fix="Avoid direct HTML sinks; prefer escaped rendering and strict allowlist-based sanitization.",
+                )
+            )
+
+    # IaC guardrails.
+    if filename.lower().endswith("dockerfile") or filename.lower().endswith("containerfile"):
+        if re.search(r"(?im)^\s*user\s+root", content):
+            findings.append(
+                build_static_issue(
+                    filename=filename,
+                    severity="MEDIUM",
+                    title="Container runs as root",
+                    root_problem="Running containers as root increases impact of container breakout and lateral movement.",
+                    suggested_solution="Use a non-root runtime user and drop unnecessary Linux capabilities.",
+                    suggested_fix="Create and switch to a dedicated low-privilege user before entrypoint execution.",
+                )
+            )
+    if filename.lower().endswith(".tf"):
+        if re.search(r"0\.0\.0\.0/0", content):
+            findings.append(
+                build_static_issue(
+                    filename=filename,
+                    severity="HIGH",
+                    title="Overly permissive network exposure in Terraform",
+                    root_problem="Ingress/egress open to the public internet broadens attack surface.",
+                    suggested_solution="Restrict CIDR ranges to trusted networks and enforce least privilege network policy.",
+                    suggested_fix="Replace 0.0.0.0/0 with explicit trusted CIDR blocks and segment exposed services.",
+                )
+            )
+
+    deduped: Dict[str, Dict[str, Any]] = {}
+    for finding in findings:
+        key = f"{finding.get('file_name','')}|{finding.get('issue_description','')}"
+        deduped[key] = finding
+    return list(deduped.values())
+
+
+def merge_hybrid_findings(ai_result: Dict[str, Any], sast_findings: List[Dict[str, Any]], filename: str) -> Dict[str, Any]:
+    ai_findings = ai_result.get("findings", []) if isinstance(ai_result.get("findings", []), list) else []
+    normalized_ai = [sanitize_scan_finding(f, filename) for f in ai_findings if isinstance(f, dict)]
+
+    merged: List[Dict[str, Any]] = []
+    seen = set()
+
+    for finding in normalized_ai + [sanitize_scan_finding(f, filename) for f in sast_findings if isinstance(f, dict)]:
+        key = (finding.get("file_name", ""), finding.get("issue_description", ""))
+        if key in seen:
+            continue
+        seen.add(key)
+        merged.append(finding)
+
+    merged = sort_findings_by_severity(merged)
+    merged_stats = build_stats_from_findings(merged)
+
+    merged_result = dict(ai_result)
+    merged_result["findings"] = merged
+    merged_result["stats"] = merged_stats
+    merged_result["status"] = "VULNERABLE" if merged else "SAFE"
+    merged_result["scanned_file_name"] = filename
+    return merged_result
+
+
+def compute_security_score(stats: Dict[str, Any], total_files: int, overall_status: str) -> Dict[str, Any]:
+    high = int(stats.get("High", 0))
+    medium = int(stats.get("Medium", 0))
+    low = int(stats.get("Low", 0))
+    error_penalty = 15 if str(overall_status).upper() == "ERROR" else 0
+
+    score = 100 - (high * 20) - (medium * 10) - (low * 4) - error_penalty
+    score = max(0, min(100, score))
+
+    if score >= 90:
+        grade = "A"
+    elif score >= 80:
+        grade = "B"
+    elif score >= 70:
+        grade = "C"
+    elif score >= 60:
+        grade = "D"
+    else:
+        grade = "F"
+
+    return {
+        "score": score,
+        "grade": grade,
+        "total_files": total_files,
+        "weights": {
+            "high": 20,
+            "medium": 10,
+            "low": 4,
+            "error": 15,
+        },
+        "rationale": "Score starts at 100 and subtracts weighted penalties for unresolved findings.",
+    }
+
+
+def _set_scan_task(scan_id: str, **kwargs: Any) -> Dict[str, Any]:
+    with scan_task_lock:
+        current = SCAN_TASKS.get(scan_id, {})
+        current.update(kwargs)
+        current["updated_at"] = _utc_timestamp()
+        SCAN_TASKS[scan_id] = current
+        return dict(current)
+
+
+def get_scan_task(scan_id: str) -> Optional[Dict[str, Any]]:
+    with scan_task_lock:
+        task = SCAN_TASKS.get(scan_id)
+        return dict(task) if task else None
+
+
+async def notify_scan_subscribers(scan_id: str) -> None:
+    payload = get_scan_task(scan_id)
+    if not payload:
+        return
+    subscribers = SCAN_SUBSCRIBERS.get(scan_id, [])
+    if not subscribers:
+        return
+
+    alive: List[WebSocket] = []
+    for ws in subscribers:
+        try:
+            await ws.send_json(payload)
+            alive.append(ws)
+        except Exception:
+            continue
+    SCAN_SUBSCRIBERS[scan_id] = alive
+
+
+async def register_scan_socket(scan_id: str, websocket: WebSocket) -> None:
+    await websocket.accept()
+    subscribers = SCAN_SUBSCRIBERS.setdefault(scan_id, [])
+    subscribers.append(websocket)
+    await notify_scan_subscribers(scan_id)
+
+
+def unregister_scan_socket(scan_id: str, websocket: WebSocket) -> None:
+    subscribers = SCAN_SUBSCRIBERS.get(scan_id, [])
+    SCAN_SUBSCRIBERS[scan_id] = [ws for ws in subscribers if ws is not websocket]
+
+
+class AsyncScanResponse(BaseModel):
+    scan_id: str
+    status: str
+    ws_path: str
+
+
+class ApplyFixRequest(BaseModel):
+    file_name: str
+    source_code: str
+    fixed_code: str
+
+
+def build_fix_preview_diff(file_name: str, source_code: str, fixed_code: str) -> str:
+    source_lines = source_code.splitlines(keepends=True)
+    fixed_lines = fixed_code.splitlines(keepends=True)
+    diff_lines = difflib.unified_diff(
+        source_lines,
+        fixed_lines,
+        fromfile=f"a/{file_name}",
+        tofile=f"b/{file_name}",
+        lineterm="",
+    )
+    return "\n".join(diff_lines)
 
 
 def load_scan_history() -> List[Dict[str, Any]]:
@@ -258,28 +755,33 @@ def compare_scan_issues(base_findings: List[Dict[str, Any]], compare_findings: L
         "unchanged_issues": [ {"file_name": fn, "issue_description": desc} for fn, desc in unchanged ]
     }
 
-def call_ollama(prompt: str, system_prompt: str) -> str:
-    """Fallback to local Ollama API"""
-    try:
-        response = requests.post("http://localhost:11434/api/generate", json={
-            "model": "llama3.2", # or another default model
-            "prompt": prompt,
-            "system": system_prompt,
-            "stream": False
-        }, timeout=60)
-        response.raise_for_status()
-        return response.json().get("response", "")
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Ollama connection failed: {e}")
-        return json.dumps({
-            "status": "ERROR", 
-            "stats": {"High": 0, "Medium": 0, "Low": 0}, 
-            "findings": [{
-                "file_name": "unknown", 
-                "issue_description": f"Ollama Error: {str(e)}", 
-                "suggested_fix": "Start Ollama via command line."
-            }]
-        })
+
+def build_error_scan_response(message: str, report_id: Optional[str] = None) -> JSONResponse:
+    """Return a structured scan response so the frontend can render failures inline."""
+    safe_message = redact_sensitive_text(message)
+    payload = {
+        "report_id": report_id or str(uuid.uuid4()),
+        "status": "ERROR",
+        "stats": {"High": 0, "Medium": 0, "Low": 0},
+        "findings": [{
+            "file_name": "unknown",
+            "issue_description": f"Analysis Error: {safe_message}",
+            "suggested_fix": "Retry the scan or verify the configured AI provider and local services.",
+        }],
+        "improvement_suggestions": [],
+    }
+    return JSONResponse(content=payload)
+
+
+def redact_sensitive_text(text: Any) -> str:
+    raw = str(text or "")
+
+    # Mask common provider key patterns if they appear in exception strings.
+    redacted = re.sub(r"gsk_[A-Za-z0-9_\-]{8,}", "gsk_[REDACTED]", raw)
+    redacted = re.sub(r"sk-[A-Za-z0-9]{8,}", "sk-[REDACTED]", redacted)
+    redacted = re.sub(r"AIza[0-9A-Za-z_\-]{8,}", "AIza[REDACTED]", redacted)
+    redacted = re.sub(r"Bearer\s+[A-Za-z0-9._\-]+", "Bearer [REDACTED]", redacted, flags=re.IGNORECASE)
+    return redacted
 
 def call_openai(prompt: str, system_prompt: str, api_key: str) -> str:
     """Call OpenAI API (GPT-4 or GPT-3.5)"""
@@ -297,13 +799,14 @@ def call_openai(prompt: str, system_prompt: str, api_key: str) -> str:
         )
         return response.choices[0].message.content
     except Exception as e:
-        logger.error(f"OpenAI API Error: {e}")
+        safe_error = redact_sensitive_text(e)
+        logger.error(f"OpenAI API Error: {safe_error}")
         return json.dumps({
             "status": "ERROR", 
             "stats": {"High": 0, "Medium": 0, "Low": 0}, 
             "findings": [{
                 "file_name": "unknown", 
-                "issue_description": f"OpenAI Error: {str(e)}", 
+                "issue_description": f"OpenAI Error: {safe_error}", 
                 "suggested_fix": "Check API key or rate limits."
             }]
         })
@@ -350,13 +853,14 @@ def call_gemini(prompt: str, system_prompt: str, api_key: str) -> str:
             }]
         })
     except Exception as e:
-        logger.error(f"Gemini API Error: {e}")
+        safe_error = redact_sensitive_text(e)
+        logger.error(f"Gemini API Error: {safe_error}")
         return json.dumps({
             "status": "ERROR", 
             "stats": {"High": 0, "Medium": 0, "Low": 0}, 
             "findings": [{
                 "file_name": "unknown", 
-                "issue_description": f"Gemini Error: {str(e)}", 
+                "issue_description": f"Gemini Error: {safe_error}", 
                 "suggested_fix": "Check API key or rate limits."
             }]
         })
@@ -377,16 +881,110 @@ def call_groq(prompt: str, system_prompt: str, api_key: str, temperature: float 
         )
         return completion.choices[0].message.content
     except Exception as e:
-        logger.error(f"Groq API Error: {e}")
+        safe_error = redact_sensitive_text(e)
+        logger.error(f"Groq API Error (strict JSON mode): {safe_error}")
+
+        # Groq may reject a near-valid response in strict JSON mode.
+        # Retry once without response_format and force plain JSON text output.
+        try:
+            client = groq.Groq(api_key=api_key)
+            retry_completion = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            system_prompt
+                            + "\n\nIMPORTANT: Return only one valid JSON object."
+                            + " Do not include markdown, explanations, or trailing text."
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0,
+                max_tokens=1400,
+            )
+            fallback_text = retry_completion.choices[0].message.content or ""
+            if fallback_text.strip():
+                return fallback_text
+        except Exception as retry_error:
+            logger.error(f"Groq retry without strict JSON mode failed: {redact_sensitive_text(retry_error)}")
+
         return json.dumps({
-            "status": "ERROR", 
-            "stats": {"High": 0, "Medium": 0, "Low": 0}, 
+            "status": "ERROR",
+            "stats": {"High": 0, "Medium": 0, "Low": 0},
             "findings": [{
-                "file_name": "unknown", 
-                "issue_description": f"Groq Error: {str(e)}", 
-                "suggested_fix": "Check API key or rate limits."
+                "file_name": "unknown",
+                "issue_description": f"Groq Error: {safe_error}",
+                "suggested_fix": "Check API key, prompt size, or rate limits."
             }]
         })
+
+
+def extract_first_json_object(raw: str) -> Optional[str]:
+    """Extract first balanced JSON object from arbitrary text."""
+    if not raw:
+        return None
+
+    text = raw.strip()
+    start = text.find("{")
+    if start == -1:
+        return None
+
+    depth = 0
+    in_string = False
+    escaped = False
+
+    for i in range(start, len(text)):
+        ch = text[i]
+
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+            continue
+
+        if ch == '"':
+            in_string = True
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:i + 1]
+
+    return None
+
+
+def _try_parse_json_relaxed(text: str) -> Optional[Dict[str, Any]]:
+    """Parse JSON with lightweight repairs for common LLM formatting mistakes."""
+    if not text:
+        return None
+
+    candidates = [text.strip()]
+
+    extracted = extract_first_json_object(text)
+    if extracted:
+        candidates.append(extracted)
+
+    for candidate in candidates:
+        try:
+            return json.loads(candidate)
+        except Exception:
+            pass
+
+        # Repair pass: remove trailing commas before closing braces/brackets.
+        repaired = re.sub(r",\s*([}\]])", r"\1", candidate)
+        try:
+            return json.loads(repaired)
+        except Exception:
+            continue
+
+    return None
 
 def extract_severity(issue_description: str) -> str:
     """Extract severity from the issue description."""
@@ -422,9 +1020,12 @@ def parse_ai_response(ai_text: str, filename: str) -> dict:
     try:
         if "```json" in ai_text:
             json_str = ai_text.split("```json")[-1].split("```")[0].strip()
-            parsed = json.loads(json_str)
+            parsed = _try_parse_json_relaxed(json_str)
         else:
-            parsed = json.loads(ai_text)
+            parsed = _try_parse_json_relaxed(ai_text)
+
+        if not parsed:
+            raise ValueError("Could not parse valid JSON from model output")
         
         if "findings" in parsed:
             parsed["findings"] = sort_findings_by_severity(parsed["findings"])
@@ -432,6 +1033,16 @@ def parse_ai_response(ai_text: str, filename: str) -> dict:
         else:
             parsed["findings"] = []
             parsed["stats"] = {"High": 0, "Medium": 0, "Low": 0}
+
+        if "overall_code_review" not in parsed or not isinstance(parsed.get("overall_code_review"), dict):
+            parsed["overall_code_review"] = {
+                "summary": "No professional code review was returned by the model.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Not assessed.",
+                "test_recommendations": [],
+                "priority_actions": []
+            }
 
         return parsed
     except Exception as e:
@@ -446,8 +1057,368 @@ def parse_ai_response(ai_text: str, filename: str) -> dict:
                 "file_name": filename,
                 "issue_description": "Raw Response (Could not parse proper JSON)",
                 "suggested_fix": ai_text[:500] + "..."
-            }]
+            }],
+            "overall_code_review": {
+                "summary": "Model output could not be parsed into valid JSON; professional review is incomplete.",
+                "strengths": [],
+                "key_risks": ["Response parsing failed, so the review quality is degraded."],
+                "maintainability_assessment": "Not fully assessed due to model output format issues.",
+                "test_recommendations": ["Re-run scan and validate model/provider response formatting."],
+                "priority_actions": ["Re-run the scan with a stable provider configuration."]
+            }
         }
+
+
+def normalize_provider_choice(provider: Optional[str]) -> str:
+    normalized = (provider or "").strip().lower()
+    if normalized in {"groq", "openai", "gemini", "auto"}:
+        return normalized
+    return "auto"
+
+
+def build_provider_error_json(issue_description: str, suggested_fix: str) -> str:
+    return json.dumps({
+        "status": "ERROR",
+        "stats": {"High": 0, "Medium": 0, "Low": 0},
+        "findings": [{
+            "file_name": "unknown",
+            "issue_description": issue_description,
+            "suggested_fix": suggested_fix,
+        }],
+    })
+
+
+def call_provider_with_json_prompt(
+    prompt: str,
+    system_prompt: str,
+    api_key: str,
+    provider: Optional[str],
+    temperature: float = 0.1
+) -> str:
+    chosen_provider = normalize_provider_choice(provider)
+    key = (api_key or "").strip()
+
+    if chosen_provider == "groq":
+        if not key:
+            return build_provider_error_json(
+                "Provider Error: Missing API key for Groq.",
+                "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+            )
+        return call_groq(prompt, system_prompt, key, temperature)
+    if chosen_provider == "openai":
+        if not key:
+            return build_provider_error_json(
+                "Provider Error: Missing API key for OpenAI.",
+                "Provide an OpenAI API key (starts with sk-), or select auto with a supported key.",
+            )
+        return call_openai(prompt, system_prompt, key)
+    if chosen_provider == "gemini":
+        if not key:
+            return build_provider_error_json(
+                "Provider Error: Missing API key for Gemini.",
+                "Provide a Gemini API key (starts with AIzaSy), or select auto with a supported key.",
+            )
+        return call_gemini(prompt, system_prompt, key)
+
+    if key.startswith("gsk_"):
+        return call_groq(prompt, system_prompt, key, temperature)
+    if key.startswith("sk-"):
+        return call_openai(prompt, system_prompt, key)
+    if key.startswith("AIzaSy"):
+        return call_gemini(prompt, system_prompt, key)
+    if not key and DEFAULT_GROQ_API_KEY:
+        return call_groq(prompt, system_prompt, DEFAULT_GROQ_API_KEY, temperature)
+
+    if key:
+        return build_provider_error_json(
+            "Provider Error: Unsupported API key format for auto provider.",
+            "Use one of: gsk_ (Groq), sk- (OpenAI), or AIzaSy (Gemini), or select an explicit provider.",
+        )
+
+    return build_provider_error_json(
+        "Provider Error: No API key available for analysis.",
+        "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+    )
+
+
+def build_fallback_file_review(file_findings: List[Dict[str, Any]]) -> Dict[str, Any]:
+    finding_count = len(file_findings)
+    high = sum(1 for f in file_findings if extract_severity(f.get("issue_description", "")) == "High")
+    medium = sum(1 for f in file_findings if extract_severity(f.get("issue_description", "")) == "Medium")
+    low = sum(1 for f in file_findings if extract_severity(f.get("issue_description", "")) == "Low")
+
+    if finding_count == 0:
+        return {
+            "summary": "No vulnerabilities were detected in this file during the current scan.",
+            "strengths": [
+                "No explicit security findings were reported by the static AI scan.",
+                "Code appears to avoid obvious high-risk anti-patterns in this pass."
+            ],
+            "key_risks": [
+                "Absence of findings does not guarantee exploit resistance.",
+                "Runtime behavior and edge cases still require testing."
+            ],
+            "maintainability_assessment": "Maintainability risk appears low from a security perspective in this scan.",
+            "test_recommendations": [
+                "Add negative-path tests for malformed inputs.",
+                "Run dependency and runtime security checks in CI."
+            ],
+            "priority_actions": [
+                "Keep regression tests for auth, validation, and error handling up to date.",
+                "Re-run this scan after major refactors or dependency upgrades."
+            ]
+        }
+
+    return {
+        "summary": (
+            f"This file has {finding_count} issue(s): {high} high, {medium} medium, and {low} low severity. "
+            "Security hardening should prioritize high-impact vulnerabilities first."
+        ),
+        "strengths": [
+            "The scan provided concrete remediation guidance for identified issues.",
+            "Findings are categorized by severity for prioritization."
+        ],
+        "key_risks": [
+            "Unresolved findings can lead to security exposure in production.",
+            "Compounded medium and low findings may still become exploitable in chained attacks."
+        ],
+        "maintainability_assessment": "Maintainability is currently affected by the number of unresolved security findings.",
+        "test_recommendations": [
+            "Introduce focused tests for each vulnerability path and remediation.",
+            "Add regression tests to prevent reintroduction of fixed issues."
+        ],
+        "priority_actions": [
+            "Fix all high-severity issues before release.",
+            "Schedule remediation for medium and low issues with owners and due dates."
+        ]
+    }
+
+
+def review_has_substance(review: Dict[str, Any]) -> bool:
+    if not isinstance(review, dict):
+        return False
+
+    summary = str(review.get("summary", "")).strip().lower()
+    if not summary or "no professional code review was returned by the model" in summary:
+        return False
+
+    list_fields = ["strengths", "key_risks", "test_recommendations", "priority_actions"]
+    list_content_count = 0
+    for field in list_fields:
+        value = review.get(field, [])
+        if isinstance(value, list):
+            list_content_count += len([v for v in value if str(v).strip()])
+
+    return list_content_count > 0
+
+
+def generate_file_overall_review(
+    filename: str,
+    content: str,
+    findings: List[Dict[str, Any]],
+    persona: str,
+    api_key: str,
+    provider: Optional[str]
+) -> Dict[str, Any]:
+    condensed_findings = []
+    for finding in findings[:10]:
+        condensed_findings.append({
+            "issue_description": finding.get("issue_description", ""),
+            "root_problem": finding.get("root_problem", ""),
+            "suggested_solution": finding.get("suggested_solution", ""),
+            "suggested_fix": finding.get("suggested_fix", "")
+        })
+
+    system_prompt = (
+        "You are a Principal Software Reviewer and Application Security Architect. "
+        "Return ONLY one valid JSON object with this exact schema:\n"
+        "{\n"
+        "  \"summary\": \"string\",\n"
+        "  \"strengths\": [\"item 1\", \"item 2\"],\n"
+        "  \"key_risks\": [\"item 1\", \"item 2\"],\n"
+        "  \"maintainability_assessment\": \"string\",\n"
+        "  \"test_recommendations\": [\"item 1\", \"item 2\"],\n"
+        "  \"priority_actions\": [\"item 1\", \"item 2\"]\n"
+        "}\n"
+        "Review the file itself, not only vulnerabilities. Be concrete and professional."
+    )
+
+    prompt = (
+        f"Persona: {persona}\n"
+        f"File name: {filename}\n"
+        "Generate a professional overall code review for this specific file.\n"
+        "Include architecture/readability observations, security posture, maintainability, and test strategy.\n"
+        "Do not output placeholders; provide actionable details.\n\n"
+        f"Findings summary JSON:\n{json.dumps(condensed_findings, ensure_ascii=True)}\n\n"
+        f"File content:\n---\n{content[:12000]}\n---\n"
+    )
+
+    try:
+        raw = call_provider_with_json_prompt(prompt, system_prompt, api_key, provider, temperature=0.1)
+        parsed = _try_parse_json_relaxed(raw)
+        if isinstance(parsed, dict):
+            parsed.setdefault("summary", "Professional review generated from file content and findings.")
+            parsed.setdefault("strengths", [])
+            parsed.setdefault("key_risks", [])
+            parsed.setdefault("maintainability_assessment", "Maintainability assessed based on file structure and risk profile.")
+            parsed.setdefault("test_recommendations", [])
+            parsed.setdefault("priority_actions", [])
+            return parsed
+    except Exception as e:
+        logger.error(f"Failed to generate dedicated file review for {filename}: {e}")
+
+    return build_fallback_file_review(findings)
+
+
+def generate_executive_vulnerability_summary(
+    findings: List[Dict[str, Any]],
+    persona: str,
+    api_key: str,
+    provider: Optional[str]
+) -> Dict[str, Any]:
+    def map_issue_to_standards(issue_text: str) -> Dict[str, List[str]]:
+        text = (issue_text or "").lower()
+
+        # Lightweight keyword mapping to maintain useful output even when model output is partial.
+        rules = [
+            (("sql injection", "sqli"), (["CWE-89"], ["A03:2021 - Injection"])),
+            (("xss", "cross-site scripting"), (["CWE-79"], ["A03:2021 - Injection"])),
+            (("path traversal", "directory traversal"), (["CWE-22"], ["A01:2021 - Broken Access Control"])),
+            (("hardcoded", "api key", "secret", "credential"), (["CWE-798"], ["A02:2021 - Cryptographic Failures"])),
+            (("deserialization",), (["CWE-502"], ["A08:2021 - Software and Data Integrity Failures"])),
+            (("auth", "authorization", "access control"), (["CWE-284"], ["A01:2021 - Broken Access Control"])),
+            (("buffer overflow", "out-of-bounds"), (["CWE-120"], ["A05:2021 - Security Misconfiguration"])),
+            (("ssrf",), (["CWE-918"], ["A10:2021 - Server-Side Request Forgery"])),
+            (("race condition",), (["CWE-362"], ["A04:2021 - Insecure Design"])),
+            (("xxe", "xml external entity"), (["CWE-611"], ["A05:2021 - Security Misconfiguration"])),
+        ]
+
+        cwe_ids: List[str] = []
+        owasp: List[str] = []
+        for keys, (cwe_list, owasp_list) in rules:
+            if any(k in text for k in keys):
+                cwe_ids.extend(cwe_list)
+                owasp.extend(owasp_list)
+
+        if not cwe_ids:
+            cwe_ids = ["CWE-Other"]
+        if not owasp:
+            owasp = ["A04:2021 - Insecure Design"]
+
+        return {
+            "cwe_ids": sorted(set(cwe_ids)),
+            "owasp_categories": sorted(set(owasp))
+        }
+
+    if not findings:
+        return {
+            "overall_assessment": "No vulnerabilities were detected in this scan.",
+            "most_important_findings": [],
+            "immediate_next_steps": [
+                "Maintain secure coding and dependency hygiene.",
+                "Continue periodic scans and add targeted security tests."
+            ]
+        }
+
+    sorted_findings = sort_findings_by_severity(findings)
+    top_findings = sorted_findings[:20]
+    condensed_findings = []
+    for f in top_findings:
+        condensed_findings.append({
+            "file_name": f.get("file_name", "unknown"),
+            "severity": extract_severity(f.get("issue_description", "")),
+            "issue_description": f.get("issue_description", ""),
+            "root_problem": f.get("root_problem", ""),
+            "suggested_solution": f.get("suggested_solution", ""),
+            "suggested_fix": f.get("suggested_fix", "")
+        })
+
+    system_prompt = (
+        "You are a Principal Application Security Reviewer. "
+        "Return ONLY valid JSON with this exact schema:\n"
+        "{\n"
+        "  \"overall_assessment\": \"string\",\n"
+        "  \"most_important_findings\": [{\n"
+        "    \"title\": \"string\",\n"
+        "    \"severity\": \"High|Medium|Low\",\n"
+        "    \"cwe_ids\": [\"CWE-79\"],\n"
+        "    \"owasp_categories\": [\"A03:2021 - Injection\"],\n"
+        "    \"affected_files\": [\"file\"],\n"
+        "    \"why_it_matters\": \"detailed explanation\",\n"
+        "    \"attack_scenario\": \"realistic exploitation path\",\n"
+        "    \"business_impact\": \"impact on confidentiality/integrity/availability and operations\",\n"
+        "    \"recommended_actions\": [\"action 1\", \"action 2\", \"action 3\"]\n"
+        "  }],\n"
+        "  \"immediate_next_steps\": [\"step 1\", \"step 2\", \"step 3\"]\n"
+        "}\n"
+        "Prioritize depth, precision, and professional enterprise tone."
+    )
+
+    prompt = (
+        f"Persona: {persona}\n"
+        "Use the findings below and produce a detailed executive summary focused on the most important vulnerabilities.\n"
+        "Focus on concrete risk impact and practical remediation sequencing.\n\n"
+        "For each important finding, map to relevant CWE IDs and OWASP Top 10 (2021) categories.\n"
+        "Keep statements evidence-based and concise enough for leadership review.\n\n"
+        f"Findings JSON:\n{json.dumps(condensed_findings, ensure_ascii=True)}\n"
+    )
+
+    try:
+        raw = call_provider_with_json_prompt(prompt, system_prompt, api_key, provider, temperature=0.1)
+        parsed = _try_parse_json_relaxed(raw)
+        if isinstance(parsed, dict):
+            if "most_important_findings" not in parsed or not isinstance(parsed.get("most_important_findings"), list):
+                parsed["most_important_findings"] = []
+            if "immediate_next_steps" not in parsed or not isinstance(parsed.get("immediate_next_steps"), list):
+                parsed["immediate_next_steps"] = []
+
+            for item in parsed["most_important_findings"]:
+                if not isinstance(item, dict):
+                    continue
+                mapped = map_issue_to_standards(item.get("title", ""))
+                if "cwe_ids" not in item or not isinstance(item.get("cwe_ids"), list) or not item.get("cwe_ids"):
+                    item["cwe_ids"] = mapped["cwe_ids"]
+                if "owasp_categories" not in item or not isinstance(item.get("owasp_categories"), list) or not item.get("owasp_categories"):
+                    item["owasp_categories"] = mapped["owasp_categories"]
+                item.setdefault(
+                    "business_impact",
+                    "This weakness may impact confidentiality, integrity, or availability if exploited in production."
+                )
+
+            parsed.setdefault("overall_assessment", "Executive summary generated from scan findings.")
+            return parsed
+    except Exception as e:
+        logger.error(f"Failed generating executive summary with AI provider: {e}")
+
+    fallback_items = []
+    for finding in top_findings[:8]:
+        severity = extract_severity(finding.get("issue_description", ""))
+        mapped = map_issue_to_standards(finding.get("issue_description", ""))
+        fallback_items.append({
+            "title": finding.get("issue_description", "Untitled finding"),
+            "severity": severity,
+            "cwe_ids": mapped["cwe_ids"],
+            "owasp_categories": mapped["owasp_categories"],
+            "affected_files": [finding.get("file_name", "unknown")],
+            "why_it_matters": finding.get("root_problem") or "This issue increases attack surface and risk exposure.",
+            "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+            "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+            "recommended_actions": [
+                finding.get("suggested_solution") or "Implement secure coding remediation and validation controls.",
+                finding.get("suggested_fix") or "Apply the proposed patch and verify behavior with tests.",
+                "Add regression security tests to prevent recurrence."
+            ]
+        })
+
+    return {
+        "overall_assessment": "Fallback executive summary generated from structured findings due to provider output constraints.",
+        "most_important_findings": fallback_items,
+        "immediate_next_steps": [
+            "Remediate high-severity issues first and verify with tests.",
+            "Create owners and deadlines for each remaining finding.",
+            "Re-run full scan after fixes and compare results."
+        ]
+    }
 
 def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, provider: str = None):
     if "Student" in persona:
@@ -466,6 +1437,14 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             "    \"source_code\": \"problematic snippet\",\n"
             "    \"fixed_code\": \"corrected snippet\"\n"
             "  }],\n"
+            "  \"overall_code_review\": {\n"
+            "    \"summary\": \"professional review summary\",\n"
+            "    \"strengths\": [\"strength 1\", \"strength 2\"],\n"
+            "    \"key_risks\": [\"risk 1\", \"risk 2\"],\n"
+            "    \"maintainability_assessment\": \"maintainability and code quality assessment\",\n"
+            "    \"test_recommendations\": [\"test recommendation 1\", \"test recommendation 2\"],\n"
+            "    \"priority_actions\": [\"priority 1\", \"priority 2\"]\n"
+            "  },\n"
             "  \"improvement_suggestions\": [\"suggestion1\", \"suggestion2\", \"suggestion3\"]\n"
             "}\n\n"
             "IMPORTANT:\n"
@@ -494,7 +1473,15 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
             "    \"suggested_fix\": \"detailed code correction or remediation steps\",\n"
             "    \"source_code\": \"problematic snippet\",\n"
             "    \"fixed_code\": \"corrected snippet\"\n"
-            "  }]\n"
+            "  }],\n"
+            "  \"overall_code_review\": {\n"
+            "    \"summary\": \"professional review summary\",\n"
+            "    \"strengths\": [\"strength 1\", \"strength 2\"],\n"
+            "    \"key_risks\": [\"risk 1\", \"risk 2\"],\n"
+            "    \"maintainability_assessment\": \"maintainability and code quality assessment\",\n"
+            "    \"test_recommendations\": [\"test recommendation 1\", \"test recommendation 2\"],\n"
+            "    \"priority_actions\": [\"priority 1\", \"priority 2\"]\n"
+            "  }\n"
             "}\n\n"
             "IMPORTANT:\n"
             "- The heart of this application is the solution for each issue. Every finding MUST include a clear, specific fix.\n"
@@ -517,7 +1504,8 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
         f"2. For each issue, provide a clear 'Root Problem', 'Suggested Solution', and'Suggested Fix'.\n"
         f"3. Each 'Suggested Fix' MUST include real, actionable code examples or exact remediation steps.\n"
         f"4. Where possible, include 'source_code' with the problematic snippet and 'fixed_code' with the corrected version.\n"
-        f"{'5. Suggest 2-3 ways to improve this project (for learning purposes).' if 'Student' in persona else ''}\n\n"
+        f"5. Add an 'overall_code_review' section for this file with professional commentary on strengths, risks, maintainability, test strategy, and priority actions.\n"
+        f"{'6. Suggest 2-3 ways to improve this project (for learning purposes).' if 'Student' in persona else ''}\n\n"
         f"Code Content:\n"
         f"---\n"
         f"{content}\n"
@@ -526,54 +1514,32 @@ def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, 
     )
 
     try:
-        # Route based on provider selection or API key prefix
-        if provider and provider != "auto":
-            # Manual provider selection
-            logger.info(f"[{filename}] Manual provider selection: {provider}")
-            if provider == "groq":
-                ai_output = call_groq(user_prompt, system_rules, api_key, current_temp)
-            elif provider == "openai":
-                ai_output = call_openai(user_prompt, system_rules, api_key)
-            elif provider == "gemini":
-                ai_output = call_gemini(user_prompt, system_rules, api_key)
-            elif provider == "ollama":
-                ai_output = call_ollama(user_prompt, system_rules)
-            else:
-                logger.warning(f"[{filename}] Unknown provider: {provider}, falling back to Ollama")
-                ai_output = call_ollama(user_prompt, system_rules)
-        else:
-            # Auto-detection based on API key prefix
-            if api_key and str(api_key).strip():  # Better null/empty check
-                api_key_str = str(api_key).strip()
-                logger.info(f"[{filename}] API Key received and not empty: {api_key_str[:4]}...")
-                logger.info(f"[{filename}] Checking API key prefix...")
-                
-                if api_key_str.startswith("gsk_"):
-                    logger.info(f"[{filename}] ✓ Detected Groq API key")
-                    ai_output = call_groq(user_prompt, system_rules, api_key_str, current_temp)
-                
-                elif api_key_str.startswith("sk-"):
-                    logger.info(f"[{filename}] ✓ Detected OpenAI API key")
-                    ai_output = call_openai(user_prompt, system_rules, api_key_str)
-                
-                elif api_key_str.startswith("AIzaSy"):
-                    logger.info(f"[{filename}] ✓ Detected Google Gemini API key")
-                    ai_output = call_gemini(user_prompt, system_rules, api_key_str)
-                
-                else:
-                    # Unknown API key format, fallback to Ollama
-                    logger.warning(f"[{filename}] ✗ Unknown API key format: {api_key_str[:20]}..., falling back to Ollama")
-                    ai_output = call_ollama(user_prompt, system_rules)
-            else:
-                # No API key provided, use Ollama
-                logger.info(f"[{filename}] No API key provided or empty, using Ollama")
-                ai_output = call_ollama(user_prompt, system_rules)
-
+        ai_output = call_provider_with_json_prompt(user_prompt, system_rules, api_key, provider, current_temp)
     except Exception as e:
         logger.error(f"Unexpected error in analyze_code_logic: {e}")
-        return {"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": filename, "issue_description": f"Analysis Error: {str(e)}", "suggested_fix": "Try again or contact support."}]}
+        return {"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": filename, "issue_description": f"Analysis Error: {redact_sensitive_text(e)}", "suggested_fix": "Try again or contact support."}]}
 
-    return parse_ai_response(ai_output, filename)
+    parsed = parse_ai_response(ai_output, filename)
+    parsed["scanned_file_name"] = filename
+
+    # Ensure every finding is tied to the correct file, even if the model omitted file_name.
+    for finding in parsed.get("findings", []):
+        if not finding.get("file_name"):
+            finding["file_name"] = filename
+
+    # Force a dedicated per-file review if the model did not return a substantive one.
+    existing_review = parsed.get("overall_code_review", {})
+    if not review_has_substance(existing_review):
+        parsed["overall_code_review"] = generate_file_overall_review(
+            filename,
+            content,
+            parsed.get("findings", []),
+            persona,
+            api_key,
+            provider
+        )
+
+    return parsed
 
 def combine_results(results_list: List[dict]):
     total_stats = {"High": 0, "Medium": 0, "Low": 0, "Safe": 0, "Vuln": 0, "Error": 0}
@@ -617,17 +1583,47 @@ def combine_results(results_list: List[dict]):
     
     # Organize findings by file
     findings_by_file = {}
+
+    # Seed every scanned file, including files with zero findings.
+    for res in results_list:
+        scanned_file_name = res.get("scanned_file_name")
+        if scanned_file_name and scanned_file_name not in findings_by_file:
+            findings_by_file[scanned_file_name] = []
+
     for finding in all_findings:
         filename = finding.get("file_name", "unknown")
         if filename not in findings_by_file:
             findings_by_file[filename] = []
         findings_by_file[filename].append(finding)
+
+    # Collect professional file-level code reviews generated by the model.
+    overall_reviews_by_file = {}
+    for res in results_list:
+        file_findings = res.get("findings", [])
+        review = res.get("overall_code_review")
+        filename = res.get("scanned_file_name")
+        if not filename and file_findings and isinstance(file_findings, list):
+            filename = file_findings[0].get("file_name")
+
+        if not filename:
+            continue
+
+        if isinstance(review, dict):
+            overall_reviews_by_file[filename] = review
+        else:
+            overall_reviews_by_file[filename] = build_fallback_file_review(file_findings)
+
+    # Ensure every scanned file has a professional review section.
+    for filename, findings in findings_by_file.items():
+        if filename not in overall_reviews_by_file:
+            overall_reviews_by_file[filename] = build_fallback_file_review(findings)
     
     result = {
         "status": final_status,
         "stats": total_stats,
         "findings": all_findings,
-        "findings_by_file": findings_by_file
+        "findings_by_file": findings_by_file,
+        "overall_reviews_by_file": overall_reviews_by_file
     }
     
     # Add improvement suggestions if any exist
@@ -643,59 +1639,263 @@ def combine_results(results_list: List[dict]):
     
     return result
 
+
+def _build_cached_report_payload(combined: Dict[str, Any], persona: str, username: str) -> Dict[str, Any]:
+    return {
+        "results": {
+            "status": combined["status"],
+            "findings_by_file": combined["findings_by_file"],
+            "overall_reviews_by_file": combined.get("overall_reviews_by_file", {}),
+            "executive_summary": combined.get("executive_summary", {}),
+            "security_score": combined.get("security_score", {}),
+        },
+        "stats": combined["stats"],
+        "persona": persona,
+        "username": username,
+        "improvement_suggestions": combined.get("improvement_suggestions", []),
+        "security_score": combined.get("security_score", {}),
+        "created_at": time.time(),
+    }
+
+
+def _build_scan_history_entry(
+    report_id: str,
+    combined: Dict[str, Any],
+    persona: str,
+    provider: Optional[str],
+    username: str,
+    source: str,
+) -> Dict[str, Any]:
+    return {
+        "scan_id": report_id,
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "persona": persona,
+        "provider": provider or "auto",
+        "status": combined["status"],
+        "stats": combined["stats"],
+        "findings": combined["findings"],
+        "findings_by_file": combined["findings_by_file"],
+        "overall_reviews_by_file": combined.get("overall_reviews_by_file", {}),
+        "executive_summary": combined.get("executive_summary", {}),
+        "security_score": combined.get("security_score", {}),
+        "username": username,
+        "improvement_suggestions": combined.get("improvement_suggestions", []),
+        "source": source,
+    }
+
 def process_file_content(files: List[UploadFile]) -> List[Dict]:
-    files_to_scan = []
-    total_size = 0
-    
+    raw_files: List[Dict[str, Any]] = []
     for file in files:
         if not file.filename:
             continue
-            
-        # Check total file count
+        file.file.seek(0, 2)
+        size = file.file.tell()
+        file.file.seek(0)
+        raw_files.append({
+            "name": file.filename,
+            "size": size,
+            "content_bytes": file.file.read(),
+        })
+    return process_raw_file_payloads(raw_files)
+
+
+def process_raw_file_payloads(raw_files: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+    files_to_scan: List[Dict[str, str]] = []
+    total_size = 0
+
+    for file in raw_files:
+        filename = str(file.get("name", ""))
+        if not filename:
+            continue
+
         if len(files_to_scan) >= MAX_FILES_PER_SCAN:
             logger.warning(f"Scan limit reached: maximum {MAX_FILES_PER_SCAN} files allowed.")
             break
 
-        # Check individual file size
-        file.file.seek(0, 2)
-        size = file.file.tell()
-        file.file.seek(0)
-        
+        size = int(file.get("size", 0))
         if size > MAX_FILE_SIZE:
-            logger.warning(f"File {file.filename} too large: {size} bytes. Skipping.")
+            logger.warning(f"File {filename} too large: {size} bytes. Skipping.")
             continue
-            
+
         total_size += size
         if total_size > MAX_TOTAL_SCAN_SIZE:
             logger.warning("Total scan size limit reached. Skipping remaining files.")
             break
 
-        content_bytes = file.file.read()
-        
-        if file.filename.endswith('.zip'):
+        content_bytes = file.get("content_bytes", b"")
+        if not isinstance(content_bytes, (bytes, bytearray)):
+            continue
+
+        if filename.lower().endswith(".zip"):
             try:
                 with zipfile.ZipFile(io.BytesIO(content_bytes)) as z:
                     for z_filename in z.namelist():
-                        # Basic path traversal protection
                         if ".." in z_filename or z_filename.startswith("/"):
                             continue
-                            
-                        ext = z_filename.split('.')[-1].lower()
-                        if ext in ['py', 'cpp', 'h', 'js', 'ts', 'tsx', 'jsx'] and not z_filename.startswith('__'):
-                            with z.open(z_filename) as internal_file:
-                                files_to_scan.append({
-                                    "name": z_filename,
-                                    "content": internal_file.read().decode("utf-8", errors="ignore")
-                                })
+                        if z_filename.startswith("__"):
+                            continue
+                        if not is_supported_source_file(z_filename):
+                            continue
+                        with z.open(z_filename) as internal_file:
+                            files_to_scan.append({
+                                "name": z_filename,
+                                "content": internal_file.read().decode("utf-8", errors="ignore"),
+                            })
             except Exception as e:
-                logger.error(f"ZIP parsing error for {file.filename}: {e}")
+                logger.error(f"ZIP parsing error for {filename}: {e}")
         else:
+            if not is_supported_source_file(filename):
+                continue
             files_to_scan.append({
-                "name": file.filename,
-                "content": content_bytes.decode("utf-8", errors="ignore")
+                "name": filename,
+                "content": bytes(content_bytes).decode("utf-8", errors="ignore"),
             })
-            
+
     return files_to_scan
+
+
+def run_hybrid_analysis_for_files(
+    files_to_scan: List[Dict[str, str]],
+    effective_key: str,
+    persona: str,
+    provider: Optional[str],
+) -> List[Dict[str, Any]]:
+    individual_results: List[Dict[str, Any]] = []
+    for scanned_file in files_to_scan:
+        filename = scanned_file["name"]
+        content = scanned_file["content"]
+        llm_result = analyze_code_logic(filename, content, effective_key, persona, provider)
+        sast_findings = run_lightweight_sast(filename, content)
+        merged = merge_hybrid_findings(llm_result, sast_findings, filename)
+        individual_results.append(merged)
+    return individual_results
+
+
+async def run_hybrid_analysis_for_files_async(
+    scan_id: str,
+    files_to_scan: List[Dict[str, str]],
+    effective_key: str,
+    persona: str,
+    provider: Optional[str],
+) -> List[Dict[str, Any]]:
+    results: List[Dict[str, Any]] = []
+    total_files = max(1, len(files_to_scan))
+    for index, scanned_file in enumerate(files_to_scan, start=1):
+        filename = scanned_file["name"]
+        _set_scan_task(
+            scan_id,
+            status="running",
+            phase="analyzing_file",
+            current_file=filename,
+            progress_percent=int(((index - 1) / total_files) * 100),
+            message=f"Analyzing {filename} ({index}/{total_files})",
+        )
+        await notify_scan_subscribers(scan_id)
+
+        llm_result = await asyncio.to_thread(analyze_code_logic, filename, scanned_file["content"], effective_key, persona, provider)
+        sast_findings = run_lightweight_sast(filename, scanned_file["content"])
+        merged = merge_hybrid_findings(llm_result, sast_findings, filename)
+        results.append(merged)
+
+        _set_scan_task(
+            scan_id,
+            progress_percent=int((index / total_files) * 100),
+            message=f"Completed {filename}",
+        )
+        await notify_scan_subscribers(scan_id)
+
+    return results
+
+
+async def run_async_scan_job(
+    scan_id: str,
+    files_to_scan: List[Dict[str, str]],
+    persona: str,
+    effective_key: str,
+    provider: Optional[str],
+    username: str,
+    source: str,
+) -> None:
+    try:
+        _set_scan_task(
+            scan_id,
+            status="running",
+            phase="queued",
+            progress_percent=0,
+            message="Scan queued",
+            report_id=None,
+            result=None,
+            error=None,
+        )
+        await notify_scan_subscribers(scan_id)
+
+        individual_results = await run_hybrid_analysis_for_files_async(scan_id, files_to_scan, effective_key, persona, provider)
+        combined = combine_results(individual_results)
+
+        _set_scan_task(scan_id, phase="generating_summary", message="Generating executive summary")
+        await notify_scan_subscribers(scan_id)
+        combined["executive_summary"] = await asyncio.to_thread(
+            generate_executive_vulnerability_summary,
+            combined.get("findings", []),
+            persona,
+            effective_key,
+            provider,
+        )
+        combined["security_score"] = compute_security_score(
+            combined.get("stats", {}),
+            len(combined.get("findings_by_file", {})),
+            combined.get("status", "SAFE"),
+        )
+
+        REPORT_CACHE[scan_id] = _build_cached_report_payload(combined, persona, username)
+        append_scan_history(_build_scan_history_entry(scan_id, combined, persona, provider, username, source))
+
+        final_payload = {
+            "report_id": scan_id,
+            "scan_id": scan_id,
+            "status": combined["status"],
+            "stats": combined["stats"],
+            "security_score": combined.get("security_score", {}),
+            "findings": combined["findings"],
+            "overall_reviews_by_file": combined.get("overall_reviews_by_file", {}),
+            "executive_summary": combined.get("executive_summary", {}),
+            "improvement_suggestions": combined.get("improvement_suggestions", []),
+        }
+
+        _set_scan_task(
+            scan_id,
+            status="completed",
+            phase="done",
+            progress_percent=100,
+            message="Scan completed",
+            report_id=scan_id,
+            result=final_payload,
+        )
+        await notify_scan_subscribers(scan_id)
+    except Exception as e:
+        safe_error = redact_sensitive_text(e)
+        logger.error(f"Async scan task failed for {scan_id}: {safe_error}")
+        _set_scan_task(
+            scan_id,
+            status="failed",
+            phase="failed",
+            progress_percent=100,
+            message="Scan failed",
+            error=safe_error,
+            result={
+                "report_id": scan_id,
+                "status": "ERROR",
+                "stats": {"High": 0, "Medium": 0, "Low": 0},
+                "security_score": compute_security_score({"High": 0, "Medium": 0, "Low": 0}, 0, "ERROR"),
+                "findings": [{
+                    "file_name": "unknown",
+                    "issue_description": f"Analysis Error: {safe_error}",
+                    "suggested_fix": "Retry analysis and verify provider credentials and connectivity.",
+                }],
+                "improvement_suggestions": [],
+            },
+        )
+        await notify_scan_subscribers(scan_id)
 
 @app.post("/analyze")
 @limiter.limit("10/hour")
@@ -707,14 +1907,29 @@ async def analyze_endpoint(
     provider: Optional[str] = Form(None),
     username: Optional[str] = Form(None)
 ):
+    effective_key = ""
+    api_key = None
     try:
+        authenticated_user = get_optional_authenticated_user(request)
         logger.info(f"=== ANALYZE REQUEST START ===")
+        persona = _validate_persona(persona)
+        provider = _validate_provider(provider)
+        api_key = _validate_api_key(api_key)
+        username = _validate_optional_username(username)
+
+        if api_key and not ALLOW_CLIENT_API_KEYS:
+            raise HTTPException(
+                status_code=400,
+                detail="Direct API key submission is disabled. Configure DEFAULT_GROQ_API_KEY on the server.",
+            )
+
+        if len(files) > MAX_FILES_PER_SCAN:
+            raise HTTPException(status_code=400, detail=f"Too many files submitted. Max allowed: {MAX_FILES_PER_SCAN}")
+
         # Resolve effective API key: user-supplied > server default
         effective_key = (api_key or "").strip() or DEFAULT_GROQ_API_KEY or ""
         using_server_key = bool(not (api_key or "").strip() and DEFAULT_GROQ_API_KEY)
         logger.info(f"API Key source: {'user-supplied' if not using_server_key else 'server-default-groq'}")
-        if effective_key:
-            logger.info(f"Effective API Key first 10 chars: {effective_key[:10]}...")
         logger.info(f"Persona: {persona}")
         logger.info(f"Provider: {provider}")
         
@@ -728,14 +1943,21 @@ async def analyze_endpoint(
         if not files_to_scan:
             return JSONResponse(status_code=400, content={"message": "No valid source files found or invalid format."})
              
-        individual_results = []
-        for f in files_to_scan:
-            logger.info(f"Analyzing file: {f['name']} with key: {effective_key[:10] if effective_key else 'NONE'}...")
-            res = analyze_code_logic(f["name"], f["content"], effective_key, persona, provider)
-            individual_results.append(res)
+        individual_results = run_hybrid_analysis_for_files(files_to_scan, effective_key, persona, provider)
         
         # Combine all individual results into a single report
         combined = combine_results(individual_results)
+        combined["executive_summary"] = generate_executive_vulnerability_summary(
+            combined.get("findings", []),
+            persona,
+            effective_key,
+            provider
+        )
+        combined["security_score"] = compute_security_score(
+            combined.get("stats", {}),
+            len(combined.get("findings_by_file", {})),
+            combined.get("status", "SAFE"),
+        )
         combined["created_at"] = time.time()  # For cache cleanup
 
         # Create PDF results - one entry per file, not per finding
@@ -754,43 +1976,41 @@ async def analyze_endpoint(
                 "report": file_report
             })
         
-        REPORT_CACHE[report_id] = {
-            "results": {
-                "status": combined["status"],
-                "findings_by_file": combined["findings_by_file"],
-            },
-            "stats": combined["stats"],
-            "persona": persona,
-            "username": username or "anonymous",
-            "improvement_suggestions": combined.get("improvement_suggestions", [])
-        }
+        REPORT_CACHE[report_id] = _build_cached_report_payload(
+            combined,
+            persona,
+            username or "anonymous",
+        )
 
-        scan_history_entry = {
-            "scan_id": report_id,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "persona": persona,
-            "provider": provider or ("auto" if api_key else "ollama"),
-            "status": combined["status"],
-            "stats": combined["stats"],
-            "findings": combined["findings"],
-            "findings_by_file": combined["findings_by_file"],
-            "username": username or "anonymous",
-            "improvement_suggestions": combined.get("improvement_suggestions", []),
-            "source": "local_upload"
-        }
+        effective_username = authenticated_user or username or "anonymous"
+        scan_history_entry = _build_scan_history_entry(
+            report_id,
+            combined,
+            persona,
+            provider,
+            effective_username,
+            "local_upload",
+        )
         append_scan_history(scan_history_entry)
         
         return JSONResponse(content={
             "report_id": report_id,
             "status": combined["status"],
             "stats": combined["stats"],
+            "security_score": combined.get("security_score", {}),
             "findings": combined["findings"],
+            "overall_reviews_by_file": combined.get("overall_reviews_by_file", {}),
+            "executive_summary": combined.get("executive_summary", {}),
             "improvement_suggestions": combined.get("improvement_suggestions", [])
         })
         
     except Exception as e:
         logger.error(f"Error processing analysis: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return build_error_scan_response(str(e), report_id=locals().get("report_id"))
+    finally:
+        # Reduce secret lifetime in request-local variables.
+        effective_key = ""
+        api_key = None
 
 @app.post("/analyze-github")
 @limiter.limit("10/hour")
@@ -802,9 +2022,24 @@ async def analyze_github_endpoint(
     provider: Optional[str] = Form(None),
     username: Optional[str] = Form(None)
 ):
-    # Resolve effective API key: user-supplied > server default
-    api_key = (api_key or "").strip() or DEFAULT_GROQ_API_KEY or ""
+    api_key = None
     try:
+        authenticated_user = get_optional_authenticated_user(request)
+        github_url = _validate_github_url(github_url)
+        persona = _validate_persona(persona)
+        provider = _validate_provider(provider)
+        api_key = _validate_api_key(api_key)
+        username = _validate_optional_username(username)
+
+        if api_key and not ALLOW_CLIENT_API_KEYS:
+            raise HTTPException(
+                status_code=400,
+                detail="Direct API key submission is disabled. Configure DEFAULT_GROQ_API_KEY on the server.",
+            )
+
+        # Resolve effective API key: user-supplied > server default
+        api_key = (api_key or "").strip() or DEFAULT_GROQ_API_KEY or ""
+
         # Advanced URL parsing: handle both owner/repo and owner/repo/tree/branch
         clean_url = github_url.split('?')[0].rstrip('/')
         url_parts = clean_url.split('/')
@@ -881,7 +2116,7 @@ async def analyze_github_endpoint(
         with zipfile.ZipFile(io.BytesIO(content_bytes)) as z:
             for z_filename in z.namelist():
                 ext = z_filename.split('.')[-1].lower()
-                if ext in ['py', 'cpp', 'h', 'js', 'ts', 'tsx', 'jsx'] and not z_filename.startswith('__') and "/." not in z_filename and "/node_modules/" not in z_filename:
+                if is_supported_source_file(z_filename) and not z_filename.startswith('__') and "/." not in z_filename and "/node_modules/" not in z_filename:
                     with z.open(z_filename) as internal_file:
                         try:
                             file_content = internal_file.read().decode("utf-8")
@@ -899,69 +2134,72 @@ async def analyze_github_endpoint(
         if not files_to_scan:
             return JSONResponse(status_code=400, content={"message": "No valid source files found in repo."})
              
-        individual_results = []
-        for f in files_to_scan:
-            res = analyze_code_logic(f["name"], f["content"], api_key, persona, provider)
-            individual_results.append(res)
+        individual_results = run_hybrid_analysis_for_files(files_to_scan, api_key, persona, provider)
         
         combined = combine_results(individual_results)
+        combined["executive_summary"] = generate_executive_vulnerability_summary(
+            combined.get("findings", []),
+            persona,
+            api_key,
+            provider
+        )
+        combined["security_score"] = compute_security_score(
+            combined.get("stats", {}),
+            len(combined.get("findings_by_file", {})),
+            combined.get("status", "SAFE"),
+        )
         
-        REPORT_CACHE[report_id] = {
-            "results": {
-                "status": combined["status"],
-                "findings_by_file": combined["findings_by_file"],
-            },
-            "stats": combined["stats"],
-            "persona": persona,
-            "username": username or "anonymous",
-            "improvement_suggestions": combined.get("improvement_suggestions", [])
-        }
+        REPORT_CACHE[report_id] = _build_cached_report_payload(
+            combined,
+            persona,
+            username or "anonymous",
+        )
 
-        scan_history_entry = {
-            "scan_id": report_id,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "persona": persona,
-            "provider": provider or ("auto" if api_key else "ollama"),
-            "status": combined["status"],
-            "stats": combined["stats"],
-            "findings": combined["findings"],
-            "findings_by_file": combined["findings_by_file"],
-            "username": username or "anonymous",
-            "improvement_suggestions": combined.get("improvement_suggestions", []),
-            "source": f"github:{owner}/{repo}"
-        }
+        effective_username = authenticated_user or username or "anonymous"
+        scan_history_entry = _build_scan_history_entry(
+            report_id,
+            combined,
+            persona,
+            provider,
+            effective_username,
+            f"github:{owner}/{repo}",
+        )
         append_scan_history(scan_history_entry)
         
         return JSONResponse(content={
             "report_id": report_id,
             "status": combined["status"],
             "stats": combined["stats"],
+            "security_score": combined.get("security_score", {}),
             "findings": combined["findings"],
+            "overall_reviews_by_file": combined.get("overall_reviews_by_file", {}),
+            "executive_summary": combined.get("executive_summary", {}),
             "improvement_suggestions": combined.get("improvement_suggestions", [])
         })
         
     except Exception as e:
         logger.error(f"Error processing github analysis: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return build_error_scan_response(str(e), report_id=locals().get("report_id"))
+    finally:
+        # Reduce secret lifetime in request-local variables.
+        api_key = None
 
 @app.get("/history")
+@limiter.limit("60/minute")
 async def get_scan_history(request: Request, username: Optional[str] = None):
-    # Authorization check
-    auth_user = request.headers.get("X-User")
-    if not auth_user or (username and auth_user != username):
-        raise HTTPException(status_code=403, detail="Unauthorized access to history")
-        
-    target_user = username or auth_user
+    auth_user = get_authenticated_user(request)
+    target_user = auth_user
     history = load_scan_history()
     if target_user:
         history = [entry for entry in history if entry.get("username", "anonymous") == target_user]
     return {"history": history[::-1]}  # Return reversed (latest first)
 
 @app.get("/compare")
+@limiter.limit("40/minute")
 async def compare_scans(request: Request, scan_a: str, scan_b: str):
-    auth_user = request.headers.get("X-User")
-    if not auth_user:
-         raise HTTPException(status_code=403, detail="Unauthorized access to comparison")
+    auth_user = get_authenticated_user(request)
+    scan_a = _validate_uuid_field(scan_a, "scan_a", MAX_SCAN_ID_LEN)
+    scan_b = _validate_uuid_field(scan_b, "scan_b", MAX_SCAN_ID_LEN)
 
     history = load_scan_history()
     # Filter to only allow comparing scans owned by the user
@@ -984,9 +2222,8 @@ async def compare_scans(request: Request, scan_a: str, scan_b: str):
 @app.get("/export-pdf")
 @limiter.limit("10/minute")
 async def export_pdf_endpoint(request: Request, report_id: str, username: Optional[str] = None):
-    auth_user = request.headers.get("X-User")
-    if not auth_user:
-         raise HTTPException(status_code=403, detail="Unauthorized access to export")
+    auth_user = get_authenticated_user(request)
+    report_id = _validate_uuid_field(report_id, "report_id", MAX_REPORT_ID_LEN)
 
     logger.info(f"=== PDF EXPORT REQUEST ===")
     logger.info(f"Report ID: {report_id}")
@@ -1005,21 +2242,37 @@ async def export_pdf_endpoint(request: Request, report_id: str, username: Option
                 "results": {
                     "status": match.get("status"),
                     "findings_by_file": match.get("findings_by_file"),
+                    "overall_reviews_by_file": match.get("overall_reviews_by_file", {}),
+                    "executive_summary": match.get("executive_summary", {}),
+                    "security_score": match.get("security_score", {}),
                 },
                 "stats": match.get("stats"),
                 "persona": match.get("persona"),
                 "username": match.get("username", "anonymous"),
-                "improvement_suggestions": match.get("improvement_suggestions", [])
+                "improvement_suggestions": match.get("improvement_suggestions", []),
+                "security_score": match.get("security_score", {}),
             }
         else:
             logger.error(f"Report ID {report_id} not found in cache or history")
             raise HTTPException(status_code=404, detail="Report ID not found or expired")
+
+    report_owner = cached.get("username", "anonymous")
+    if report_owner != auth_user:
+        raise HTTPException(status_code=403, detail="You are not allowed to export this report")
     
     logger.info(f"Data available for PDF: Persona={cached.get('persona')}, Results={len(cached.get('results', {}).get('findings_by_file', {}))} files")
     
     try:
-        report_username = username or cached.get("username", "anonymous")
-        pdf_bytes = generate_pdf_report(cached["results"], cached["stats"], cached["persona"], cached.get("improvement_suggestions", []), report_username)
+        report_username = cached.get("username", "anonymous")
+        pdf_bytes = generate_pdf_report(
+            cached["results"],
+            cached["stats"],
+            cached["persona"],
+            cached.get("improvement_suggestions", []),
+            report_username,
+            cached.get("results", {}).get("overall_reviews_by_file", {}),
+            cached.get("results", {}).get("executive_summary", {})
+        )
         logger.info(f"PDF generation result: {pdf_bytes is not None}")
         
         if not pdf_bytes:
@@ -1043,6 +2296,161 @@ async def export_pdf_endpoint(request: Request, report_id: str, username: Option
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+
+
+@app.post("/analyze-async", response_model=AsyncScanResponse)
+@limiter.limit("10/hour")
+async def analyze_async_endpoint(
+    request: Request,
+    files: List[UploadFile] = File(...),
+    persona: str = Form("Student"),
+    api_key: Optional[str] = Form(None),
+    provider: Optional[str] = Form(None),
+    username: Optional[str] = Form(None),
+):
+    authenticated_user = get_optional_authenticated_user(request)
+    persona = _validate_persona(persona)
+    provider = _validate_provider(provider)
+    api_key = _validate_api_key(api_key)
+    username = _validate_optional_username(username)
+
+    if api_key and not ALLOW_CLIENT_API_KEYS:
+        raise HTTPException(
+            status_code=400,
+            detail="Direct API key submission is disabled. Configure DEFAULT_GROQ_API_KEY on the server.",
+        )
+
+    if len(files) > MAX_FILES_PER_SCAN:
+        raise HTTPException(status_code=400, detail=f"Too many files submitted. Max allowed: {MAX_FILES_PER_SCAN}")
+
+    effective_key = (api_key or "").strip() or DEFAULT_GROQ_API_KEY or ""
+
+    raw_files: List[Dict[str, Any]] = []
+    for uploaded in files:
+        if not uploaded.filename:
+            continue
+        uploaded.file.seek(0, 2)
+        size = uploaded.file.tell()
+        uploaded.file.seek(0)
+        raw_files.append({
+            "name": uploaded.filename,
+            "size": size,
+            "content_bytes": uploaded.file.read(),
+        })
+
+    files_to_scan = process_raw_file_payloads(raw_files)
+    if not files_to_scan:
+        raise HTTPException(status_code=400, detail="No valid source files found or invalid format.")
+
+    scan_id = str(uuid.uuid4())
+    effective_username = authenticated_user or username or "anonymous"
+
+    _set_scan_task(
+        scan_id,
+        scan_id=scan_id,
+        report_id=None,
+        status="queued",
+        phase="queued",
+        progress_percent=0,
+        message="Scan accepted",
+        source="local_upload",
+        user=effective_username,
+        created_at=_utc_timestamp(),
+        current_file=None,
+        result=None,
+        error=None,
+        provider=provider or "auto",
+        persona=persona,
+        total_files=len(files_to_scan),
+    )
+    await notify_scan_subscribers(scan_id)
+
+    asyncio.create_task(
+        run_async_scan_job(
+            scan_id=scan_id,
+            files_to_scan=files_to_scan,
+            persona=persona,
+            effective_key=effective_key,
+            provider=provider,
+            username=effective_username,
+            source="local_upload",
+        )
+    )
+
+    return AsyncScanResponse(scan_id=scan_id, status="queued", ws_path=f"/ws/scans/{scan_id}")
+
+
+@app.get("/scan-status/{scan_id}")
+@limiter.limit("120/minute")
+async def get_scan_status(request: Request, scan_id: str):
+    auth_user = get_authenticated_user(request)
+    scan_id = _validate_uuid_field(scan_id, "scan_id", MAX_SCAN_ID_LEN)
+    task = get_scan_task(scan_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Scan task not found")
+    if task.get("user") != auth_user:
+        raise HTTPException(status_code=403, detail="You are not allowed to access this scan")
+    return task
+
+
+@app.websocket("/ws/scans/{scan_id}")
+async def scan_updates_websocket(websocket: WebSocket, scan_id: str):
+    try:
+        parsed_scan_id = str(uuid.UUID(scan_id))
+    except Exception:
+        await websocket.accept()
+        await websocket.send_json({"status": "failed", "error": "Invalid scan_id format"})
+        await websocket.close()
+        return
+
+    token = websocket.query_params.get("token", "").strip()
+    username = verify_auth_token(token) if token else None
+    task = get_scan_task(parsed_scan_id)
+    if not username or not task or task.get("user") != username:
+        await websocket.accept()
+        await websocket.send_json({"status": "failed", "error": "Unauthorized websocket subscription"})
+        await websocket.close()
+        return
+
+    await register_scan_socket(parsed_scan_id, websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        unregister_scan_socket(parsed_scan_id, websocket)
+    except Exception:
+        unregister_scan_socket(parsed_scan_id, websocket)
+
+
+@app.post("/apply-fix-preview")
+@limiter.limit("30/minute")
+async def apply_fix_preview_endpoint(request: Request, payload: ApplyFixRequest):
+    get_authenticated_user(request)
+    file_name = _validate_text_field(payload.file_name, "file_name", 512, required=True)
+    source_code = payload.source_code or ""
+    fixed_code = payload.fixed_code or ""
+
+    if len(source_code) > 1_000_000 or len(fixed_code) > 1_000_000:
+        raise HTTPException(status_code=400, detail="Source or fixed code exceeds size limits")
+
+    if source_code == fixed_code:
+        return {
+            "file_name": file_name,
+            "changed": False,
+            "diff": "",
+            "message": "No changes detected between source and fixed code.",
+        }
+
+    diff = build_fix_preview_diff(file_name, source_code, fixed_code)
+    if not diff:
+        diff = "(No textual diff generated; verify newline normalization or binary content.)"
+
+    return {
+        "file_name": file_name,
+        "changed": True,
+        "diff": diff,
+        "message": "Preview generated. Validate side effects with tests before applying fixes.",
+    }
 
 # ---------------------------------------------------------------------------
 # Dependency Vulnerability Scanner
@@ -1135,6 +2543,8 @@ async def scan_dependencies_endpoint(
 ):
     """Parse imports from uploaded files and check OSV.dev for known CVEs."""
     try:
+        if len(files) > MAX_FILES_PER_SCAN:
+            raise HTTPException(status_code=400, detail=f"Too many files submitted. Max allowed: {MAX_FILES_PER_SCAN}")
         files_content = process_file_content(files)
         if not files_content:
             return JSONResponse(status_code=400, content={"message": "No parseable files found."})

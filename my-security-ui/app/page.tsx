@@ -2,6 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { clearAuthSession, isAuthenticated, saveAuthSession } from "./lib/auth";
+import {
+  MAX_EMAIL_LEN,
+  MAX_LOGIN_LEN,
+  MAX_PASSWORD_LEN,
+  MAX_USERNAME_LEN,
+  normalizeText,
+  validateEmail,
+  validateLoginField,
+  validatePassword,
+  validateUsername,
+} from "./lib/validation";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -17,19 +29,54 @@ export default function LandingPage() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (isAuthenticated()) {
+      router.replace("/dashboard");
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    const cleanUsername = normalizeText(username, MAX_USERNAME_LEN);
+    const cleanEmail = normalizeText(email, MAX_EMAIL_LEN).toLowerCase();
+    const cleanPassword = password.slice(0, MAX_PASSWORD_LEN);
+    const loginValue = cleanEmail || cleanUsername;
+
+    if (!isLogin) {
+      const usernameError = validateUsername(cleanUsername);
+      if (usernameError) {
+        setError(usernameError);
+        return;
+      }
+
+      const emailError = validateEmail(cleanEmail);
+      if (emailError) {
+        setError(emailError);
+        return;
+      }
+    } else {
+      const loginError = validateLoginField(loginValue);
+      if (loginError) {
+        setError(loginError);
+        return;
+      }
+    }
+
+    const passwordError = validatePassword(cleanPassword);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const endpoint = isLogin ? "/api/login" : "/api/register";
       const payload = isLogin 
-        ? { login: email || username, password } 
-        : { username, email, password };
+        ? { login: loginValue, password: cleanPassword } 
+        : { username: cleanUsername, email: cleanEmail, password: cleanPassword };
 
       const res = await fetch(`${apiBase}${endpoint}`, {
         method: "POST",
@@ -54,11 +101,12 @@ export default function LandingPage() {
         setEmail("");
         setPassword("");
       } else {
-        // Store user info in localStorage for use across pages
-        if (data.user) {
-          localStorage.setItem('codeguard_user', JSON.stringify(data.user));
+        if (data.user && data.token) {
+          saveAuthSession(data.token, data.expires_in || 28800, data.user);
+        } else {
+          clearAuthSession();
+          throw new Error("Login response is missing session token");
         }
-        // Redirect to dashboard on successful login
         router.push("/dashboard");
       }
     } catch (err: any) {
@@ -189,10 +237,11 @@ export default function LandingPage() {
                     type="text" 
                     required={!isLogin}
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => setUsername(e.target.value.slice(0, MAX_USERNAME_LEN))}
                     className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
                     placeholder="neo_1337"
                     autoComplete="off"
+                    maxLength={MAX_USERNAME_LEN}
                   />
                 </div>
               )}
@@ -205,10 +254,11 @@ export default function LandingPage() {
                   type="text" 
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.slice(0, MAX_LOGIN_LEN))}
                   className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
                   placeholder={isLogin ? "neo / neo@matrix.com" : "neo@matrix.com"}
                   autoComplete="off"
+                  maxLength={MAX_LOGIN_LEN}
                 />
               </div>
 
@@ -218,10 +268,11 @@ export default function LandingPage() {
                   type="password" 
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value.slice(0, MAX_PASSWORD_LEN))}
                   className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-mono text-sm"
                   placeholder="••••••••"
                   autoComplete="new-password"
+                  maxLength={MAX_PASSWORD_LEN}
                 />
               </div>
 

@@ -9,6 +9,23 @@ matplotlib.use('Agg')  # Use non-interactive backend
 
 logger = logging.getLogger(__name__)
 
+
+def extract_severity_label(issue_description):
+    text = (issue_description or "").upper()
+    if "[HIGH]" in text or "HIGH" in text:
+        return "HIGH"
+    if "[MEDIUM]" in text or "MEDIUM" in text:
+        return "MEDIUM"
+    return "LOW"
+
+
+def severity_colors(severity):
+    if severity == "HIGH":
+        return (239, 68, 68), (60, 16, 16)
+    if severity == "MEDIUM":
+        return (234, 179, 8), (60, 48, 10)
+    return (59, 130, 246), (16, 40, 70)
+
 def process_uploaded_files(uploaded_files):
     """
     Processes uploaded files (individual or ZIP) and extracts their content.
@@ -52,13 +69,29 @@ def sanitize_text(text):
     except Exception:
         return ""
 
-def generate_pdf_report(results, stats, persona, improvement_suggestions=None, username="anonymous"):
+def generate_pdf_report(
+    results,
+    stats,
+    persona,
+    improvement_suggestions=None,
+    username="anonymous",
+    overall_reviews_by_file=None,
+    executive_summary=None
+):
     """
     Generates a professional PDF report using FPDF.
     Handles encoding to prevent crashes on non-Latin characters.
     """
     try:
-        logger.info(f"PDF generation started - persona: {persona}, username: {username}, results type: {type(results)}, suggestions: {len(improvement_suggestions) if improvement_suggestions else 0}")
+        logger.info(
+            f"PDF generation started - persona: {persona}, username: {username}, "
+            f"results type: {type(results)}, suggestions: {len(improvement_suggestions) if improvement_suggestions else 0}"
+        )
+
+        if overall_reviews_by_file is None:
+            overall_reviews_by_file = {}
+        if executive_summary is None:
+            executive_summary = {}
         
         # Validate input data
         if not results or not isinstance(results, dict):
@@ -288,9 +321,27 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
                 
                 if findings:
                     for idx, finding in enumerate(findings, 1):
+                        severity = extract_severity_label(finding.get('issue_description', ''))
+                        accent_color, muted_bg = severity_colors(severity)
+
+                        if pdf.get_y() > 280:
+                            pdf.add_page()
+
+                        # Severity badge for quick triage in dense reports.
+                        badge_y = pdf.get_y()
+                        pdf.set_fill_color(muted_bg[0], muted_bg[1], muted_bg[2])
+                        pdf.set_draw_color(accent_color[0], accent_color[1], accent_color[2])
+                        pdf.rect(10, badge_y, 24, 6, 'FD')
+                        pdf.set_font("Arial", "B", 8)
+                        pdf.set_text_color(accent_color[0], accent_color[1], accent_color[2])
+                        pdf.set_xy(10, badge_y + 0.5)
+                        pdf.cell(24, 5, severity, align='C')
+
                         pdf.set_font("Arial", "B", 9)
+                        pdf.set_xy(36, badge_y)
+                        pdf.set_text_color(30, 35, 45)
                         issue_desc = finding.get('issue_description', 'No description')
-                        pdf.cell(0, 6, f"Issue {idx}: {sanitize_text(issue_desc)}", ln=True)
+                        pdf.multi_cell(0, 6, f"Issue {idx}: {sanitize_text(issue_desc)}")
                         
                         pdf.set_font("Arial", "", 8)
                         # Root Problem
@@ -323,6 +374,63 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
                         pdf.multi_cell(160, 5, sanitize_text(fix))
                         
                         pdf.ln(2)
+
+                # Add professional overall code review at the end of each file section.
+                file_review = overall_reviews_by_file.get(file_name, {}) if isinstance(overall_reviews_by_file, dict) else {}
+                if file_review:
+                    pdf.set_fill_color(245, 248, 252)
+                    start_y = pdf.get_y()
+                    box_height = 6
+                    dynamic_lines = 0
+                    for key in ["summary", "maintainability_assessment"]:
+                        text = sanitize_text(file_review.get(key, ""))
+                        dynamic_lines += max(1, len(text) // 95 + (1 if len(text) % 95 else 0))
+                    for key in ["strengths", "key_risks", "test_recommendations", "priority_actions"]:
+                        values = file_review.get(key, []) if isinstance(file_review.get(key), list) else []
+                        dynamic_lines += max(1, len(values))
+
+                    box_height += dynamic_lines * 5 + 20
+                    if pdf.get_y() + box_height > 285:
+                        pdf.add_page()
+                        start_y = pdf.get_y()
+
+                    pdf.set_draw_color(180, 190, 205)
+                    pdf.rect(10, start_y, 190, box_height, 'D')
+                    pdf.set_xy(12, start_y + 2)
+                    pdf.set_font("Arial", "B", 9)
+                    pdf.set_text_color(20, 45, 95)
+                    pdf.cell(0, 6, "Overall Code Review (Professional)", ln=True)
+
+                    pdf.set_font("Arial", "", 8)
+                    pdf.set_text_color(30, 35, 45)
+
+                    summary = sanitize_text(file_review.get("summary", "No summary provided."))
+                    pdf.set_font("Arial", "B", 8)
+                    pdf.cell(30, 5, "Summary:", ln=False)
+                    pdf.set_font("Arial", "", 8)
+                    pdf.multi_cell(160, 5, summary)
+
+                    maintainability = sanitize_text(file_review.get("maintainability_assessment", "Not assessed."))
+                    pdf.set_font("Arial", "B", 8)
+                    pdf.cell(55, 5, "Maintainability:", ln=False)
+                    pdf.set_font("Arial", "", 8)
+                    pdf.multi_cell(135, 5, maintainability)
+
+                    list_sections = [
+                        ("Strengths", file_review.get("strengths", [])),
+                        ("Key Risks", file_review.get("key_risks", [])),
+                        ("Test Recommendations", file_review.get("test_recommendations", [])),
+                        ("Priority Actions", file_review.get("priority_actions", [])),
+                    ]
+
+                    for title, values in list_sections:
+                        clean_values = values if isinstance(values, list) and values else ["No specific items provided."]
+                        pdf.set_font("Arial", "B", 8)
+                        pdf.cell(0, 5, f"{sanitize_text(title)}:", ln=True)
+                        pdf.set_font("Arial", "", 8)
+                        for value in clean_values:
+                            pdf.multi_cell(186, 5, f"- {sanitize_text(value)}")
+                    pdf.ln(2)
                 
                 pdf.line(10, pdf.get_y(), 200, pdf.get_y())
                 pdf.ln(5)
@@ -346,6 +454,96 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
                 pdf.multi_cell(170, 5, sanitize_text(suggestion))
                 pdf.ln(2)
 
+        # Final section: detailed executive summary and top vulnerabilities.
+        if executive_summary:
+            pdf.add_page()
+            pdf.set_font("Arial", "B", 12)
+            pdf.set_text_color(30, 35, 45)
+            pdf.cell(0, 10, "5. Most Important Findings (Executive Deep Dive)", ln=True)
+            pdf.ln(3)
+
+            overall_assessment = sanitize_text(executive_summary.get("overall_assessment", "No assessment provided."))
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(0, 7, "Overall Risk Assessment", ln=True)
+            pdf.set_font("Arial", "", 9)
+            pdf.multi_cell(0, 5, overall_assessment)
+            pdf.ln(2)
+
+            important = executive_summary.get("most_important_findings", [])
+            if not isinstance(important, list):
+                important = []
+
+            for idx, item in enumerate(important, 1):
+                if pdf.get_y() > 250:
+                    pdf.add_page()
+
+                title = sanitize_text(item.get("title", f"Important Finding #{idx}"))
+                severity = sanitize_text(item.get("severity", "Unknown"))
+                files = item.get("affected_files", [])
+                files_text = ", ".join([sanitize_text(f) for f in files]) if isinstance(files, list) and files else "Not specified"
+                cwe_ids = item.get("cwe_ids", [])
+                cwe_text = ", ".join([sanitize_text(cwe) for cwe in cwe_ids]) if isinstance(cwe_ids, list) and cwe_ids else "Not specified"
+                owasp_categories = item.get("owasp_categories", [])
+                owasp_text = ", ".join([sanitize_text(o) for o in owasp_categories]) if isinstance(owasp_categories, list) and owasp_categories else "Not specified"
+
+                pdf.set_font("Arial", "B", 10)
+                pdf.set_text_color(70, 20, 20)
+                pdf.set_x(10)
+                pdf.multi_cell(190, 6, f"{idx}. {title} [{severity}]")
+
+                pdf.set_font("Arial", "", 8)
+                pdf.set_text_color(30, 35, 45)
+                pdf.set_x(10)
+                pdf.multi_cell(190, 5, f"Affected Files: {files_text}")
+                pdf.set_x(10)
+                pdf.multi_cell(190, 5, f"CWE Mapping: {cwe_text}")
+                pdf.set_x(10)
+                pdf.multi_cell(190, 5, f"OWASP Mapping: {owasp_text}")
+
+                why_it_matters = sanitize_text(item.get("why_it_matters", "No details provided."))
+                attack_scenario = sanitize_text(item.get("attack_scenario", "No scenario provided."))
+                business_impact = sanitize_text(item.get("business_impact", "No business impact provided."))
+
+                pdf.set_font("Arial", "B", 8)
+                pdf.cell(28, 5, "Why It Matters:", ln=False)
+                pdf.set_font("Arial", "", 8)
+                pdf.multi_cell(162, 5, why_it_matters)
+
+                pdf.set_font("Arial", "B", 8)
+                pdf.cell(30, 5, "Attack Scenario:", ln=False)
+                pdf.set_font("Arial", "", 8)
+                pdf.multi_cell(160, 5, attack_scenario)
+
+                pdf.set_font("Arial", "B", 8)
+                pdf.cell(28, 5, "Business Impact:", ln=False)
+                pdf.set_font("Arial", "", 8)
+                pdf.multi_cell(162, 5, business_impact)
+
+                actions = item.get("recommended_actions", [])
+                if not isinstance(actions, list) or not actions:
+                    actions = ["Apply the recommended remediation and validate with regression testing."]
+
+                pdf.set_font("Arial", "B", 8)
+                pdf.cell(0, 5, "Recommended Actions:", ln=True)
+                pdf.set_font("Arial", "", 8)
+                for action in actions:
+                    pdf.set_x(10)
+                    pdf.multi_cell(190, 5, f"- {sanitize_text(action)}")
+                pdf.ln(2)
+
+            next_steps = executive_summary.get("immediate_next_steps", [])
+            if isinstance(next_steps, list) and next_steps:
+                if pdf.get_y() > 245:
+                    pdf.add_page()
+                pdf.set_font("Arial", "B", 10)
+                pdf.set_text_color(30, 35, 45)
+                pdf.cell(0, 8, "Immediate Next Steps", ln=True)
+                pdf.set_font("Arial", "", 9)
+                for idx, step in enumerate(next_steps, 1):
+                    pdf.set_x(10)
+                    pdf.multi_cell(190, 5, f"{idx}. {sanitize_text(step)}")
+                pdf.ln(2)
+
         logger.info("PDF generation completed successfully")
         try:
             pdf_bytes = pdf.output()
@@ -363,4 +561,4 @@ def generate_pdf_report(results, stats, persona, improvement_suggestions=None, u
         import traceback
         logger.error(f"PDF generation traceback: {traceback.format_exc()}")
         return None
-
+

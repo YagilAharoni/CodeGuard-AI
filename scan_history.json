@@ -1,13 +1,13 @@
 [
     {
-        "scan_id": "df6125d3-832a-4006-8048-20502edde993",
-        "timestamp": "2026-04-05 20:56:12",
-        "persona": "Professional",
+        "scan_id": "f08396b4-49b3-4663-9332-8e207964d3ac",
+        "timestamp": "2026-04-09 19:55:05",
+        "persona": "Student",
         "provider": "auto",
         "status": "VULNERABLE",
         "stats": {
-            "High": 2,
-            "Medium": 1,
+            "High": 3,
+            "Medium": 5,
             "Low": 2,
             "Safe": 0,
             "Vuln": 2,
@@ -15,1065 +15,547 @@
         },
         "findings": [
             {
-                "file_name": "HW6_318725405_213478142_Q1.cpp",
-                "issue_description": "[HIGH] Potential memory leak due to missing delete statements for dynamically allocated memory",
-                "suggested_fix": "Add delete statements to free the memory allocated by new",
-                "source_code": "Node* newNode = new Node();",
-                "fixed_code": "Node* newNode = new Node(); // ... later, when newNode is no longer needed: delete newNode;",
-                "root_cause": "The code allocates memory using new but does not free it using delete, leading to a memory leak."
+                "file_name": "LogIntel-Analyzer.py",
+                "issue_description": "[HIGH] Potential Path Traversal Vulnerability",
+                "root_problem": "The script does not validate or sanitize the folder path, which could lead to a path traversal attack.",
+                "suggested_solution": "Validate and sanitize user input to prevent path traversal attacks.",
+                "suggested_fix": "Use the `os.path.abspath()` and `os.path.normpath()` functions to normalize the folder path.",
+                "source_code": "folder_path = 'logs'",
+                "fixed_code": "import os\nfolder_path = os.path.abspath(os.path.normpath('logs'))"
             },
             {
-                "file_name": "HW6_318725405_213478142_Q1.cpp",
-                "issue_description": "[HIGH] Use of using namespace std; can lead to naming conflicts",
-                "suggested_fix": "Use the std namespace prefix for standard library functions and objects, or import only the necessary names",
-                "source_code": "using namespace std;",
-                "fixed_code": "using std::cout; using std::endl;",
-                "root_cause": "The using namespace std; directive can lead to naming conflicts with user-defined names."
+                "file_name": "opsec_final_analyzer.py",
+                "issue_description": "[HIGH] Hardcoded API Key",
+                "root_problem": "The API key is hardcoded in the script, which is a significant security risk if the script is exposed.",
+                "suggested_solution": "Use environment variables to store sensitive information like API keys.",
+                "suggested_fix": "Replace API_KEY = 'ENTER_YOUR_API_KEY' with import os; API_KEY = os.environ.get('VT_API_KEY') and set the VT_API_KEY environment variable.",
+                "source_code": "API_KEY = 'ENTER_YOUR_API_KEY'",
+                "fixed_code": "import os; API_KEY = os.environ.get('VT_API_KEY')"
             },
             {
-                "file_name": "HW6_318725405_213478142_Q1.cpp",
-                "issue_description": "[MEDIUM] Missing error handling for null pointer dereferences",
-                "suggested_fix": "Add null checks before dereferencing pointers",
-                "source_code": "Node* tail = list2; while (tail->next != NULL) {",
-                "fixed_code": "if (list2 == NULL) { return false; } Node* tail = list2; while (tail != NULL && tail->next != NULL) {",
-                "root_cause": "The code does not check for null pointers before dereferencing them, which can lead to crashes or undefined behavior."
+                "file_name": "opsec_final_analyzer.py",
+                "issue_description": "[HIGH] Insecure Log File Parsing",
+                "root_problem": "The script uses a regular expression to parse log files, which can lead to security issues if the logs contain malicious data.",
+                "suggested_solution": "Use a secure log parsing library or validate user input.",
+                "suggested_fix": "Use a library like logparser or validate the log data before parsing it.",
+                "source_code": "match = re.search(LOG_PATTERN, line)",
+                "fixed_code": "Use a secure log parsing library"
             },
             {
-                "file_name": "HW6_318725405_213478142_Q1.cpp",
-                "issue_description": "[LOW] Magic numbers are used in the code",
-                "suggested_fix": "Replace magic numbers with named constants",
-                "source_code": "Node* l1 = createNode(1); l1->next = createNode(2); l1->next->next = createNode(3);",
-                "fixed_code": "const int FIRST_NODE_VALUE = 1; const int SECOND_NODE_VALUE = 2; const int THIRD_NODE_VALUE = 3; Node* l1 = createNode(FIRST_NODE_VALUE); l1->next = createNode(SECOND_NODE_VALUE); l1->next->next = createNode(THIRD_NODE_VALUE);",
-                "root_cause": "The code uses magic numbers, which can make it harder to understand and maintain."
+                "file_name": "LogIntel-Analyzer.py",
+                "issue_description": "[MEDIUM] Insecure File Handling",
+                "root_problem": "The script does not handle file exceptions properly, which could lead to data corruption or information disclosure.",
+                "suggested_solution": "Implement try-except blocks to handle file-related exceptions.",
+                "suggested_fix": "Use a try-except block to catch and handle exceptions when opening and reading files.",
+                "source_code": "with open(file_path, 'r') as f:",
+                "fixed_code": "try:\n    with open(file_path, 'r') as f:\n        # file operations\nexcept FileNotFoundError:\n    print(f\"Error: File '{file_path}' not found.\")\nexcept Exception as e:\n    print(f\"Error: {str(e)}\")"
             },
             {
-                "file_name": "HW6_318725405_213478142_Q2.cpp",
-                "issue_description": "[LOW] Using 'using namespace std;' can lead to naming conflicts and pollute the global namespace.",
-                "suggested_fix": "Remove 'using namespace std;' and use the 'std::' prefix for standard library elements.",
-                "source_code": "using namespace std;",
-                "fixed_code": "using std::cout; using std::endl;",
-                "root_cause": "The code uses 'using namespace std;' which can cause naming conflicts."
+                "file_name": "LogIntel-Analyzer.py",
+                "issue_description": "[MEDIUM] Potential Denial of Service (DoS) Vulnerability",
+                "root_problem": "The script does not limit the number of files it processes, which could lead to a denial of service attack.",
+                "suggested_solution": "Implement a limit on the number of files to process.",
+                "suggested_fix": "Use a counter to limit the number of files processed.",
+                "source_code": "for filename in os.listdir(folder_path):",
+                "fixed_code": "file_count = 0\nmax_files = 1000\nfor filename in os.listdir(folder_path):\n    if file_count >= max_files:\n        break\n    # process file\n    file_count += 1"
+            },
+            {
+                "file_name": "opsec_final_analyzer.py",
+                "issue_description": "[MEDIUM] Missing Error Handling",
+                "root_problem": "The script does not handle errors properly, which can lead to unexpected behavior or crashes.",
+                "suggested_solution": "Add try-except blocks to handle potential errors.",
+                "suggested_fix": "Add try-except blocks around the code that interacts with external resources, such as the VirusTotal API.",
+                "source_code": "response = requests.get(f\"{VT_URL}{ip}\", headers=headers)",
+                "fixed_code": "try: response = requests.get(f\"{VT_URL}{ip}\", headers=headers); except requests.exceptions.RequestException as e: print(f\"Error: {e}\")"
+            },
+            {
+                "file_name": "opsec_final_analyzer.py",
+                "issue_description": "[MEDIUM] Insecure File Access",
+                "root_problem": "The script accesses files without proper validation, which can lead to security issues.",
+                "suggested_solution": "Validate file paths and permissions before accessing files.",
+                "suggested_fix": "Use the os.path.abspath function to validate file paths and check file permissions before accessing files.",
+                "source_code": "with open(os.path.join(LOG_DIRECTORY, filename), 'r', encoding='utf-8', errors='ignore') as file:",
+                "fixed_code": "file_path = os.path.abspath(os.path.join(LOG_DIRECTORY, filename)); if os.path.isfile(file_path): with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:"
+            },
+            {
+                "file_name": "opsec_final_analyzer.py",
+                "issue_description": "[MEDIUM] Missing Input Validation",
+                "root_problem": "The script does not validate user input, which can lead to security issues.",
+                "suggested_solution": "Validate user input to prevent security issues.",
+                "suggested_fix": "Validate the log directory and file names to prevent potential security issues.",
+                "source_code": "for filename in os.listdir(LOG_DIRECTORY):",
+                "fixed_code": "for filename in os.listdir(LOG_DIRECTORY): if os.path.isfile(os.path.join(LOG_DIRECTORY, filename)): # process the file"
+            },
+            {
+                "file_name": "LogIntel-Analyzer.py",
+                "issue_description": "[LOW] Inefficient Data Processing",
+                "root_problem": "The script uses a simple loop to process log data, which could be inefficient for large datasets.",
+                "suggested_solution": "Use more efficient data processing techniques, such as parallel processing or data streaming.",
+                "suggested_fix": "Use the `concurrent.futures` module to parallelize data processing.",
+                "source_code": "for line in f:",
+                "fixed_code": "import concurrent.futures\nwith concurrent.futures.ThreadPoolExecutor() as executor:\n    futures = [executor.submit(process_line, line) for line in f]\n    results = [future.result() for future in futures]"
+            },
+            {
+                "file_name": "opsec_final_analyzer.py",
+                "issue_description": "[LOW] Missing Type Hints",
+                "root_problem": "The script does not use type hints, which can make the code harder to understand and maintain.",
+                "suggested_solution": "Add type hints to function parameters and return types.",
+                "suggested_fix": "Add type hints to the function parameters and return types, such as def analyze_logs() -> None:",
+                "source_code": "def analyze_logs():",
+                "fixed_code": "def analyze_logs() -> None:"
             }
         ],
         "findings_by_file": {
-            "HW6_318725405_213478142_Q1.cpp": [
+            "LogIntel-Analyzer.py": [
                 {
-                    "file_name": "HW6_318725405_213478142_Q1.cpp",
-                    "issue_description": "[HIGH] Potential memory leak due to missing delete statements for dynamically allocated memory",
-                    "suggested_fix": "Add delete statements to free the memory allocated by new",
-                    "source_code": "Node* newNode = new Node();",
-                    "fixed_code": "Node* newNode = new Node(); // ... later, when newNode is no longer needed: delete newNode;",
-                    "root_cause": "The code allocates memory using new but does not free it using delete, leading to a memory leak."
+                    "file_name": "LogIntel-Analyzer.py",
+                    "issue_description": "[HIGH] Potential Path Traversal Vulnerability",
+                    "root_problem": "The script does not validate or sanitize the folder path, which could lead to a path traversal attack.",
+                    "suggested_solution": "Validate and sanitize user input to prevent path traversal attacks.",
+                    "suggested_fix": "Use the `os.path.abspath()` and `os.path.normpath()` functions to normalize the folder path.",
+                    "source_code": "folder_path = 'logs'",
+                    "fixed_code": "import os\nfolder_path = os.path.abspath(os.path.normpath('logs'))"
                 },
                 {
-                    "file_name": "HW6_318725405_213478142_Q1.cpp",
-                    "issue_description": "[HIGH] Use of using namespace std; can lead to naming conflicts",
-                    "suggested_fix": "Use the std namespace prefix for standard library functions and objects, or import only the necessary names",
-                    "source_code": "using namespace std;",
-                    "fixed_code": "using std::cout; using std::endl;",
-                    "root_cause": "The using namespace std; directive can lead to naming conflicts with user-defined names."
+                    "file_name": "LogIntel-Analyzer.py",
+                    "issue_description": "[MEDIUM] Insecure File Handling",
+                    "root_problem": "The script does not handle file exceptions properly, which could lead to data corruption or information disclosure.",
+                    "suggested_solution": "Implement try-except blocks to handle file-related exceptions.",
+                    "suggested_fix": "Use a try-except block to catch and handle exceptions when opening and reading files.",
+                    "source_code": "with open(file_path, 'r') as f:",
+                    "fixed_code": "try:\n    with open(file_path, 'r') as f:\n        # file operations\nexcept FileNotFoundError:\n    print(f\"Error: File '{file_path}' not found.\")\nexcept Exception as e:\n    print(f\"Error: {str(e)}\")"
                 },
                 {
-                    "file_name": "HW6_318725405_213478142_Q1.cpp",
-                    "issue_description": "[MEDIUM] Missing error handling for null pointer dereferences",
-                    "suggested_fix": "Add null checks before dereferencing pointers",
-                    "source_code": "Node* tail = list2; while (tail->next != NULL) {",
-                    "fixed_code": "if (list2 == NULL) { return false; } Node* tail = list2; while (tail != NULL && tail->next != NULL) {",
-                    "root_cause": "The code does not check for null pointers before dereferencing them, which can lead to crashes or undefined behavior."
+                    "file_name": "LogIntel-Analyzer.py",
+                    "issue_description": "[MEDIUM] Potential Denial of Service (DoS) Vulnerability",
+                    "root_problem": "The script does not limit the number of files it processes, which could lead to a denial of service attack.",
+                    "suggested_solution": "Implement a limit on the number of files to process.",
+                    "suggested_fix": "Use a counter to limit the number of files processed.",
+                    "source_code": "for filename in os.listdir(folder_path):",
+                    "fixed_code": "file_count = 0\nmax_files = 1000\nfor filename in os.listdir(folder_path):\n    if file_count >= max_files:\n        break\n    # process file\n    file_count += 1"
                 },
                 {
-                    "file_name": "HW6_318725405_213478142_Q1.cpp",
-                    "issue_description": "[LOW] Magic numbers are used in the code",
-                    "suggested_fix": "Replace magic numbers with named constants",
-                    "source_code": "Node* l1 = createNode(1); l1->next = createNode(2); l1->next->next = createNode(3);",
-                    "fixed_code": "const int FIRST_NODE_VALUE = 1; const int SECOND_NODE_VALUE = 2; const int THIRD_NODE_VALUE = 3; Node* l1 = createNode(FIRST_NODE_VALUE); l1->next = createNode(SECOND_NODE_VALUE); l1->next->next = createNode(THIRD_NODE_VALUE);",
-                    "root_cause": "The code uses magic numbers, which can make it harder to understand and maintain."
+                    "file_name": "LogIntel-Analyzer.py",
+                    "issue_description": "[LOW] Inefficient Data Processing",
+                    "root_problem": "The script uses a simple loop to process log data, which could be inefficient for large datasets.",
+                    "suggested_solution": "Use more efficient data processing techniques, such as parallel processing or data streaming.",
+                    "suggested_fix": "Use the `concurrent.futures` module to parallelize data processing.",
+                    "source_code": "for line in f:",
+                    "fixed_code": "import concurrent.futures\nwith concurrent.futures.ThreadPoolExecutor() as executor:\n    futures = [executor.submit(process_line, line) for line in f]\n    results = [future.result() for future in futures]"
                 }
             ],
-            "HW6_318725405_213478142_Q2.cpp": [
+            "opsec_final_analyzer.py": [
                 {
-                    "file_name": "HW6_318725405_213478142_Q2.cpp",
-                    "issue_description": "[LOW] Using 'using namespace std;' can lead to naming conflicts and pollute the global namespace.",
-                    "suggested_fix": "Remove 'using namespace std;' and use the 'std::' prefix for standard library elements.",
-                    "source_code": "using namespace std;",
-                    "fixed_code": "using std::cout; using std::endl;",
-                    "root_cause": "The code uses 'using namespace std;' which can cause naming conflicts."
+                    "file_name": "opsec_final_analyzer.py",
+                    "issue_description": "[HIGH] Hardcoded API Key",
+                    "root_problem": "The API key is hardcoded in the script, which is a significant security risk if the script is exposed.",
+                    "suggested_solution": "Use environment variables to store sensitive information like API keys.",
+                    "suggested_fix": "Replace API_KEY = 'ENTER_YOUR_API_KEY' with import os; API_KEY = os.environ.get('VT_API_KEY') and set the VT_API_KEY environment variable.",
+                    "source_code": "API_KEY = 'ENTER_YOUR_API_KEY'",
+                    "fixed_code": "import os; API_KEY = os.environ.get('VT_API_KEY')"
+                },
+                {
+                    "file_name": "opsec_final_analyzer.py",
+                    "issue_description": "[HIGH] Insecure Log File Parsing",
+                    "root_problem": "The script uses a regular expression to parse log files, which can lead to security issues if the logs contain malicious data.",
+                    "suggested_solution": "Use a secure log parsing library or validate user input.",
+                    "suggested_fix": "Use a library like logparser or validate the log data before parsing it.",
+                    "source_code": "match = re.search(LOG_PATTERN, line)",
+                    "fixed_code": "Use a secure log parsing library"
+                },
+                {
+                    "file_name": "opsec_final_analyzer.py",
+                    "issue_description": "[MEDIUM] Missing Error Handling",
+                    "root_problem": "The script does not handle errors properly, which can lead to unexpected behavior or crashes.",
+                    "suggested_solution": "Add try-except blocks to handle potential errors.",
+                    "suggested_fix": "Add try-except blocks around the code that interacts with external resources, such as the VirusTotal API.",
+                    "source_code": "response = requests.get(f\"{VT_URL}{ip}\", headers=headers)",
+                    "fixed_code": "try: response = requests.get(f\"{VT_URL}{ip}\", headers=headers); except requests.exceptions.RequestException as e: print(f\"Error: {e}\")"
+                },
+                {
+                    "file_name": "opsec_final_analyzer.py",
+                    "issue_description": "[MEDIUM] Insecure File Access",
+                    "root_problem": "The script accesses files without proper validation, which can lead to security issues.",
+                    "suggested_solution": "Validate file paths and permissions before accessing files.",
+                    "suggested_fix": "Use the os.path.abspath function to validate file paths and check file permissions before accessing files.",
+                    "source_code": "with open(os.path.join(LOG_DIRECTORY, filename), 'r', encoding='utf-8', errors='ignore') as file:",
+                    "fixed_code": "file_path = os.path.abspath(os.path.join(LOG_DIRECTORY, filename)); if os.path.isfile(file_path): with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:"
+                },
+                {
+                    "file_name": "opsec_final_analyzer.py",
+                    "issue_description": "[MEDIUM] Missing Input Validation",
+                    "root_problem": "The script does not validate user input, which can lead to security issues.",
+                    "suggested_solution": "Validate user input to prevent security issues.",
+                    "suggested_fix": "Validate the log directory and file names to prevent potential security issues.",
+                    "source_code": "for filename in os.listdir(LOG_DIRECTORY):",
+                    "fixed_code": "for filename in os.listdir(LOG_DIRECTORY): if os.path.isfile(os.path.join(LOG_DIRECTORY, filename)): # process the file"
+                },
+                {
+                    "file_name": "opsec_final_analyzer.py",
+                    "issue_description": "[LOW] Missing Type Hints",
+                    "root_problem": "The script does not use type hints, which can make the code harder to understand and maintain.",
+                    "suggested_solution": "Add type hints to function parameters and return types.",
+                    "suggested_fix": "Add type hints to the function parameters and return types, such as def analyze_logs() -> None:",
+                    "source_code": "def analyze_logs():",
+                    "fixed_code": "def analyze_logs() -> None:"
                 }
             ]
-        }
+        },
+        "username": "tst1",
+        "improvement_suggestions": [
+            "Use a more robust logging mechanism, such as the `logging` module, to handle errors and exceptions.",
+            "Implement input validation and sanitization to prevent security vulnerabilities.",
+            "Consider using a more efficient data processing framework, such as Apache Spark or pandas, to handle large datasets.",
+            "Use a secure log parsing library to parse log files.",
+            "Validate user input to prevent security issues.",
+            "Use environment variables to store sensitive information like API keys."
+        ],
+        "source": "github:YagilAharoni/Python"
     },
     {
-        "scan_id": "28523b9f-d1a1-4988-95ea-75b051682e5d",
-        "timestamp": "2026-04-05 20:59:29",
+        "scan_id": "0f4186e4-b385-470d-8bdf-13462b03c0bd",
+        "timestamp": "2026-04-09 20:06:07",
         "persona": "Professional",
         "provider": "auto",
         "status": "ERROR",
-        "stats": {
-            "High": 0,
-            "Medium": 0,
-            "Low": 1,
-            "Safe": 0,
-            "Vuln": 0,
-            "Error": 1
-        },
-        "findings": [
-            {
-                "file_name": "unknown",
-                "issue_description": "Failed to connect to Ollama. Ensure Ollama is running.",
-                "suggested_fix": "Start Ollama via command line."
-            }
-        ],
-        "findings_by_file": {
-            "unknown": [
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Failed to connect to Ollama. Ensure Ollama is running.",
-                    "suggested_fix": "Start Ollama via command line."
-                }
-            ]
-        }
-    },
-    {
-        "scan_id": "recent-test-id",
-        "timestamp": "2026-04-03 21:24:34",
-        "username": "testuser"
-    },
-    {
-        "scan_id": "new-test-id",
-        "timestamp": "2026-04-05 21:24:38",
-        "username": "testuser"
-    },
-    {
-        "scan_id": "69edea33-8331-4e81-b851-a80915119be6",
-        "timestamp": "2026-04-05 21:25:32",
-        "username": "testuser_verify",
-        "persona": "Student",
-        "status": "VULNERABLE",
-        "stats": {
-            "High": 1,
-            "Medium": 0,
-            "Low": 1
-        },
-        "findings_by_file": {
-            "main.py": [
-                {
-                    "issue_description": "SQL Injection",
-                    "suggested_fix": "Use ORM"
-                }
-            ]
-        },
-        "improvement_suggestions": [
-            "Practice safe coding"
-        ]
-    },
-    {
-        "scan_id": "b766b51c-6316-46da-9c7c-4283f190f097",
-        "timestamp": "2026-04-05 21:44:01",
-        "persona": "Professional",
-        "provider": "auto",
-        "status": "VULNERABLE",
         "stats": {
             "High": 0,
             "Medium": 0,
             "Low": 2,
-            "Safe": 2,
-            "Vuln": 0,
-            "Error": 0
-        },
-        "findings": [
-            {
-                "file_name": "app.py",
-                "issue_description": "Raw Response (Could not parse proper JSON)",
-                "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
-            },
-            {
-                "file_name": "utils.py",
-                "issue_description": "Raw Response (Could not parse proper JSON)",
-                "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
-            }
-        ],
-        "findings_by_file": {
-            "app.py": [
-                {
-                    "file_name": "app.py",
-                    "issue_description": "Raw Response (Could not parse proper JSON)",
-                    "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
-                }
-            ],
-            "utils.py": [
-                {
-                    "file_name": "utils.py",
-                    "issue_description": "Raw Response (Could not parse proper JSON)",
-                    "suggested_fix": "{\"status\": \"ERROR\", \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0}, \"findings\": [{\"file_name\": \"unknown\", \"issue_description\": f\"Gemini Error: {str(e)}\", \"suggested_fix\": \"Check API key or rate limits.\"}]}..."
-                }
-            ]
-        },
-        "username": "tst2",
-        "improvement_suggestions": [],
-        "source": "local_upload"
-    },
-    {
-        "scan_id": "681c8e5b-da68-48cd-998d-ca4d12d43e4a",
-        "timestamp": "2026-04-07 16:58:13",
-        "persona": "Student",
-        "provider": "auto",
-        "status": "ERROR",
-        "stats": {
-            "High": 0,
-            "Medium": 0,
-            "Low": 9,
             "Safe": 0,
             "Vuln": 0,
-            "Error": 9
+            "Error": 2
         },
         "findings": [
             {
                 "file_name": "unknown",
-                "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                "suggested_fix": "Start Ollama via command line."
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                "suggested_fix": "Start Ollama via command line."
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                "suggested_fix": "Start Ollama via command line."
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                "suggested_fix": "Start Ollama via command line."
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                "suggested_fix": "Start Ollama via command line."
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                "suggested_fix": "Start Ollama via command line."
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                "suggested_fix": "Start Ollama via command line."
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                "suggested_fix": "Start Ollama via command line."
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                "suggested_fix": "Start Ollama via command line."
-            }
-        ],
-        "findings_by_file": {
-            "unknown": [
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                    "suggested_fix": "Start Ollama via command line."
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                    "suggested_fix": "Start Ollama via command line."
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                    "suggested_fix": "Start Ollama via command line."
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                    "suggested_fix": "Start Ollama via command line."
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                    "suggested_fix": "Start Ollama via command line."
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                    "suggested_fix": "Start Ollama via command line."
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                    "suggested_fix": "Start Ollama via command line."
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                    "suggested_fix": "Start Ollama via command line."
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                    "suggested_fix": "Start Ollama via command line."
-                }
-            ]
-        },
-        "username": "tst2",
-        "improvement_suggestions": [],
-        "source": "github:YagilAharoni/CodeGuard-AI"
-    },
-    {
-        "scan_id": "15225908-4252-47df-9995-4f4ef70109e0",
-        "timestamp": "2026-04-07 16:59:27",
-        "persona": "Student",
-        "provider": "auto",
-        "status": "VULNERABLE",
-        "stats": {
-            "High": 0,
-            "Medium": 0,
-            "Low": 3,
-            "Safe": 2,
-            "Vuln": 0,
-            "Error": 0
-        },
-        "findings": [
-            {
-                "file_name": "LADD-main/filereader.cpp",
-                "issue_description": "[LOW] Potential Resource Leak",
-                "root_problem": "The program does not check if the output file is already open before attempting to open it.",
-                "suggested_solution": "Check if the output file is already open before attempting to open it.",
-                "fix": "Add a check to see if the output file is already open before attempting to open it. If it is already open, do not attempt to open it again.",
-                "source_code": "std::ofstream outputFile(outputFilename, openMode);",
-                "fixed_code": "if (!outputFile.is_open()) { std::ofstream outputFile(outputFilename, openMode); }"
-            },
-            {
-                "file_name": "LADD-main/filereader.cpp",
-                "issue_description": "[LOW] Potential Null Pointer Dereference",
-                "root_problem": "The program does not check if the argv array is null before attempting to access its elements.",
-                "suggested_solution": "Check if the argv array is null before attempting to access its elements.",
-                "fix": "Add a check to see if the argv array is null before attempting to access its elements. If it is null, do not attempt to access its elements.",
-                "source_code": "std::string arg1 = argv[1];",
-                "fixed_code": "if (argv != nullptr) { std::string arg1 = argv[1]; }"
-            },
-            {
-                "file_name": "ladd.h",
-                "issue_description": "[LOW] Missing input validation in function declarations",
-                "root_problem": "The function declaration does not specify the input parameters, which could lead to confusion or incorrect usage.",
-                "suggested_solution": "Add input parameters to the function declaration to clarify its usage.",
-                "fix": "Since the detect_debugger function does not seem to require any parameters, consider adding a comment to indicate this or using a void parameter to make it explicit.",
-                "source_code": "void detect_debugger(void);",
-                "fixed_code": "void detect_debugger(void) {} // or add a comment to explain the lack of parameters"
-            }
-        ],
-        "findings_by_file": {
-            "LADD-main/filereader.cpp": [
-                {
-                    "file_name": "LADD-main/filereader.cpp",
-                    "issue_description": "[LOW] Potential Resource Leak",
-                    "root_problem": "The program does not check if the output file is already open before attempting to open it.",
-                    "suggested_solution": "Check if the output file is already open before attempting to open it.",
-                    "fix": "Add a check to see if the output file is already open before attempting to open it. If it is already open, do not attempt to open it again.",
-                    "source_code": "std::ofstream outputFile(outputFilename, openMode);",
-                    "fixed_code": "if (!outputFile.is_open()) { std::ofstream outputFile(outputFilename, openMode); }"
-                },
-                {
-                    "file_name": "LADD-main/filereader.cpp",
-                    "issue_description": "[LOW] Potential Null Pointer Dereference",
-                    "root_problem": "The program does not check if the argv array is null before attempting to access its elements.",
-                    "suggested_solution": "Check if the argv array is null before attempting to access its elements.",
-                    "fix": "Add a check to see if the argv array is null before attempting to access its elements. If it is null, do not attempt to access its elements.",
-                    "source_code": "std::string arg1 = argv[1];",
-                    "fixed_code": "if (argv != nullptr) { std::string arg1 = argv[1]; }"
-                }
-            ],
-            "ladd.h": [
-                {
-                    "file_name": "ladd.h",
-                    "issue_description": "[LOW] Missing input validation in function declarations",
-                    "root_problem": "The function declaration does not specify the input parameters, which could lead to confusion or incorrect usage.",
-                    "suggested_solution": "Add input parameters to the function declaration to clarify its usage.",
-                    "fix": "Since the detect_debugger function does not seem to require any parameters, consider adding a comment to indicate this or using a void parameter to make it explicit.",
-                    "source_code": "void detect_debugger(void);",
-                    "fixed_code": "void detect_debugger(void) {} // or add a comment to explain the lack of parameters"
-                }
-            ]
-        },
-        "username": "tst2",
-        "improvement_suggestions": [
-            "Consider using smart pointers to manage memory and avoid potential memory leaks.",
-            "Use const correctness to ensure that variables that do not need to be modified are not modified.",
-            "Consider using a more robust error handling mechanism, such as exceptions, to handle errors in a more centralized and controlled manner.",
-            "Consider adding comments to explain the purpose and usage of each function.",
-            "Use a consistent naming convention throughout the project.",
-            "Add a license or copyright notice to the header file to clarify the project's licensing terms."
-        ],
-        "source": "github:YagilAharoni/LADD"
-    },
-    {
-        "scan_id": "e5f2fba3-3360-4708-88c4-09126ffdb71d",
-        "timestamp": "2026-04-07 17:01:33",
-        "persona": "Professional",
-        "provider": "auto",
-        "status": "ERROR",
-        "stats": {
-            "High": 1,
-            "Medium": 0,
-            "Low": 1,
-            "Safe": 0,
-            "Vuln": 1,
-            "Error": 1
-        },
-        "findings": [
-            {
-                "file_name": "unknown",
-                "issue_description": "Groq Error: Error code: 400 - {'error': {'message': \"Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.\", 'type': 'invalid_request_error', 'code': 'json_validate_failed', 'failed_generation': '{\\n  \"status\": \"VULNERABLE\",\\n   \"stats\": {\\n       \"High\": 2,\\n       \"Medium\": 3,\\n       \"Low\": 1\\n   },\\n   \"findings\": [\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[HIGH] Potential Path Traversal Vulnerability\",\\n           \"root_problem\": \"The code does not validate the source file paths, allowing potential path traversal attacks.\",\\n           \"suggested_solution\": \"Validate and sanitize source file paths to prevent path traversal attacks.\",\\n           \"fix\": \"Use a library like \\\\\"filesystem\\\\\" to validate and normalize file paths. For example, use std::filesystem::path::lexically_normal() to normalize the path and check if it\\'s within the expected directory.\",\\n           \"source_code\": \"std::string sourceFile = value;\",\\n           \"fixed_code\": \"std::filesystem::path normalizedPath = std::filesystem::path(value).lexically_normal();\\\\nif (normalizedPath.string().find(\\\\\"../\\\\\") != std::string::npos) {\\\\n    std::cerr << \\\\\"Error: Potential path traversal attack detected.\\\\\" << std::endl;\\\\n    return 1;\\\\n}\\\\nstd::string sourceFile = normalizedPath.string();\"\\n       },\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[HIGH] Unvalidated User Input\",\\n           \"root_problem\": \"The code does not validate user input from the command line arguments and config file.\",\\n           \"suggested_solution\": \"Validate and sanitize user input to prevent potential security vulnerabilities.\",\\n           \"fix\": \"Use a library like \\\\\"boost::program_options\\\\\" to parse and validate command line arguments. For example, use boost::program_options::validate() to validate the output filename.\",\\n           \"source_code\": \"std::string outputFilename = arg1;\",\\n           \"fixed_code\": \"boost::program_options::options_description desc(\\\\\"Allowed options\\\\\");\\\\ndesc.add_options()(\\\\\"output-filename\\\\\", boost::program_options::value<std::string>(), \\\\\"Output filename\\\\\");\\\\nboost::program_options::variables_map vm;\\\\nboost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);\\\\nif (vm.count(\\\\\"output-filename\\\\\")) {\\\\n    std::string outputFilename = vm[\\\\\"output-filename\\\\\"].as<std::string>();\\\\n    // Validate output filename\\\\n    if (outputFilename.empty() || outputFilename.find(\\\\\"..\\\\\") != std::string::npos) {\\\\n        std::cerr << \\\\\"Error: Invalid output filename.\\\\\" << std::endl;\\\\n        return 1;\\\\n    }\\\\n}\"\\n       },\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[MEDIUM] Potential Buffer Overflow\",\\n           \"root_problem\": \"The code uses std::string::getline() to read lines from the config file, which can lead to buffer overflows if the lines are very long.\",\\n           \"suggested_solution\": \"Use a safer way to read lines from the config file, such as using std::getline() with a limited buffer size.\",\\n           \"fix\": \"Use std::getline() with a limited buffer size to prevent buffer overflows. For example, use std::getline(inputFile, line, \\'\\\\\\\\n\\', 1024) to limit the buffer size to 1024 characters.\",\\n           \"source_code\": \"std::getline(inputFile, line)\",\\n           \"fixed_code\": \"std::getline(inputFile, line, \\'\\\\\\\\n\\', 1024)\"\\n       },\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[MEDIUM] Insecure File Handling\",\\n           \"root_problem\": \"The code does not check if the output file is already open before opening it, which can lead to file corruption or data loss.\",\\n           \"suggested_solution\": \"Check if the output file is already open before opening it, and handle the case where it is already open.\",\\n           \"fix\": \"Use std::ifstream to check if the output file is already open before opening it. For example, use std::ifstream outputFile(outputFilename); if (outputFile.is_open()) { std::cerr << \\\\\"Error: Output file is already open.\\\\\" << std::endl; return 1; }\",\\n           \"source_code\": \"std::ofstream outputFile(outputFilename, openMode);\",\\n           \"fixed_code\": \"std::ifstream outputFile(outputFilename);\\\\nif (outputFile.is_open()) {\\\\n    std::cerr << \\\\\"Error: Output file is already open.\\\\\" << std::endl;\\\\n    return 1;\\\\n}\\\\nstd::ofstream outputFile(outputFilename, openMode);\"\\n       }}'}}",
+                "issue_description": "Gemini Error: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
                 "suggested_fix": "Check API key or rate limits."
             },
             {
-                "file_name": "ladd.h",
-                "issue_description": "[LOW] Potential Information Disclosure Through Header Files",
-                "root_problem": "The header file does not explicitly handle or restrict access to its contents, potentially allowing unauthorized access or information disclosure.",
-                "suggested_solution": "Implement access control mechanisms or use secure coding practices to minimize information disclosure risks.",
-                "fix": "Consider using compiler directives or preprocessor definitions to restrict access to sensitive information within the header file. For example, use #ifdef directives to conditionally include sensitive code only when necessary.",
-                "source_code": "#ifndef LADD_H\n#define LADD_H",
-                "fixed_code": "#ifndef LADD_H\n#define LADD_H\n#ifdef INTERNAL_ACCESS\n// Sensitive code here\n#endif"
+                "file_name": "unknown",
+                "issue_description": "Gemini Error: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
+                "suggested_fix": "Check API key or rate limits."
             }
         ],
         "findings_by_file": {
             "unknown": [
                 {
                     "file_name": "unknown",
-                    "issue_description": "Groq Error: Error code: 400 - {'error': {'message': \"Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.\", 'type': 'invalid_request_error', 'code': 'json_validate_failed', 'failed_generation': '{\\n  \"status\": \"VULNERABLE\",\\n   \"stats\": {\\n       \"High\": 2,\\n       \"Medium\": 3,\\n       \"Low\": 1\\n   },\\n   \"findings\": [\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[HIGH] Potential Path Traversal Vulnerability\",\\n           \"root_problem\": \"The code does not validate the source file paths, allowing potential path traversal attacks.\",\\n           \"suggested_solution\": \"Validate and sanitize source file paths to prevent path traversal attacks.\",\\n           \"fix\": \"Use a library like \\\\\"filesystem\\\\\" to validate and normalize file paths. For example, use std::filesystem::path::lexically_normal() to normalize the path and check if it\\'s within the expected directory.\",\\n           \"source_code\": \"std::string sourceFile = value;\",\\n           \"fixed_code\": \"std::filesystem::path normalizedPath = std::filesystem::path(value).lexically_normal();\\\\nif (normalizedPath.string().find(\\\\\"../\\\\\") != std::string::npos) {\\\\n    std::cerr << \\\\\"Error: Potential path traversal attack detected.\\\\\" << std::endl;\\\\n    return 1;\\\\n}\\\\nstd::string sourceFile = normalizedPath.string();\"\\n       },\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[HIGH] Unvalidated User Input\",\\n           \"root_problem\": \"The code does not validate user input from the command line arguments and config file.\",\\n           \"suggested_solution\": \"Validate and sanitize user input to prevent potential security vulnerabilities.\",\\n           \"fix\": \"Use a library like \\\\\"boost::program_options\\\\\" to parse and validate command line arguments. For example, use boost::program_options::validate() to validate the output filename.\",\\n           \"source_code\": \"std::string outputFilename = arg1;\",\\n           \"fixed_code\": \"boost::program_options::options_description desc(\\\\\"Allowed options\\\\\");\\\\ndesc.add_options()(\\\\\"output-filename\\\\\", boost::program_options::value<std::string>(), \\\\\"Output filename\\\\\");\\\\nboost::program_options::variables_map vm;\\\\nboost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);\\\\nif (vm.count(\\\\\"output-filename\\\\\")) {\\\\n    std::string outputFilename = vm[\\\\\"output-filename\\\\\"].as<std::string>();\\\\n    // Validate output filename\\\\n    if (outputFilename.empty() || outputFilename.find(\\\\\"..\\\\\") != std::string::npos) {\\\\n        std::cerr << \\\\\"Error: Invalid output filename.\\\\\" << std::endl;\\\\n        return 1;\\\\n    }\\\\n}\"\\n       },\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[MEDIUM] Potential Buffer Overflow\",\\n           \"root_problem\": \"The code uses std::string::getline() to read lines from the config file, which can lead to buffer overflows if the lines are very long.\",\\n           \"suggested_solution\": \"Use a safer way to read lines from the config file, such as using std::getline() with a limited buffer size.\",\\n           \"fix\": \"Use std::getline() with a limited buffer size to prevent buffer overflows. For example, use std::getline(inputFile, line, \\'\\\\\\\\n\\', 1024) to limit the buffer size to 1024 characters.\",\\n           \"source_code\": \"std::getline(inputFile, line)\",\\n           \"fixed_code\": \"std::getline(inputFile, line, \\'\\\\\\\\n\\', 1024)\"\\n       },\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[MEDIUM] Insecure File Handling\",\\n           \"root_problem\": \"The code does not check if the output file is already open before opening it, which can lead to file corruption or data loss.\",\\n           \"suggested_solution\": \"Check if the output file is already open before opening it, and handle the case where it is already open.\",\\n           \"fix\": \"Use std::ifstream to check if the output file is already open before opening it. For example, use std::ifstream outputFile(outputFilename); if (outputFile.is_open()) { std::cerr << \\\\\"Error: Output file is already open.\\\\\" << std::endl; return 1; }\",\\n           \"source_code\": \"std::ofstream outputFile(outputFilename, openMode);\",\\n           \"fixed_code\": \"std::ifstream outputFile(outputFilename);\\\\nif (outputFile.is_open()) {\\\\n    std::cerr << \\\\\"Error: Output file is already open.\\\\\" << std::endl;\\\\n    return 1;\\\\n}\\\\nstd::ofstream outputFile(outputFilename, openMode);\"\\n       }}'}}",
+                    "issue_description": "Gemini Error: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
                     "suggested_fix": "Check API key or rate limits."
-                }
-            ],
-            "ladd.h": [
+                },
                 {
-                    "file_name": "ladd.h",
-                    "issue_description": "[LOW] Potential Information Disclosure Through Header Files",
-                    "root_problem": "The header file does not explicitly handle or restrict access to its contents, potentially allowing unauthorized access or information disclosure.",
-                    "suggested_solution": "Implement access control mechanisms or use secure coding practices to minimize information disclosure risks.",
-                    "fix": "Consider using compiler directives or preprocessor definitions to restrict access to sensitive information within the header file. For example, use #ifdef directives to conditionally include sensitive code only when necessary.",
-                    "source_code": "#ifndef LADD_H\n#define LADD_H",
-                    "fixed_code": "#ifndef LADD_H\n#define LADD_H\n#ifdef INTERNAL_ACCESS\n// Sensitive code here\n#endif"
+                    "file_name": "unknown",
+                    "issue_description": "Gemini Error: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
+                    "suggested_fix": "Check API key or rate limits."
                 }
             ]
         },
-        "username": "tst2",
+        "overall_reviews_by_file": {
+            "unknown": {
+                "summary": "No professional code review was returned by the model.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Not assessed.",
+                "test_recommendations": [],
+                "priority_actions": []
+            }
+        },
+        "executive_summary": {
+            "status": "ERROR",
+            "stats": {
+                "High": 0,
+                "Medium": 0,
+                "Low": 0
+            },
+            "findings": [
+                {
+                    "file_name": "unknown",
+                    "issue_description": "Gemini Error: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
+                    "suggested_fix": "Check API key or rate limits."
+                }
+            ],
+            "most_important_findings": [],
+            "immediate_next_steps": [],
+            "overall_assessment": "Executive summary generated from scan findings."
+        },
+        "username": "tst1",
         "improvement_suggestions": [],
         "source": "github:YagilAharoni/LADD"
     },
     {
-        "scan_id": "e413483e-67f4-4d60-b04e-2a71c9dfa214",
-        "timestamp": "2026-04-07 17:08:05",
+        "scan_id": "4bb1a47d-655a-4d11-a411-0e37a826664d",
+        "timestamp": "2026-04-09 20:06:49",
         "persona": "Professional",
         "provider": "auto",
-        "status": "ERROR",
+        "status": "VULNERABLE",
         "stats": {
-            "High": 2,
-            "Medium": 0,
+            "High": 4,
+            "Medium": 3,
             "Low": 0,
             "Safe": 0,
-            "Vuln": 1,
-            "Error": 1
+            "Vuln": 2,
+            "Error": 0
         },
         "findings": [
             {
-                "file_name": "unknown",
-                "issue_description": "Groq Error: Error code: 400 - {'error': {'message': \"Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.\", 'type': 'invalid_request_error', 'code': 'json_validate_failed', 'failed_generation': '{\\n  \"status\": \"VULNERABLE\",\\n   \"stats\": {\\n       \"High\": 2,\\n       \"Medium\": 3,\\n       \"Low\": 1\\n   },\\n   \"findings\": [\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[HIGH] Unvalidated User Input in Command Line Arguments\",\\n           \"root_problem\": \"The program does not validate user input from command line arguments, which can lead to security vulnerabilities.\",\\n           \"suggested_solution\": \"Validate all user input from command line arguments to prevent potential security vulnerabilities.\",\\n           \"fix\": \"Use a library like getopt to parse and validate command line arguments. For example: \\\\\"if (argc > 3) { std::cerr << \\\\\"Error: Too many arguments.\\\\\" << std::endl; return 1; }\\\\\" should be replaced with a more robust validation mechanism.\",\\n           \"source_code\": \"if (argc == 2) { std::string arg1 = argv[1]; if (arg1 != \\\\\"-o\\\\\") { outputFilename = arg1; setFromCmd = true; } }\",\\n           \"fixed_code\": \"if (argc == 2) { if (std::string(argv[1]) == \\\\\"-o\\\\\") { std::cerr << \\\\\"Error: Missing output filename.\\\\\" << std::endl; return 1; } else { outputFilename = argv[1]; setFromCmd = true; } }\"\\n       },\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[HIGH] Potential Path Traversal Vulnerability in copyFileWithHeader Function\",\\n           \"root_problem\": \"The copyFileWithHeader function does not validate the source filename, which can lead to a path traversal vulnerability.\",\\n           \"suggested_solution\": \"Validate the source filename to prevent path traversal attacks.\",\\n           \"fix\": \"Use a library like realpath to validate and normalize the source filename. For example: \\\\\"std::ifstream inputFile(realpath(sourceFilename.c_str(), NULL));\\\\\".\",\\n           \"source_code\": \"std::ifstream inputFile(sourceFilename);\",\\n           \"fixed_code\": \"char resolved_path[PATH_MAX]; if (realpath(sourceFilename.c_str(), resolved_path) == NULL) { std::cerr << \\\\\"Error: Invalid source filename.\\\\\" << std::endl; return 1; } std::ifstream inputFile(resolved_path);\"\\n       },\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[MEDIUM] Missing Error Handling in configFile Parsing\",\\n           \"root_problem\": \"The program does not handle errors that may occur while parsing the config file.\",\\n           \"suggested_solution\": \"Add error handling to the config file parsing code to prevent crashes or unexpected behavior.\",\\n           \"fix\": \"Use try-catch blocks to catch and handle exceptions that may occur during config file parsing. For example: \\\\\"try { std::getline(ss, key, \\'=\\'); } catch (const std::exception& e) { std::cerr << \\\\\"Error: Failed to parse config file.\\\\\" << std::endl; return 1; }\\\\\".\",\\n           \"source_code\": \"std::getline(ss, key, \\'=\\');\",\\n           \"fixed_code\": \"try { std::getline(ss, key, \\'=\\'); } catch (const std::exception& e) { std::cerr << \\\\\"Error: Failed to parse config file.\\\\\" << std::endl; return 1; }\"\\n       },\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[MEDIUM] Potential Buffer Overflow in trim Function\",\\n           \"root_problem\": \"The trim function does not check for buffer overflows when trimming whitespace from the input string.\",\\n           \"suggested_solution\": \"Add bounds checking to the trim function to prevent buffer overflows.\",\\n           \"fix\": \"Use a safer string manipulation library like std::string::erase to trim whitespace from the input string. For example: \\\\\"std::string trimmed_str = str; trimmed_str.erase(0, str.find_first_not_of(\\\\\" \\\\t\\\\n\\\\r\\\\\"));\\\\\".\",\\n           \"source_code\": \"size_t first = str.find_first_not_of(\\\\\\\\\\\\\" \\\\\\\\t\\\\\\\\n\\\\\\\\r\\\\\\\\\",\");\"null,\\n           \"fixed_code\": \"std::string trimmed_str = str; trimmed_str.erase(0, str.find_first_not_of(\\\\\" \\\\t\\\\n\\\\r\\\\\")); trimmed_str.erase(str.find_last_not_of(\\\\\" \\\\t\\\\n\\\\r\\\\\") + 1);\"\\n       }'}}",
-                "suggested_fix": "Check API key or rate limits."
+                "file_name": "filereader.cpp",
+                "issue_description": "[HIGH] Unvalidated User Input in Command Line Arguments",
+                "root_problem": "The program does not validate user input from command line arguments, which can lead to security vulnerabilities.",
+                "suggested_solution": "Validate all user input to prevent potential security vulnerabilities.",
+                "suggested_fix": "Use a library like getopt to parse command line arguments and validate user input.",
+                "source_code": "if (argc == 2) { std::string arg1 = argv[1]; ... }",
+                "fixed_code": "int opt; while ((opt = getopt(argc, argv, \"o:\")) != -1) { ... }"
+            },
+            {
+                "file_name": "filereader.cpp",
+                "issue_description": "[HIGH] Potential Buffer Overflow in Config File Parsing",
+                "root_problem": "The program uses std::getline to read lines from the config file, which can lead to buffer overflows if the lines are very long.",
+                "suggested_solution": "Use a safer method to read lines from the config file, such as using a fixed-size buffer.",
+                "suggested_fix": "Use std::getline with a fixed-size buffer, such as std::array<char, 1024>.",
+                "source_code": "std::string line; while (std::getline(configFile, line)) { ... }",
+                "fixed_code": "std::array<char, 1024> line; while (configFile.getline(line.data(), line.size())) { ... }"
+            },
+            {
+                "file_name": "filereader.cpp",
+                "issue_description": "[HIGH] Lack of Error Handling in File Operations",
+                "root_problem": "The program does not handle errors properly when performing file operations, which can lead to security vulnerabilities.",
+                "suggested_solution": "Implement proper error handling for file operations to prevent security vulnerabilities.",
+                "suggested_fix": "Use try-catch blocks to catch exceptions and handle errors properly.",
+                "source_code": "std::ofstream outputFile(outputFilename, openMode); if (!outputFile.is_open()) { ... }",
+                "fixed_code": "try { std::ofstream outputFile(outputFilename, openMode); if (!outputFile.is_open()) { throw std::runtime_error(\"Failed to open output file\"); } } catch (const std::exception& e) { ... }"
             },
             {
                 "file_name": "ladd.h",
-                "issue_description": "[HIGH] Potential Information Disclosure via Anti-Debugging Detection",
-                "root_problem": "The declaration of the anti-debugging detection function may reveal sensitive information about the program's behavior or intentions.",
-                "suggested_solution": "Remove or modify the anti-debugging detection function to prevent information disclosure.",
-                "fix": "Consider removing the function declaration or replacing it with a more secure alternative, such as a function that checks for debugging environments without revealing the program's intentions.",
+                "issue_description": "[HIGH] Potential for Anti-Debugging Evasion Techniques",
+                "root_problem": "The declaration of an anti-debugging detection function may indicate an attempt to evade debugging or reverse engineering, potentially hiding malicious behavior.",
+                "suggested_solution": "Implement secure coding practices and ensure the function's purpose is legitimate and transparent.",
+                "suggested_fix": "Remove or refactor the anti-debugging detection function to ensure it does not facilitate malicious activities. Consider implementing logging or monitoring mechanisms to detect and respond to potential security incidents.",
                 "source_code": "void detect_debugger(void);",
-                "fixed_code": "// Removed or modified function declaration to prevent information disclosure.\n// Example: void check_environment(void);"
+                "fixed_code": "/* Removed or refactored for security and transparency */"
+            },
+            {
+                "file_name": "filereader.cpp",
+                "issue_description": "[MEDIUM] Hardcoded Config File Name",
+                "root_problem": "The program uses a hardcoded config file name, which can make it difficult to change the config file location.",
+                "suggested_solution": "Use a configurable config file name to make the program more flexible.",
+                "suggested_fix": "Use a command line argument or an environment variable to specify the config file name.",
+                "source_code": "std::string configFilename = \\\"config.env\\\";",
+                "fixed_code": "std::string configFilename = argv[1];"
+            },
+            {
+                "file_name": "filereader.cpp",
+                "issue_description": "[MEDIUM] Lack of Input Validation in Config File Parsing",
+                "root_problem": "The program does not validate input in the config file, which can lead to security vulnerabilities.",
+                "suggested_solution": "Validate all input in the config file to prevent security vulnerabilities.",
+                "suggested_fix": "Use a library like boost::property_tree to parse the config file and validate input.",
+                "source_code": "std::stringstream ss(line); std::string key, value; ...",
+                "fixed_code": "boost::property_tree::ptree config; boost::property_tree::read_ini(configFile, config);"
+            },
+            {
+                "file_name": "filereader.cpp",
+                "issue_description": "[MEDIUM] Potential Resource Leak in File Operations",
+                "root_problem": "The program does not close files properly in all cases, which can lead to resource leaks.",
+                "suggested_solution": "Use smart pointers or RAII to ensure that files are closed properly.",
+                "suggested_fix": "Use std::unique_ptr to manage file pointers.",
+                "source_code": "std::ifstream configFile(configFilename); ...",
+                "fixed_code": "std::unique_ptr<std::ifstream> configFile = std::make_unique<std::ifstream>(configFilename);"
             }
         ],
         "findings_by_file": {
-            "unknown": [
+            "filereader.cpp": [
                 {
-                    "file_name": "unknown",
-                    "issue_description": "Groq Error: Error code: 400 - {'error': {'message': \"Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.\", 'type': 'invalid_request_error', 'code': 'json_validate_failed', 'failed_generation': '{\\n  \"status\": \"VULNERABLE\",\\n   \"stats\": {\\n       \"High\": 2,\\n       \"Medium\": 3,\\n       \"Low\": 1\\n   },\\n   \"findings\": [\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[HIGH] Unvalidated User Input in Command Line Arguments\",\\n           \"root_problem\": \"The program does not validate user input from command line arguments, which can lead to security vulnerabilities.\",\\n           \"suggested_solution\": \"Validate all user input from command line arguments to prevent potential security vulnerabilities.\",\\n           \"fix\": \"Use a library like getopt to parse and validate command line arguments. For example: \\\\\"if (argc > 3) { std::cerr << \\\\\"Error: Too many arguments.\\\\\" << std::endl; return 1; }\\\\\" should be replaced with a more robust validation mechanism.\",\\n           \"source_code\": \"if (argc == 2) { std::string arg1 = argv[1]; if (arg1 != \\\\\"-o\\\\\") { outputFilename = arg1; setFromCmd = true; } }\",\\n           \"fixed_code\": \"if (argc == 2) { if (std::string(argv[1]) == \\\\\"-o\\\\\") { std::cerr << \\\\\"Error: Missing output filename.\\\\\" << std::endl; return 1; } else { outputFilename = argv[1]; setFromCmd = true; } }\"\\n       },\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[HIGH] Potential Path Traversal Vulnerability in copyFileWithHeader Function\",\\n           \"root_problem\": \"The copyFileWithHeader function does not validate the source filename, which can lead to a path traversal vulnerability.\",\\n           \"suggested_solution\": \"Validate the source filename to prevent path traversal attacks.\",\\n           \"fix\": \"Use a library like realpath to validate and normalize the source filename. For example: \\\\\"std::ifstream inputFile(realpath(sourceFilename.c_str(), NULL));\\\\\".\",\\n           \"source_code\": \"std::ifstream inputFile(sourceFilename);\",\\n           \"fixed_code\": \"char resolved_path[PATH_MAX]; if (realpath(sourceFilename.c_str(), resolved_path) == NULL) { std::cerr << \\\\\"Error: Invalid source filename.\\\\\" << std::endl; return 1; } std::ifstream inputFile(resolved_path);\"\\n       },\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[MEDIUM] Missing Error Handling in configFile Parsing\",\\n           \"root_problem\": \"The program does not handle errors that may occur while parsing the config file.\",\\n           \"suggested_solution\": \"Add error handling to the config file parsing code to prevent crashes or unexpected behavior.\",\\n           \"fix\": \"Use try-catch blocks to catch and handle exceptions that may occur during config file parsing. For example: \\\\\"try { std::getline(ss, key, \\'=\\'); } catch (const std::exception& e) { std::cerr << \\\\\"Error: Failed to parse config file.\\\\\" << std::endl; return 1; }\\\\\".\",\\n           \"source_code\": \"std::getline(ss, key, \\'=\\');\",\\n           \"fixed_code\": \"try { std::getline(ss, key, \\'=\\'); } catch (const std::exception& e) { std::cerr << \\\\\"Error: Failed to parse config file.\\\\\" << std::endl; return 1; }\"\\n       },\\n       {\\n           \"file_name\": \"filereader.cpp\",\\n           \"issue_description\": \"[MEDIUM] Potential Buffer Overflow in trim Function\",\\n           \"root_problem\": \"The trim function does not check for buffer overflows when trimming whitespace from the input string.\",\\n           \"suggested_solution\": \"Add bounds checking to the trim function to prevent buffer overflows.\",\\n           \"fix\": \"Use a safer string manipulation library like std::string::erase to trim whitespace from the input string. For example: \\\\\"std::string trimmed_str = str; trimmed_str.erase(0, str.find_first_not_of(\\\\\" \\\\t\\\\n\\\\r\\\\\"));\\\\\".\",\\n           \"source_code\": \"size_t first = str.find_first_not_of(\\\\\\\\\\\\\" \\\\\\\\t\\\\\\\\n\\\\\\\\r\\\\\\\\\",\");\"null,\\n           \"fixed_code\": \"std::string trimmed_str = str; trimmed_str.erase(0, str.find_first_not_of(\\\\\" \\\\t\\\\n\\\\r\\\\\")); trimmed_str.erase(str.find_last_not_of(\\\\\" \\\\t\\\\n\\\\r\\\\\") + 1);\"\\n       }'}}",
-                    "suggested_fix": "Check API key or rate limits."
+                    "file_name": "filereader.cpp",
+                    "issue_description": "[HIGH] Unvalidated User Input in Command Line Arguments",
+                    "root_problem": "The program does not validate user input from command line arguments, which can lead to security vulnerabilities.",
+                    "suggested_solution": "Validate all user input to prevent potential security vulnerabilities.",
+                    "suggested_fix": "Use a library like getopt to parse command line arguments and validate user input.",
+                    "source_code": "if (argc == 2) { std::string arg1 = argv[1]; ... }",
+                    "fixed_code": "int opt; while ((opt = getopt(argc, argv, \"o:\")) != -1) { ... }"
+                },
+                {
+                    "file_name": "filereader.cpp",
+                    "issue_description": "[HIGH] Potential Buffer Overflow in Config File Parsing",
+                    "root_problem": "The program uses std::getline to read lines from the config file, which can lead to buffer overflows if the lines are very long.",
+                    "suggested_solution": "Use a safer method to read lines from the config file, such as using a fixed-size buffer.",
+                    "suggested_fix": "Use std::getline with a fixed-size buffer, such as std::array<char, 1024>.",
+                    "source_code": "std::string line; while (std::getline(configFile, line)) { ... }",
+                    "fixed_code": "std::array<char, 1024> line; while (configFile.getline(line.data(), line.size())) { ... }"
+                },
+                {
+                    "file_name": "filereader.cpp",
+                    "issue_description": "[HIGH] Lack of Error Handling in File Operations",
+                    "root_problem": "The program does not handle errors properly when performing file operations, which can lead to security vulnerabilities.",
+                    "suggested_solution": "Implement proper error handling for file operations to prevent security vulnerabilities.",
+                    "suggested_fix": "Use try-catch blocks to catch exceptions and handle errors properly.",
+                    "source_code": "std::ofstream outputFile(outputFilename, openMode); if (!outputFile.is_open()) { ... }",
+                    "fixed_code": "try { std::ofstream outputFile(outputFilename, openMode); if (!outputFile.is_open()) { throw std::runtime_error(\"Failed to open output file\"); } } catch (const std::exception& e) { ... }"
+                },
+                {
+                    "file_name": "filereader.cpp",
+                    "issue_description": "[MEDIUM] Hardcoded Config File Name",
+                    "root_problem": "The program uses a hardcoded config file name, which can make it difficult to change the config file location.",
+                    "suggested_solution": "Use a configurable config file name to make the program more flexible.",
+                    "suggested_fix": "Use a command line argument or an environment variable to specify the config file name.",
+                    "source_code": "std::string configFilename = \\\"config.env\\\";",
+                    "fixed_code": "std::string configFilename = argv[1];"
+                },
+                {
+                    "file_name": "filereader.cpp",
+                    "issue_description": "[MEDIUM] Lack of Input Validation in Config File Parsing",
+                    "root_problem": "The program does not validate input in the config file, which can lead to security vulnerabilities.",
+                    "suggested_solution": "Validate all input in the config file to prevent security vulnerabilities.",
+                    "suggested_fix": "Use a library like boost::property_tree to parse the config file and validate input.",
+                    "source_code": "std::stringstream ss(line); std::string key, value; ...",
+                    "fixed_code": "boost::property_tree::ptree config; boost::property_tree::read_ini(configFile, config);"
+                },
+                {
+                    "file_name": "filereader.cpp",
+                    "issue_description": "[MEDIUM] Potential Resource Leak in File Operations",
+                    "root_problem": "The program does not close files properly in all cases, which can lead to resource leaks.",
+                    "suggested_solution": "Use smart pointers or RAII to ensure that files are closed properly.",
+                    "suggested_fix": "Use std::unique_ptr to manage file pointers.",
+                    "source_code": "std::ifstream configFile(configFilename); ...",
+                    "fixed_code": "std::unique_ptr<std::ifstream> configFile = std::make_unique<std::ifstream>(configFilename);"
                 }
             ],
             "ladd.h": [
                 {
                     "file_name": "ladd.h",
-                    "issue_description": "[HIGH] Potential Information Disclosure via Anti-Debugging Detection",
-                    "root_problem": "The declaration of the anti-debugging detection function may reveal sensitive information about the program's behavior or intentions.",
-                    "suggested_solution": "Remove or modify the anti-debugging detection function to prevent information disclosure.",
-                    "fix": "Consider removing the function declaration or replacing it with a more secure alternative, such as a function that checks for debugging environments without revealing the program's intentions.",
+                    "issue_description": "[HIGH] Potential for Anti-Debugging Evasion Techniques",
+                    "root_problem": "The declaration of an anti-debugging detection function may indicate an attempt to evade debugging or reverse engineering, potentially hiding malicious behavior.",
+                    "suggested_solution": "Implement secure coding practices and ensure the function's purpose is legitimate and transparent.",
+                    "suggested_fix": "Remove or refactor the anti-debugging detection function to ensure it does not facilitate malicious activities. Consider implementing logging or monitoring mechanisms to detect and respond to potential security incidents.",
                     "source_code": "void detect_debugger(void);",
-                    "fixed_code": "// Removed or modified function declaration to prevent information disclosure.\n// Example: void check_environment(void);"
+                    "fixed_code": "/* Removed or refactored for security and transparency */"
                 }
             ]
         },
-        "username": "tst2",
+        "overall_reviews_by_file": {
+            "filereader.cpp": {
+                "summary": "No professional code review was returned by the model.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Not assessed.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "ladd.h": {
+                "summary": "The provided header file declares a function that may be used for anti-debugging purposes, which raises security concerns. The code lacks transparency and may facilitate malicious activities.",
+                "strengths": [],
+                "key_risks": [
+                    "Potential for hiding malicious behavior",
+                    "Lack of transparency and security"
+                ],
+                "maintainability_assessment": "The code's maintainability is compromised due to the potential security risks and lack of transparency.",
+                "test_recommendations": [
+                    "Implement comprehensive testing to ensure the function's purpose is legitimate and does not facilitate malicious activities",
+                    "Conduct regular security audits and code reviews to identify potential vulnerabilities"
+                ],
+                "priority_actions": [
+                    "Refactor or remove the anti-debugging detection function",
+                    "Implement secure coding practices and ensure transparency"
+                ]
+            }
+        },
+        "executive_summary": {
+            "overall_assessment": "The application has multiple high-severity vulnerabilities that require immediate attention to prevent potential security breaches.",
+            "most_important_findings": [
+                {
+                    "title": "Unvalidated User Input in Command Line Arguments",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-20"
+                    ],
+                    "owasp_categories": [
+                        "A03:2021 - Injection"
+                    ],
+                    "affected_files": [
+                        "filereader.cpp"
+                    ],
+                    "why_it_matters": "Unvalidated user input can lead to security vulnerabilities such as command injection, allowing attackers to execute arbitrary commands.",
+                    "attack_scenario": "An attacker could inject malicious commands through the command line arguments, potentially leading to unauthorized access or data breaches.",
+                    "business_impact": "A successful attack could compromise the confidentiality, integrity, and availability of sensitive data, resulting in significant financial and reputational losses.",
+                    "recommended_actions": [
+                        "Validate all user input from command line arguments using a library like getopt.",
+                        "Implement input sanitization and whitelisting to prevent malicious input.",
+                        "Conduct regular security testing and code reviews to identify and address potential vulnerabilities."
+                    ]
+                },
+                {
+                    "title": "Potential Buffer Overflow in Config File Parsing",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-121"
+                    ],
+                    "owasp_categories": [
+                        "A08:2021 - Software and Data Integrity Failures"
+                    ],
+                    "affected_files": [
+                        "filereader.cpp"
+                    ],
+                    "why_it_matters": "Buffer overflows can lead to arbitrary code execution, allowing attackers to gain unauthorized access to sensitive data or systems.",
+                    "attack_scenario": "An attacker could craft a malicious config file with long lines, causing a buffer overflow and potentially leading to code execution.",
+                    "business_impact": "A successful attack could compromise the integrity and availability of sensitive data, resulting in significant financial and reputational losses.",
+                    "recommended_actions": [
+                        "Use a safer method to read lines from the config file, such as using a fixed-size buffer.",
+                        "Implement bounds checking and input validation to prevent buffer overflows.",
+                        "Conduct regular security testing and code reviews to identify and address potential vulnerabilities."
+                    ]
+                },
+                {
+                    "title": "Lack of Error Handling in File Operations",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-703"
+                    ],
+                    "owasp_categories": [
+                        "A08:2021 - Software and Data Integrity Failures"
+                    ],
+                    "affected_files": [
+                        "filereader.cpp"
+                    ],
+                    "why_it_matters": "Inadequate error handling can lead to security vulnerabilities, such as information disclosure or denial-of-service attacks.",
+                    "attack_scenario": "An attacker could exploit a file operation error to gain unauthorized access to sensitive data or disrupt system operations.",
+                    "business_impact": "A successful attack could compromise the confidentiality, integrity, and availability of sensitive data, resulting in significant financial and reputational losses.",
+                    "recommended_actions": [
+                        "Implement proper error handling for file operations using try-catch blocks.",
+                        "Log and monitor errors to detect and respond to potential security incidents.",
+                        "Conduct regular security testing and code reviews to identify and address potential vulnerabilities."
+                    ]
+                }
+            ],
+            "immediate_next_steps": [
+                "Conduct an emergency security review to identify and address all high-severity vulnerabilities.",
+                "Implement the recommended actions for each high-severity finding.",
+                "Schedule a follow-up security review to verify the effectiveness of the implemented fixes and identify potential new vulnerabilities."
+            ]
+        },
+        "username": "tst1",
         "improvement_suggestions": [],
         "source": "github:YagilAharoni/LADD"
     },
     {
-        "scan_id": "906ef91e-7028-426d-ac06-ea766b912ead",
-        "timestamp": "2026-04-07 17:10:09",
+        "scan_id": "10117967-7dcd-4482-8ca0-a081acc0f3a2",
+        "timestamp": "2026-04-09 20:25:12",
         "persona": "Professional",
-        "provider": "auto",
-        "status": "VULNERABLE",
-        "stats": {
-            "High": 12,
-            "Medium": 10,
-            "Low": 6,
-            "Safe": 0,
-            "Vuln": 6,
-            "Error": 0
-        },
-        "findings": [
-            {
-                "file_name": "HW4_318725405_213478142_Q1.cpp",
-                "issue_description": "[HIGH] Unvalidated Array Indexing",
-                "root_problem": "The code does not validate array indices, which can lead to buffer overflow attacks.",
-                "suggested_solution": "Implement bounds checking for array indices.",
-                "fix": "Use std::vector instead of fixed-size arrays and check indices using at() or size() methods.",
-                "source_code": "int array[N][N] = { 7,6,8,9,1,2,3,4,5 };",
-                "fixed_code": "std::vector<std::vector<int>> array(N, std::vector<int>(N));"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q1.cpp",
-                "issue_description": "[HIGH] Missing Error Handling",
-                "root_problem": "The code does not handle potential errors, such as division by zero or invalid input.",
-                "suggested_solution": "Implement try-catch blocks and error handling mechanisms.",
-                "fix": "Use try-catch blocks to catch and handle exceptions, and validate user input.",
-                "source_code": "int tmp, total_indexes = N * size;",
-                "fixed_code": "try { int tmp, total_indexes = N * size; } catch (const std::exception& e) { std::cerr << e.what() << std::endl; }"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q2.cpp",
-                "issue_description": "[HIGH] Unvalidated User Input",
-                "root_problem": "The program does not validate the user's input, which can lead to unexpected behavior or crashes.",
-                "suggested_solution": "Validate user input to ensure it falls within the expected range.",
-                "fix": "Add input validation to check if the user's input is within the range of the array indices.",
-                "source_code": "cin >> num_to_search;",
-                "fixed_code": "if (!(cin >> num_to_search) || num_to_search < 0 || num_to_search > SIZE - 1) { cout << \"Invalid input. Please enter a number between 0 and \" << SIZE - 1 << \".\" << endl; return 1; }"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q2.cpp",
-                "issue_description": "[HIGH] Potential Integer Overflow",
-                "root_problem": "The calculation of the mid index can overflow for large array sizes.",
-                "suggested_solution": "Use a safer method to calculate the mid index.",
-                "fix": "Use the formula mid = left + (right - left) / 2 to avoid potential integer overflow.",
-                "source_code": "mid = (right + left) / 2;",
-                "fixed_code": "mid = left + (right - left) / 2;"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q3.cpp",
-                "issue_description": "[HIGH] Buffer Overflow Vulnerability",
-                "root_problem": "The code does not validate the length of the input strings, which can lead to a buffer overflow.",
-                "suggested_solution": "Validate the length of the input strings and ensure they do not exceed the buffer size.",
-                "fix": "Use strncpy instead of strcpy and check the length of the strings before copying them.",
-                "source_code": "char s[12] = \"abracadabra\";",
-                "fixed_code": "const int MAX_SIZE = 12; char s[MAX_SIZE]; strncpy(s, \"abracadabra\", MAX_SIZE); s[MAX_SIZE - 1] = '\\0';"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q3.cpp",
-                "issue_description": "[HIGH] Potential Null Pointer Dereference",
-                "root_problem": "The code does not check if the input strings are null before calling strlen.",
-                "suggested_solution": "Check if the input strings are null before calling strlen.",
-                "fix": "Add a null check before calling strlen: if (s == NULL || t == NULL) { return -1; }",
-                "source_code": "int s_size = strlen(s), t_size = strlen(t);",
-                "fixed_code": "if (s == NULL || t == NULL) { return -1; } int s_size = strlen(s), t_size = strlen(t);"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q4.cpp",
-                "issue_description": "[HIGH] Unbounded String Copy",
-                "root_problem": "The code uses strcpy which can lead to buffer overflow attacks.",
-                "suggested_solution": "Use bounded string copy functions like strncpy.",
-                "fix": "Replace #include <string.h> with #include <cstring> and use std::string instead of char arrays for safer string handling.",
-                "source_code": "#include <string.h>",
-                "fixed_code": "#include <cstring>\nstd::string arr = \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \";"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q4.cpp",
-                "issue_description": "[HIGH] Missing Input Validation",
-                "root_problem": "The code does not validate the input to the printDecrypted function.",
-                "suggested_solution": "Add input validation to check for null pointers and empty strings.",
-                "fix": "Add a check at the beginning of the printDecrypted function: if (encriptedStr == nullptr || *encriptedStr == '\\0') { return; }",
-                "source_code": "void printDecrypted(char encriptedStr[]){",
-                "fixed_code": "void printDecrypted(char encriptedStr[]){ if (encriptedStr == nullptr || *encriptedStr == '\\0') { return; }"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q5.cpp",
-                "issue_description": "[HIGH] Unvalidated User Input",
-                "root_problem": "The program does not validate user input, which can lead to buffer overflow attacks.",
-                "suggested_solution": "Validate user input to ensure it does not exceed the buffer size.",
-                "fix": "Use cin.getline() with a limited buffer size to prevent buffer overflows.",
-                "source_code": "cin.getline(str, MAX_SIZE);",
-                "fixed_code": "cin.getline(str, MAX_SIZE - 1); str[MAX_SIZE - 1] = '\\0';"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q5.cpp",
-                "issue_description": "[HIGH] Potential Buffer Overflow",
-                "root_problem": "The new_str buffer in converToLanguageB() function can overflow if the input string is too long.",
-                "suggested_solution": "Increase the buffer size or use dynamic memory allocation.",
-                "fix": "Use a std::string instead of a fixed-size buffer to prevent buffer overflows.",
-                "source_code": "char new_str[MAX_SIZE *3];",
-                "fixed_code": "std::string new_str;"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q6.cpp",
-                "issue_description": "[HIGH] Unbounded String Copy",
-                "root_problem": "The code uses strcpy or similar functions without bounds checking, which can lead to buffer overflow attacks.",
-                "suggested_solution": "Use bounded string copy functions like strncpy.",
-                "fix": "Replace \"char mat[3][SIZE] = { \"0000000\",\"10101\" , \"11000001\" };\" with \"strncpy(mat[0], \"0000000\", SIZE); strncpy(mat[1], \"10101\", SIZE); strncpy(mat[2], \"11000001\", SIZE);\"",
-                "source_code": "char mat[3][SIZE] = { \"0000000\",\"10101\" , \"11000001\" };",
-                "fixed_code": "strncpy(mat[0], \"0000000\", SIZE); strncpy(mat[1], \"10101\", SIZE); strncpy(mat[2], \"11000001\", SIZE);"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q6.cpp",
-                "issue_description": "[HIGH] Potential Null Pointer Dereference",
-                "root_problem": "The code does not check for null pointers before dereferencing them, which can lead to crashes or code execution.",
-                "suggested_solution": "Always check for null pointers before dereferencing them.",
-                "fix": "Add null checks before calling functions like printMap or findSecAmount, e.g., \"if (str != NULL) { printMap(str); }\"",
-                "source_code": "void printMap(char str[]){",
-                "fixed_code": "void printMap(char str[]){ if (str != NULL) {"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q1.cpp",
-                "issue_description": "[MEDIUM] Using Namespace Std",
-                "root_problem": "The code uses the 'using namespace std;' directive, which can lead to naming conflicts.",
-                "suggested_solution": "Use the std:: prefix instead of the using namespace std; directive.",
-                "fix": "Replace 'using namespace std;' with 'std::' prefix for standard library functions and objects.",
-                "source_code": "using namespace std;",
-                "fixed_code": "std::cout << \"Original array: \" << std::endl;"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q2.cpp",
-                "issue_description": "[MEDIUM] Using Namespace Std",
-                "root_problem": "Using the entire std namespace can lead to naming conflicts and pollute the global namespace.",
-                "suggested_solution": "Use the std namespace only where necessary.",
-                "fix": "Remove the using namespace std; directive and use the std:: prefix for standard library functions and objects.",
-                "source_code": "using namespace std;",
-                "fixed_code": "std::cout, std::cin, etc."
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q3.cpp",
-                "issue_description": "[MEDIUM] Using namespace std",
-                "root_problem": "Using the entire std namespace can lead to naming conflicts.",
-                "suggested_solution": "Use the std namespace only for the necessary functions.",
-                "fix": "Replace \"using namespace std;\" with \"using std::cout; using std::endl;\" and use the std namespace only for the necessary functions.",
-                "source_code": "using namespace std;",
-                "fixed_code": "using std::cout; using std::endl;"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q4.cpp",
-                "issue_description": "[MEDIUM] Using Namespace Std",
-                "root_problem": "The code uses the entire std namespace which can lead to naming conflicts.",
-                "suggested_solution": "Use the std namespace only for specific standard library functions.",
-                "fix": "Replace using namespace std; with using std::cout; using std::endl;",
-                "source_code": "using namespace std;",
-                "fixed_code": "using std::cout; using std::endl;"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q5.cpp",
-                "issue_description": "[MEDIUM] Using namespace std;",
-                "root_problem": "Using the entire std namespace can lead to naming conflicts.",
-                "suggested_solution": "Use the std:: prefix for standard library functions and objects.",
-                "fix": "Remove the using namespace std; directive and use the std:: prefix.",
-                "source_code": "using namespace std;",
-                "fixed_code": "std::cout, std::cin, etc."
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q5.cpp",
-                "issue_description": "[MEDIUM] Magic Numbers",
-                "root_problem": "The code uses magic numbers (e.g., 100, 1000) without explanation.",
-                "suggested_solution": "Define named constants for magic numbers.",
-                "fix": "Define a named constant for the buffer size, e.g., const int BUFFER_SIZE = 100;",
-                "source_code": "char sentence[MAX_SIZE];",
-                "fixed_code": "const int BUFFER_SIZE = 100; char sentence[BUFFER_SIZE];"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q5.cpp",
-                "issue_description": "[MEDIUM] Missing Error Handling",
-                "root_problem": "The program does not handle errors that may occur during input/output operations.",
-                "suggested_solution": "Add error handling for input/output operations.",
-                "fix": "Check the return values of input/output functions, e.g., if (cin.getline(str, MAX_SIZE)) { ... }",
-                "source_code": "cin.getline(str, MAX_SIZE);",
-                "fixed_code": "if (cin.getline(str, MAX_SIZE)) { ... } else { std::cerr << \"Error: \" << std::endl; }"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q6.cpp",
-                "issue_description": "[MEDIUM] Missing Input Validation",
-                "root_problem": "The code does not validate its inputs, which can lead to unexpected behavior or crashes.",
-                "suggested_solution": "Add input validation to ensure that inputs are within expected ranges.",
-                "fix": "Add checks to ensure that the input strings are not too long, e.g., \"if (strlen(str) > SIZE) { // handle error }\"",
-                "source_code": "void printMap(char str[]){",
-                "fixed_code": "void printMap(char str[]){ if (strlen(str) > SIZE) { // handle error }"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q6.cpp",
-                "issue_description": "[MEDIUM] Potential Integer Overflow",
-                "root_problem": "The code uses integers to store sizes, which can lead to overflows for large inputs.",
-                "suggested_solution": "Use size_t or other unsigned types to store sizes.",
-                "fix": "Replace \"int size\" with \"size_t size\" in function parameters.",
-                "source_code": "void print(int arr[], int size){",
-                "fixed_code": "void print(int arr[], size_t size){"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q6.cpp",
-                "issue_description": "[MEDIUM] Magic Numbers",
-                "root_problem": "The code uses magic numbers, which can make it harder to understand and maintain.",
-                "suggested_solution": "Replace magic numbers with named constants.",
-                "fix": "Replace \"10\" with \"const int SIZE = 10;\" and use SIZE throughout the code.",
-                "source_code": "#define SIZE 10",
-                "fixed_code": "const int SIZE = 10;"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q1.cpp",
-                "issue_description": "[LOW] Magic Number",
-                "root_problem": "The code uses a magic number (N = 3) without explanation.",
-                "suggested_solution": "Define a named constant for the magic number.",
-                "fix": "Replace the magic number with a named constant, e.g., const int ARRAY_SIZE = 3;",
-                "source_code": "#define N 3",
-                "fixed_code": "const int ARRAY_SIZE = 3;"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q2.cpp",
-                "issue_description": "[LOW] Magic Numbers",
-                "root_problem": "The array size is hardcoded as a magic number.",
-                "suggested_solution": "Define a named constant for the array size.",
-                "fix": "Replace the magic number with a named constant.",
-                "source_code": "int const SIZE = 10;",
-                "fixed_code": "const int ARRAY_SIZE = 10; int arr[ARRAY_SIZE];"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q3.cpp",
-                "issue_description": "[LOW] Magic Numbers",
-                "root_problem": "The code uses magic numbers, which can make it harder to understand and maintain.",
-                "suggested_solution": "Replace magic numbers with named constants.",
-                "fix": "Replace the magic number 12 with a named constant: const int BUFFER_SIZE = 12; char s[BUFFER_SIZE];",
-                "source_code": "char s[12] = \"abracadabra\";",
-                "fixed_code": "const int BUFFER_SIZE = 12; char s[BUFFER_SIZE];"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q4.cpp",
-                "issue_description": "[LOW] Magic Numbers",
-                "root_problem": "The code uses magic numbers like 35 for the array size.",
-                "suggested_solution": "Define constants for magic numbers to improve code readability.",
-                "fix": "Define a constant for the array size: const int ARR_SIZE = 35; char arr[ARR_SIZE] = { \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \" };",
-                "source_code": "char arr[35] = { \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \" };",
-                "fixed_code": "const int ARR_SIZE = 35; char arr[ARR_SIZE] = { \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \" };"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q5.cpp",
-                "issue_description": "[LOW] Code Organization",
-                "root_problem": "The code is not well-organized, making it difficult to read and maintain.",
-                "suggested_solution": "Improve code organization by separating functions and using whitespace.",
-                "fix": "Separate functions into different sections, and use whitespace to improve readability.",
-                "source_code": "void converToLanguageB(char str[]) { ... }",
-                "fixed_code": "void converToLanguageB(char str[]) { \n    ... \n}"
-            },
-            {
-                "file_name": "HW4_318725405_213478142_Q6.cpp",
-                "issue_description": "[LOW] Using Namespace Std",
-                "root_problem": "The code uses the entire std namespace, which can lead to naming conflicts.",
-                "suggested_solution": "Use the std namespace only where necessary.",
-                "fix": "Replace \"using namespace std;\" with \"using std::cout;\" and \"using std::endl;\".",
-                "source_code": "using namespace std;",
-                "fixed_code": "using std::cout; using std::endl;"
-            }
-        ],
-        "findings_by_file": {
-            "HW4_318725405_213478142_Q1.cpp": [
-                {
-                    "file_name": "HW4_318725405_213478142_Q1.cpp",
-                    "issue_description": "[HIGH] Unvalidated Array Indexing",
-                    "root_problem": "The code does not validate array indices, which can lead to buffer overflow attacks.",
-                    "suggested_solution": "Implement bounds checking for array indices.",
-                    "fix": "Use std::vector instead of fixed-size arrays and check indices using at() or size() methods.",
-                    "source_code": "int array[N][N] = { 7,6,8,9,1,2,3,4,5 };",
-                    "fixed_code": "std::vector<std::vector<int>> array(N, std::vector<int>(N));"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q1.cpp",
-                    "issue_description": "[HIGH] Missing Error Handling",
-                    "root_problem": "The code does not handle potential errors, such as division by zero or invalid input.",
-                    "suggested_solution": "Implement try-catch blocks and error handling mechanisms.",
-                    "fix": "Use try-catch blocks to catch and handle exceptions, and validate user input.",
-                    "source_code": "int tmp, total_indexes = N * size;",
-                    "fixed_code": "try { int tmp, total_indexes = N * size; } catch (const std::exception& e) { std::cerr << e.what() << std::endl; }"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q1.cpp",
-                    "issue_description": "[MEDIUM] Using Namespace Std",
-                    "root_problem": "The code uses the 'using namespace std;' directive, which can lead to naming conflicts.",
-                    "suggested_solution": "Use the std:: prefix instead of the using namespace std; directive.",
-                    "fix": "Replace 'using namespace std;' with 'std::' prefix for standard library functions and objects.",
-                    "source_code": "using namespace std;",
-                    "fixed_code": "std::cout << \"Original array: \" << std::endl;"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q1.cpp",
-                    "issue_description": "[LOW] Magic Number",
-                    "root_problem": "The code uses a magic number (N = 3) without explanation.",
-                    "suggested_solution": "Define a named constant for the magic number.",
-                    "fix": "Replace the magic number with a named constant, e.g., const int ARRAY_SIZE = 3;",
-                    "source_code": "#define N 3",
-                    "fixed_code": "const int ARRAY_SIZE = 3;"
-                }
-            ],
-            "HW4_318725405_213478142_Q2.cpp": [
-                {
-                    "file_name": "HW4_318725405_213478142_Q2.cpp",
-                    "issue_description": "[HIGH] Unvalidated User Input",
-                    "root_problem": "The program does not validate the user's input, which can lead to unexpected behavior or crashes.",
-                    "suggested_solution": "Validate user input to ensure it falls within the expected range.",
-                    "fix": "Add input validation to check if the user's input is within the range of the array indices.",
-                    "source_code": "cin >> num_to_search;",
-                    "fixed_code": "if (!(cin >> num_to_search) || num_to_search < 0 || num_to_search > SIZE - 1) { cout << \"Invalid input. Please enter a number between 0 and \" << SIZE - 1 << \".\" << endl; return 1; }"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q2.cpp",
-                    "issue_description": "[HIGH] Potential Integer Overflow",
-                    "root_problem": "The calculation of the mid index can overflow for large array sizes.",
-                    "suggested_solution": "Use a safer method to calculate the mid index.",
-                    "fix": "Use the formula mid = left + (right - left) / 2 to avoid potential integer overflow.",
-                    "source_code": "mid = (right + left) / 2;",
-                    "fixed_code": "mid = left + (right - left) / 2;"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q2.cpp",
-                    "issue_description": "[MEDIUM] Using Namespace Std",
-                    "root_problem": "Using the entire std namespace can lead to naming conflicts and pollute the global namespace.",
-                    "suggested_solution": "Use the std namespace only where necessary.",
-                    "fix": "Remove the using namespace std; directive and use the std:: prefix for standard library functions and objects.",
-                    "source_code": "using namespace std;",
-                    "fixed_code": "std::cout, std::cin, etc."
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q2.cpp",
-                    "issue_description": "[LOW] Magic Numbers",
-                    "root_problem": "The array size is hardcoded as a magic number.",
-                    "suggested_solution": "Define a named constant for the array size.",
-                    "fix": "Replace the magic number with a named constant.",
-                    "source_code": "int const SIZE = 10;",
-                    "fixed_code": "const int ARRAY_SIZE = 10; int arr[ARRAY_SIZE];"
-                }
-            ],
-            "HW4_318725405_213478142_Q3.cpp": [
-                {
-                    "file_name": "HW4_318725405_213478142_Q3.cpp",
-                    "issue_description": "[HIGH] Buffer Overflow Vulnerability",
-                    "root_problem": "The code does not validate the length of the input strings, which can lead to a buffer overflow.",
-                    "suggested_solution": "Validate the length of the input strings and ensure they do not exceed the buffer size.",
-                    "fix": "Use strncpy instead of strcpy and check the length of the strings before copying them.",
-                    "source_code": "char s[12] = \"abracadabra\";",
-                    "fixed_code": "const int MAX_SIZE = 12; char s[MAX_SIZE]; strncpy(s, \"abracadabra\", MAX_SIZE); s[MAX_SIZE - 1] = '\\0';"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q3.cpp",
-                    "issue_description": "[HIGH] Potential Null Pointer Dereference",
-                    "root_problem": "The code does not check if the input strings are null before calling strlen.",
-                    "suggested_solution": "Check if the input strings are null before calling strlen.",
-                    "fix": "Add a null check before calling strlen: if (s == NULL || t == NULL) { return -1; }",
-                    "source_code": "int s_size = strlen(s), t_size = strlen(t);",
-                    "fixed_code": "if (s == NULL || t == NULL) { return -1; } int s_size = strlen(s), t_size = strlen(t);"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q3.cpp",
-                    "issue_description": "[MEDIUM] Using namespace std",
-                    "root_problem": "Using the entire std namespace can lead to naming conflicts.",
-                    "suggested_solution": "Use the std namespace only for the necessary functions.",
-                    "fix": "Replace \"using namespace std;\" with \"using std::cout; using std::endl;\" and use the std namespace only for the necessary functions.",
-                    "source_code": "using namespace std;",
-                    "fixed_code": "using std::cout; using std::endl;"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q3.cpp",
-                    "issue_description": "[LOW] Magic Numbers",
-                    "root_problem": "The code uses magic numbers, which can make it harder to understand and maintain.",
-                    "suggested_solution": "Replace magic numbers with named constants.",
-                    "fix": "Replace the magic number 12 with a named constant: const int BUFFER_SIZE = 12; char s[BUFFER_SIZE];",
-                    "source_code": "char s[12] = \"abracadabra\";",
-                    "fixed_code": "const int BUFFER_SIZE = 12; char s[BUFFER_SIZE];"
-                }
-            ],
-            "HW4_318725405_213478142_Q4.cpp": [
-                {
-                    "file_name": "HW4_318725405_213478142_Q4.cpp",
-                    "issue_description": "[HIGH] Unbounded String Copy",
-                    "root_problem": "The code uses strcpy which can lead to buffer overflow attacks.",
-                    "suggested_solution": "Use bounded string copy functions like strncpy.",
-                    "fix": "Replace #include <string.h> with #include <cstring> and use std::string instead of char arrays for safer string handling.",
-                    "source_code": "#include <string.h>",
-                    "fixed_code": "#include <cstring>\nstd::string arr = \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \";"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q4.cpp",
-                    "issue_description": "[HIGH] Missing Input Validation",
-                    "root_problem": "The code does not validate the input to the printDecrypted function.",
-                    "suggested_solution": "Add input validation to check for null pointers and empty strings.",
-                    "fix": "Add a check at the beginning of the printDecrypted function: if (encriptedStr == nullptr || *encriptedStr == '\\0') { return; }",
-                    "source_code": "void printDecrypted(char encriptedStr[]){",
-                    "fixed_code": "void printDecrypted(char encriptedStr[]){ if (encriptedStr == nullptr || *encriptedStr == '\\0') { return; }"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q4.cpp",
-                    "issue_description": "[MEDIUM] Using Namespace Std",
-                    "root_problem": "The code uses the entire std namespace which can lead to naming conflicts.",
-                    "suggested_solution": "Use the std namespace only for specific standard library functions.",
-                    "fix": "Replace using namespace std; with using std::cout; using std::endl;",
-                    "source_code": "using namespace std;",
-                    "fixed_code": "using std::cout; using std::endl;"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q4.cpp",
-                    "issue_description": "[LOW] Magic Numbers",
-                    "root_problem": "The code uses magic numbers like 35 for the array size.",
-                    "suggested_solution": "Define constants for magic numbers to improve code readability.",
-                    "fix": "Define a constant for the array size: const int ARR_SIZE = 35; char arr[ARR_SIZE] = { \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \" };",
-                    "source_code": "char arr[35] = { \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \" };",
-                    "fixed_code": "const int ARR_SIZE = 35; char arr[ARR_SIZE] = { \" 3y!!roe$ & hT + *-gnaB gi#B eh@T \" };"
-                }
-            ],
-            "HW4_318725405_213478142_Q5.cpp": [
-                {
-                    "file_name": "HW4_318725405_213478142_Q5.cpp",
-                    "issue_description": "[HIGH] Unvalidated User Input",
-                    "root_problem": "The program does not validate user input, which can lead to buffer overflow attacks.",
-                    "suggested_solution": "Validate user input to ensure it does not exceed the buffer size.",
-                    "fix": "Use cin.getline() with a limited buffer size to prevent buffer overflows.",
-                    "source_code": "cin.getline(str, MAX_SIZE);",
-                    "fixed_code": "cin.getline(str, MAX_SIZE - 1); str[MAX_SIZE - 1] = '\\0';"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q5.cpp",
-                    "issue_description": "[HIGH] Potential Buffer Overflow",
-                    "root_problem": "The new_str buffer in converToLanguageB() function can overflow if the input string is too long.",
-                    "suggested_solution": "Increase the buffer size or use dynamic memory allocation.",
-                    "fix": "Use a std::string instead of a fixed-size buffer to prevent buffer overflows.",
-                    "source_code": "char new_str[MAX_SIZE *3];",
-                    "fixed_code": "std::string new_str;"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q5.cpp",
-                    "issue_description": "[MEDIUM] Using namespace std;",
-                    "root_problem": "Using the entire std namespace can lead to naming conflicts.",
-                    "suggested_solution": "Use the std:: prefix for standard library functions and objects.",
-                    "fix": "Remove the using namespace std; directive and use the std:: prefix.",
-                    "source_code": "using namespace std;",
-                    "fixed_code": "std::cout, std::cin, etc."
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q5.cpp",
-                    "issue_description": "[MEDIUM] Magic Numbers",
-                    "root_problem": "The code uses magic numbers (e.g., 100, 1000) without explanation.",
-                    "suggested_solution": "Define named constants for magic numbers.",
-                    "fix": "Define a named constant for the buffer size, e.g., const int BUFFER_SIZE = 100;",
-                    "source_code": "char sentence[MAX_SIZE];",
-                    "fixed_code": "const int BUFFER_SIZE = 100; char sentence[BUFFER_SIZE];"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q5.cpp",
-                    "issue_description": "[MEDIUM] Missing Error Handling",
-                    "root_problem": "The program does not handle errors that may occur during input/output operations.",
-                    "suggested_solution": "Add error handling for input/output operations.",
-                    "fix": "Check the return values of input/output functions, e.g., if (cin.getline(str, MAX_SIZE)) { ... }",
-                    "source_code": "cin.getline(str, MAX_SIZE);",
-                    "fixed_code": "if (cin.getline(str, MAX_SIZE)) { ... } else { std::cerr << \"Error: \" << std::endl; }"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q5.cpp",
-                    "issue_description": "[LOW] Code Organization",
-                    "root_problem": "The code is not well-organized, making it difficult to read and maintain.",
-                    "suggested_solution": "Improve code organization by separating functions and using whitespace.",
-                    "fix": "Separate functions into different sections, and use whitespace to improve readability.",
-                    "source_code": "void converToLanguageB(char str[]) { ... }",
-                    "fixed_code": "void converToLanguageB(char str[]) { \n    ... \n}"
-                }
-            ],
-            "HW4_318725405_213478142_Q6.cpp": [
-                {
-                    "file_name": "HW4_318725405_213478142_Q6.cpp",
-                    "issue_description": "[HIGH] Unbounded String Copy",
-                    "root_problem": "The code uses strcpy or similar functions without bounds checking, which can lead to buffer overflow attacks.",
-                    "suggested_solution": "Use bounded string copy functions like strncpy.",
-                    "fix": "Replace \"char mat[3][SIZE] = { \"0000000\",\"10101\" , \"11000001\" };\" with \"strncpy(mat[0], \"0000000\", SIZE); strncpy(mat[1], \"10101\", SIZE); strncpy(mat[2], \"11000001\", SIZE);\"",
-                    "source_code": "char mat[3][SIZE] = { \"0000000\",\"10101\" , \"11000001\" };",
-                    "fixed_code": "strncpy(mat[0], \"0000000\", SIZE); strncpy(mat[1], \"10101\", SIZE); strncpy(mat[2], \"11000001\", SIZE);"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q6.cpp",
-                    "issue_description": "[HIGH] Potential Null Pointer Dereference",
-                    "root_problem": "The code does not check for null pointers before dereferencing them, which can lead to crashes or code execution.",
-                    "suggested_solution": "Always check for null pointers before dereferencing them.",
-                    "fix": "Add null checks before calling functions like printMap or findSecAmount, e.g., \"if (str != NULL) { printMap(str); }\"",
-                    "source_code": "void printMap(char str[]){",
-                    "fixed_code": "void printMap(char str[]){ if (str != NULL) {"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q6.cpp",
-                    "issue_description": "[MEDIUM] Missing Input Validation",
-                    "root_problem": "The code does not validate its inputs, which can lead to unexpected behavior or crashes.",
-                    "suggested_solution": "Add input validation to ensure that inputs are within expected ranges.",
-                    "fix": "Add checks to ensure that the input strings are not too long, e.g., \"if (strlen(str) > SIZE) { // handle error }\"",
-                    "source_code": "void printMap(char str[]){",
-                    "fixed_code": "void printMap(char str[]){ if (strlen(str) > SIZE) { // handle error }"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q6.cpp",
-                    "issue_description": "[MEDIUM] Potential Integer Overflow",
-                    "root_problem": "The code uses integers to store sizes, which can lead to overflows for large inputs.",
-                    "suggested_solution": "Use size_t or other unsigned types to store sizes.",
-                    "fix": "Replace \"int size\" with \"size_t size\" in function parameters.",
-                    "source_code": "void print(int arr[], int size){",
-                    "fixed_code": "void print(int arr[], size_t size){"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q6.cpp",
-                    "issue_description": "[MEDIUM] Magic Numbers",
-                    "root_problem": "The code uses magic numbers, which can make it harder to understand and maintain.",
-                    "suggested_solution": "Replace magic numbers with named constants.",
-                    "fix": "Replace \"10\" with \"const int SIZE = 10;\" and use SIZE throughout the code.",
-                    "source_code": "#define SIZE 10",
-                    "fixed_code": "const int SIZE = 10;"
-                },
-                {
-                    "file_name": "HW4_318725405_213478142_Q6.cpp",
-                    "issue_description": "[LOW] Using Namespace Std",
-                    "root_problem": "The code uses the entire std namespace, which can lead to naming conflicts.",
-                    "suggested_solution": "Use the std namespace only where necessary.",
-                    "fix": "Replace \"using namespace std;\" with \"using std::cout;\" and \"using std::endl;\".",
-                    "source_code": "using namespace std;",
-                    "fixed_code": "using std::cout; using std::endl;"
-                }
-            ]
-        },
-        "username": "tst2",
-        "improvement_suggestions": [],
-        "source": "local_upload"
-    },
-    {
-        "scan_id": "54786b0f-da12-43d8-8cca-ef8db67d5843",
-        "timestamp": "2026-04-07 17:18:15",
-        "persona": "Student",
         "provider": "auto",
         "status": "ERROR",
         "stats": {
             "High": 0,
             "Medium": 0,
-            "Low": 1,
+            "Low": 2,
             "Safe": 0,
             "Vuln": 0,
-            "Error": 1
+            "Error": 2
         },
         "findings": [
+            {
+                "file_name": "unknown",
+                "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
+                "suggested_fix": "Start Ollama via command line."
+            },
             {
                 "file_name": "unknown",
                 "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
@@ -1081,7 +563,14 @@
             }
         ],
         "findings_by_file": {
+            "LADD-main/filereader.cpp": [],
+            "LADD-main/ladd.h": [],
             "unknown": [
+                {
+                    "file_name": "unknown",
+                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
+                    "suggested_fix": "Start Ollama via command line."
+                },
                 {
                     "file_name": "unknown",
                     "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
@@ -1089,8 +578,90 @@
                 }
             ]
         },
-        "username": "tst2",
+        "overall_reviews_by_file": {
+            "LADD-main/filereader.cpp": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
+                        "suggested_fix": "Start Ollama via command line."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "LADD-main/ladd.h": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
+                        "suggested_fix": "Start Ollama via command line."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "unknown": {
+                "summary": "This file has 2 issue(s): 0 high, 0 medium, and 2 low severity. Security hardening should prioritize high-impact vulnerabilities first.",
+                "strengths": [
+                    "The scan provided concrete remediation guidance for identified issues.",
+                    "Findings are categorized by severity for prioritization."
+                ],
+                "key_risks": [
+                    "Unresolved findings can lead to security exposure in production.",
+                    "Compounded medium and low findings may still become exploitable in chained attacks."
+                ],
+                "maintainability_assessment": "Maintainability is currently affected by the number of unresolved security findings.",
+                "test_recommendations": [
+                    "Introduce focused tests for each vulnerability path and remediation.",
+                    "Add regression tests to prevent reintroduction of fixed issues."
+                ],
+                "priority_actions": [
+                    "Fix all high-severity issues before release.",
+                    "Schedule remediation for medium and low issues with owners and due dates."
+                ]
+            }
+        },
+        "executive_summary": {
+            "status": "ERROR",
+            "stats": {
+                "High": 0,
+                "Medium": 0,
+                "Low": 0
+            },
+            "findings": [
+                {
+                    "file_name": "unknown",
+                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
+                    "suggested_fix": "Start Ollama via command line."
+                }
+            ],
+            "most_important_findings": [],
+            "immediate_next_steps": [],
+            "overall_assessment": "Executive summary generated from scan findings."
+        },
+        "username": "tst1",
         "improvement_suggestions": [],
-        "source": "github:YagilAharoni/Tools"
+        "source": "github:YagilAharoni/LADD"
     }
 ]

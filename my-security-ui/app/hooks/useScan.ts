@@ -1,5 +1,15 @@
 import { useState } from 'react';
 import axios, { AxiosError } from 'axios';
+import { getAuthHeaders } from '../lib/auth';
+import {
+  MAX_API_KEY_LEN,
+  MAX_FILES_PER_SCAN,
+  MAX_GITHUB_URL_LEN,
+  normalizeText,
+  validateApiKey,
+  validateGithubUrl,
+  validateScanId,
+} from '../lib/validation';
 
 // Define the required types based on the FastAPI response structure
 export interface Finding {
@@ -52,6 +62,9 @@ export interface DependencyScanResult {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const CLIENT_API_KEYS_ENABLED = process.env.NEXT_PUBLIC_ALLOW_CLIENT_API_KEYS !== 'false';
+const ALLOWED_PERSONAS = new Set(['Student', 'Professional']);
+const ALLOWED_PROVIDERS = new Set(['auto', 'groq', 'openai', 'gemini']);
 
 export const useScan = (apiUrl: string = API_URL) => {
   const [isScanning, setIsScanning] = useState(false);
@@ -68,31 +81,54 @@ export const useScan = (apiUrl: string = API_URL) => {
     const formData = new FormData();
     
     const fileArray = files instanceof File ? [files] : Array.from(files);
+    if (fileArray.length === 0) {
+      setError('Please select at least one file.');
+      setIsScanning(false);
+      return;
+    }
+    if (fileArray.length > MAX_FILES_PER_SCAN) {
+      setError(`Too many files selected. Maximum allowed is ${MAX_FILES_PER_SCAN}.`);
+      setIsScanning(false);
+      return;
+    }
+
+    const safePersona = ALLOWED_PERSONAS.has(persona) ? persona : 'Student';
+    const safeProvider = provider && ALLOWED_PROVIDERS.has(provider) ? provider : 'auto';
+    const safeApiKey = CLIENT_API_KEYS_ENABLED ? (apiKey || '').slice(0, MAX_API_KEY_LEN) : '';
+    if (CLIENT_API_KEYS_ENABLED) {
+      const apiKeyError = validateApiKey(safeApiKey);
+      if (apiKeyError) {
+        setError(apiKeyError);
+        setIsScanning(false);
+        return;
+      }
+    }
+
     fileArray.forEach((file: File) => {
       // Use webkitRelativePath for folder structure preservation, fall back to .name for single files
       const fileName = (file as any).webkitRelativePath || file.name;
       formData.append('files', file, fileName);
     });
     
-    formData.append('persona', persona);
+    formData.append('persona', safePersona);
     
-    if (apiKey) {
-      formData.append('api_key', apiKey);
+    if (safeApiKey) {
+      formData.append('api_key', safeApiKey);
     }
 
-    if (provider) {
-      formData.append('provider', provider);
+    if (safeProvider) {
+      formData.append('provider', safeProvider);
     }
 
     if (username) {
-      formData.append('username', username);
+      formData.append('username', normalizeText(username, 32));
     }
 
     try {
       const response = await axios.post<ScanResult>(`${apiUrl}/analyze`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'X-User': username || 'anonymous'
+          ...getAuthHeaders(),
         },
       });
 
@@ -122,27 +158,47 @@ export const useScan = (apiUrl: string = API_URL) => {
     setResults(null);
     setError(null);
 
-    const formData = new FormData();
-    formData.append('github_url', githubUrl);
-    formData.append('persona', persona);
-    
-    if (apiKey) {
-      formData.append('api_key', apiKey);
+    const safeUrl = normalizeText(githubUrl, MAX_GITHUB_URL_LEN);
+    const githubError = validateGithubUrl(safeUrl);
+    if (githubError) {
+      setError(githubError);
+      setIsScanning(false);
+      return;
     }
 
-    if (provider) {
-      formData.append('provider', provider);
+    const safePersona = ALLOWED_PERSONAS.has(persona) ? persona : 'Student';
+    const safeProvider = provider && ALLOWED_PROVIDERS.has(provider) ? provider : 'auto';
+    const safeApiKey = CLIENT_API_KEYS_ENABLED ? (apiKey || '').slice(0, MAX_API_KEY_LEN) : '';
+    if (CLIENT_API_KEYS_ENABLED) {
+      const apiKeyError = validateApiKey(safeApiKey);
+      if (apiKeyError) {
+        setError(apiKeyError);
+        setIsScanning(false);
+        return;
+      }
+    }
+
+    const formData = new FormData();
+    formData.append('github_url', safeUrl);
+    formData.append('persona', safePersona);
+    
+    if (safeApiKey) {
+      formData.append('api_key', safeApiKey);
+    }
+
+    if (safeProvider) {
+      formData.append('provider', safeProvider);
     }
 
     if (username) {
-      formData.append('username', username);
+      formData.append('username', normalizeText(username, 32));
     }
 
     try {
       const response = await axios.post<ScanResult>(`${apiUrl}/analyze-github`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'X-User': username || 'anonymous'
+          ...getAuthHeaders(),
         },
       });
 
@@ -169,6 +225,10 @@ export const useScan = (apiUrl: string = API_URL) => {
 
   const downloadReport = async (reportId: string, username?: string) => {
     if (!reportId) return;
+    if (!validateScanId(reportId)) {
+      setError('Invalid report ID format.');
+      return;
+    }
     
     try {
       const params: Record<string, string> = { report_id: reportId };
@@ -178,7 +238,7 @@ export const useScan = (apiUrl: string = API_URL) => {
         params,
         responseType: 'blob',
         headers: {
-          'X-User': username || 'anonymous'
+          ...getAuthHeaders(),
         }
       });
 
@@ -226,12 +286,25 @@ export const useScan = (apiUrl: string = API_URL) => {
     setDepResults(null);
     const formData = new FormData();
     const fileArray = files instanceof File ? [files] : Array.from(files);
+    if (fileArray.length === 0) {
+      setError('Please select at least one file.');
+      setIsDepScanning(false);
+      return;
+    }
+    if (fileArray.length > MAX_FILES_PER_SCAN) {
+      setError(`Too many files selected. Maximum allowed is ${MAX_FILES_PER_SCAN}.`);
+      setIsDepScanning(false);
+      return;
+    }
     fileArray.forEach((file: File) => {
       formData.append('files', file, (file as any).webkitRelativePath || file.name);
     });
     try {
       const response = await axios.post<DependencyScanResult>(`${apiUrl}/scan-dependencies`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...getAuthHeaders(),
+        },
       });
       setDepResults(response.data);
     } catch (err: any) {

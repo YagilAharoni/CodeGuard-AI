@@ -1,7 +1,17 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useScan, DependencyScanResult, VulnerablePackage } from "../hooks/useScan";
+import { clearAuthSession, getAuthHeaders, getStoredUser, isAuthenticated } from "../lib/auth";
+import {
+  MAX_API_KEY_LEN,
+  MAX_FILES_PER_SCAN,
+  MAX_GITHUB_URL_LEN,
+  validateApiKey,
+  validateGithubUrl,
+} from "../lib/validation";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 const getSeverityColor = (severity: string): string => {
   const upper = severity.toUpperCase();
@@ -296,8 +306,11 @@ const VulnerabilityChart = ({ stats }: { stats: any }) => {
 };
 
 export default function Home() {
+  const clientApiKeysEnabled = process.env.NEXT_PUBLIC_ALLOW_CLIENT_API_KEYS !== "false";
+  const SESSION_API_KEY_STORAGE_KEY = "codeguard_session_api_key";
   // --- States ---
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [persona, setPersona] = useState<"Student" | "Professional">("Student");
   const [apiKey, setApiKey] = useState("");
   const [mounted, setMounted] = useState(false);
@@ -312,20 +325,19 @@ export default function Home() {
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
   const [isFolderMode, setIsFolderMode] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
+  const [inputError, setInputError] = useState<string | null>(null);
 
   // Hook for backend connection
   const { uploadFile, scanGithubUrl, downloadReport, scanDependencies, isScanning, isDepScanning, results, depResults, error, clearError, clearResults } = useScan();
 
   const fetchHistory = async () => {
-    const stored = localStorage.getItem('codeguard_user');
-    if (!stored) return;
+    if (!isAuthenticated()) return;
     try {
-      const user = JSON.parse(stored);
-      const userToFetch = user.username || "anonymous";
       const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const response = await axios.get(`${apiBase}/history`, {
-        params: { username: userToFetch },
-        headers: { 'X-User': userToFetch }
+        headers: {
+          ...getAuthHeaders(),
+        },
       });
       setHistory(response.data.history || []);
     } catch (err) {
@@ -335,22 +347,62 @@ export default function Home() {
 
   // Prevent hydration mismatch
   useEffect(() => {
+    if (!isAuthenticated()) {
+      router.replace("/");
+      return;
+    }
+
     setMounted(true);
-    // Read user from localStorage
+    const user = getStoredUser();
+    if (user?.username) {
+      setLoggedInUsername(user.username);
+    }
+
     try {
-      const stored = localStorage.getItem('codeguard_user');
-      if (stored) {
-        const user = JSON.parse(stored);
-        setLoggedInUsername(user.username || "anonymous");
+      const rawPrefs = localStorage.getItem("codeguard_preferences");
+      if (rawPrefs) {
+        const prefs = JSON.parse(rawPrefs) as { defaultPersona?: "Student" | "Professional" };
+        if (prefs.defaultPersona) {
+          setPersona(prefs.defaultPersona);
+        }
       }
     } catch {
-      // ignore
+      // ignore malformed local settings
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (mounted) fetchHistory();
   }, [mounted]);
+
+  useEffect(() => {
+    if (!mounted || !clientApiKeysEnabled) {
+      return;
+    }
+    try {
+      const storedSessionApiKey = sessionStorage.getItem(SESSION_API_KEY_STORAGE_KEY);
+      if (storedSessionApiKey) {
+        setApiKey(storedSessionApiKey.slice(0, MAX_API_KEY_LEN));
+      }
+    } catch {
+      // Ignore storage access issues.
+    }
+  }, [mounted, clientApiKeysEnabled]);
+
+  useEffect(() => {
+    if (!mounted || !clientApiKeysEnabled) {
+      return;
+    }
+    try {
+      if (apiKey) {
+        sessionStorage.setItem(SESSION_API_KEY_STORAGE_KEY, apiKey);
+      } else {
+        sessionStorage.removeItem(SESSION_API_KEY_STORAGE_KEY);
+      }
+    } catch {
+      // Ignore storage access issues.
+    }
+  }, [apiKey, mounted, clientApiKeysEnabled]);
 
   useEffect(() => {
     if (results) fetchHistory();
@@ -380,7 +432,7 @@ export default function Home() {
   };
 
   const getModelInfo = () => {
-    if (!apiKey) return { provider: "Ollama", icon: "🦙", color: "text-purple-400" };
+    if (!apiKey) return { provider: "Server Default", icon: "🛡️", color: "text-blue-300" };
     const key = apiKey.trim();
     if (key.startsWith("gsk_")) return { provider: "Groq", icon: "⚡", color: "text-cyan-400" };
     if (key.startsWith("sk-")) return { provider: "OpenAI", icon: "🤖", color: "text-green-400" };
@@ -448,7 +500,30 @@ export default function Home() {
   };
 
   const runAnalysis = () => {
-    const apiKeyToPass = apiKey || undefined;
+    setInputError(null);
+
+    if (clientApiKeysEnabled) {
+      const apiKeyError = validateApiKey(apiKey);
+      if (apiKeyError) {
+        setInputError(apiKeyError);
+        return;
+      }
+    }
+
+    if (selectedFiles && selectedFiles.length > MAX_FILES_PER_SCAN) {
+      setInputError(`Too many files selected. Maximum allowed is ${MAX_FILES_PER_SCAN}.`);
+      return;
+    }
+
+    if (githubUrl && !selectedFiles) {
+      const githubError = validateGithubUrl(githubUrl);
+      if (githubError) {
+        setInputError(githubError);
+        return;
+      }
+    }
+
+    const apiKeyToPass = clientApiKeysEnabled ? apiKey || undefined : undefined;
     if (githubUrl && !selectedFiles) {
       scanGithubUrl(githubUrl, persona, apiKeyToPass, "auto", loggedInUsername);
     } else if (selectedFiles) {
@@ -526,6 +601,7 @@ export default function Home() {
       <div className="absolute top-[20%] right-[-10%] w-[40%] h-[60%] rounded-full bg-[#00F0FF]/8 blur-[150px] pointer-events-none" />
       <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[40%] rounded-full bg-[#8A2BE2]/8 blur-[120px] pointer-events-none" />
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGRlZnM+PHBhdHRlcm4gaWQ9ImciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgNDBoNDBWMEgweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZykiLz48L3N2Zz4=')] pointer-events-none opacity-40" />
+      <div className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.14)_1px,transparent_0)] [background-size:14px_14px]" />
 
       {/* Navbar */}
       <nav className="border-b border-white/5 bg-[#0A0C10]/80 backdrop-blur-xl sticky top-0 z-50">
@@ -539,14 +615,22 @@ export default function Home() {
             </h1>
           </div>
           <div className="flex gap-4 items-center">
-            <a href={`/history?user=${encodeURIComponent(loggedInUsername)}`} className="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition text-sm font-medium text-gray-300">
-              📜 History
-            </a>
+            <Link href="/history" className="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition text-sm font-medium text-gray-300">📜 History</Link>
+            <Link href="/reports" className="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition text-sm font-medium text-gray-300">📦 Reports</Link>
+            <Link href="/settings" className="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition text-sm font-medium text-gray-300">⚙ Settings</Link>
             <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg flex items-center gap-2">
               <span className="text-xs text-gray-500">👤</span>
               <span className="text-sm font-semibold text-cyan-300">{loggedInUsername}</span>
               <button
-                onClick={() => { localStorage.removeItem('codeguard_user'); window.location.href = '/'; }}
+                onClick={() => {
+                  clearAuthSession();
+                  try {
+                    sessionStorage.removeItem(SESSION_API_KEY_STORAGE_KEY);
+                  } catch {
+                    // Ignore storage access issues.
+                  }
+                  router.replace('/');
+                }}
                 className="ml-2 text-xs text-gray-500 hover:text-red-400 transition"
                 title="Logout"
               >
@@ -598,18 +682,29 @@ export default function Home() {
               </div>
             </div>
 
-            {/* API Key input only - no provider selector */}
-            <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mb-8 backdrop-blur-sm">
-              <label className="block text-sm font-semibold mb-2 text-gray-300">AI API Key <span className="text-gray-500 font-normal">(optional — uses local Ollama if empty)</span></label>
-              <input 
-                type="password" 
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="gsk_... or sk-... or AIzaSy..."
-                className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
-              />
-              <p className="text-xs text-gray-500 mt-2">Auto-detects: Groq (gsk_), OpenAI (sk-), Google Gemini (AIzaSy), or falls back to local Ollama.</p>
-            </div>
+            {clientApiKeysEnabled ? (
+              <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mb-8 backdrop-blur-sm">
+                <label className="block text-sm font-semibold mb-2 text-gray-300">AI API Key <span className="text-gray-500 font-normal">(optional — uses server default if empty)</span></label>
+                <input 
+                  type="password" 
+                  value={apiKey}
+                  onChange={(e) => {
+                    setInputError(null);
+                    setApiKey(e.target.value.slice(0, MAX_API_KEY_LEN));
+                  }}
+                  placeholder="gsk_... or sk-... or AIzaSy..."
+                  className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
+                  maxLength={MAX_API_KEY_LEN}
+                  autoComplete="off"
+                />
+                <p className="text-xs text-gray-500 mt-2">Auto-detects: Groq (gsk_), OpenAI (sk-), Google Gemini (AIzaSy), or uses server default provider.</p>
+              </div>
+            ) : (
+              <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mb-8 backdrop-blur-sm">
+                <label className="block text-sm font-semibold mb-2 text-gray-300">Server-managed API Security</label>
+                <p className="text-xs text-gray-400">Client API keys are disabled for security. Scans use server-side credentials only.</p>
+              </div>
+            )}
 
             <button 
               onClick={() => setIsLoggedIn(true)}
@@ -627,29 +722,19 @@ export default function Home() {
         {/* --- VIEW 2: DASHBOARD (UPLOAD) --- */}
         {isLoggedIn && !results && (
           <div className="w-full mt-10 animate-fade-in flex flex-col items-center">
-             <div className="text-center mb-12">
-               <h2 className="text-5xl font-extrabold tracking-tight mb-4">
-                  Secure Your Code. <br className="hidden md:block" />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-                    Powered by AI.
+             <div className="text-center mb-10">
+               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-semibold tracking-wider uppercase mb-5">
+                 Mission Control
+               </div>
+               <h2 className="text-5xl font-black tracking-tight mb-4 leading-tight">
+                  Secure Your Codebase
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-500 mt-1">
+                    Sharp. Fast. Explainable.
                   </span>
                 </h2>
-                <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-                  Upload your Python, JS, or C++ files for an instant, deep vulnerability scan.
+                <p className="text-base text-gray-400 max-w-3xl mx-auto">
+                  Drop files or paste a repository URL, set your scan profile, then launch an AI-assisted security audit from one clean workspace.
                 </p>
-             </div>
-
-             {/* API Key input only */}
-             <div className="bg-white/5 p-6 rounded-2xl border border-white/10 mb-8 w-full max-w-4xl backdrop-blur-sm">
-               <label className="block text-sm font-semibold mb-2 text-gray-300">AI API Key <span className="text-gray-500 font-normal">(optional)</span></label>
-               <input 
-                 type="password" 
-                 value={apiKey}
-                 onChange={(e) => setApiKey(e.target.value)}
-                 placeholder="gsk_... or sk-... or AIzaSy..."
-                 className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
-               />
-               <p className="text-xs text-gray-500 mt-2">Auto-detects provider from your key. Leave blank to use local Ollama.</p>
              </div>
 
              {error && (
@@ -659,39 +744,53 @@ export default function Home() {
                </div>
              )}
 
-             <div 
+             {inputError && (
+               <div className="w-full max-w-2xl bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl mb-6 flex justify-between items-center">
+                 <span>{inputError}</span>
+                 <button onClick={() => setInputError(null)} className="text-red-400 hover:text-white">✕</button>
+               </div>
+             )}
+
+            <div className="w-full max-w-6xl grid gap-6 lg:grid-cols-[1.4fr_1fr] animate-fade-in">
+              <section
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`w-full max-w-2xl p-16 rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer flex flex-col items-center justify-center gap-4 ${
-                  isHovered 
-                    ? "bg-cyan-500/5 border-cyan-500 shadow-2xl shadow-cyan-500/10 scale-[1.02]" 
-                    : "bg-white/3 border-white/10 hover:border-cyan-500/40 hover:bg-white/5"
+                className={`relative rounded-3xl border p-8 md:p-10 cursor-pointer transition-all duration-300 overflow-hidden ${
+                  isHovered
+                    ? "border-cyan-400/60 bg-cyan-500/10 shadow-[0_20px_80px_rgba(34,211,238,0.12)] scale-[1.01]"
+                    : "border-white/10 bg-[#0f141d]/85 hover:border-cyan-500/40"
                 }`}
               >
-                <input 
-                  type="file" 
-                  multiple 
-                  className="hidden" 
-                  ref={fileInputRef} 
+                <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(135deg,rgba(255,255,255,0.03),transparent_35%,rgba(0,240,255,0.04)_70%,transparent)]" />
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  ref={fileInputRef}
                   onChange={handleFileChange}
                   accept=".py,.js,.ts,.cpp,.h,.zip"
                   {...(isFolderMode ? { webkitdirectory: "", directory: "" } as any : {})}
                 />
-                <div className="w-20 h-20 rounded-full bg-cyan-500/10 flex items-center justify-center mb-2">
-                  <svg className="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                </div>
-                {selectedFiles ? (
-                  <h3 className="text-xl font-bold text-green-400">{selectedFiles.length} file(s) selected</h3>
-                ) : (
-                  <h3 className="text-xl font-bold text-gray-200">Drag & Drop source files here</h3>
-                )}
-                <p className="text-sm text-gray-500 text-center">Supports .py, .cpp, .js, or .zip archives</p>
-                <div className="flex flex-col items-center gap-6">
-                  <div className="flex items-center gap-4 px-1 py-1 rounded-xl bg-white/5 border border-white/10">
+
+                <div className="relative z-10 flex flex-col items-start gap-6">
+                  <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+
+                  <div>
+                    <h3 className="text-2xl font-extrabold text-white mb-2">
+                      {selectedFiles ? `${selectedFiles.length} file(s) ready for scan` : "Drop source files to begin"}
+                    </h3>
+                    <p className="text-sm text-gray-400">
+                      Supports .py, .js, .ts, .cpp, .h and .zip. Click anywhere in this panel to browse.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -699,7 +798,11 @@ export default function Home() {
                         setIsFolderMode(false);
                         setSelectedFiles(null);
                       }}
-                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${!isFolderMode ? 'bg-cyan-500 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'text-gray-400 hover:text-white'}`}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide border transition-all ${
+                        !isFolderMode
+                          ? "bg-cyan-500/20 border-cyan-400/40 text-cyan-200"
+                          : "bg-white/5 border-white/10 text-gray-300 hover:text-white"
+                      }`}
                     >
                       FILE MODE
                     </button>
@@ -710,41 +813,115 @@ export default function Home() {
                         setIsFolderMode(true);
                         setSelectedFiles(null);
                       }}
-                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${isFolderMode ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'text-gray-400 hover:text-white'}`}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide border transition-all ${
+                        isFolderMode
+                          ? "bg-purple-500/20 border-purple-400/40 text-purple-200"
+                          : "bg-white/5 border-white/10 text-gray-300 hover:text-white"
+                      }`}
                     >
                       FOLDER MODE
                     </button>
+                    <span className="text-xs text-gray-500 ml-1">
+                      {isFolderMode ? "Folder structure preserved" : "Single and multiple files supported"}
+                    </span>
                   </div>
-                  
-                  <div className="px-8 py-3 rounded-lg bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold transition-all hover:scale-105">
+
+                  <div className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600/80 to-purple-600/80 border border-cyan-500/30 text-sm font-bold tracking-wide">
                     {isFolderMode ? "Select Folder" : "Browse Files"}
                   </div>
                 </div>
+              </section>
+
+              <section className="rounded-3xl border border-white/10 bg-[#111722]/85 p-6 md:p-7 backdrop-blur-md relative overflow-hidden">
+                <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(160deg,rgba(255,255,255,0.04),transparent_30%,rgba(138,43,226,0.08)_65%,transparent)]" />
+                <div className="relative z-10 space-y-5">
+                  <div>
+                    <h3 className="text-xl font-black text-white">Scan Configuration</h3>
+                    <p className="text-xs text-gray-400 mt-1">Configure source and access in one place before starting the scan.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Source (Optional)</label>
+                    <input
+                      type="text"
+                      value={githubUrl}
+                      onChange={(e) => {
+                        setInputError(null);
+                        setGithubUrl(e.target.value.slice(0, MAX_GITHUB_URL_LEN));
+                        setSelectedFiles(null);
+                      }}
+                      placeholder="https://github.com/owner/repo"
+                      className="w-full bg-[#0A0C10]/85 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all text-sm"
+                      maxLength={MAX_GITHUB_URL_LEN}
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1.5">Use this or file upload, not both.</p>
+                  </div>
+
+                  {clientApiKeysEnabled ? (
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">API Key (Optional)</label>
+                      <input
+                        type="password"
+                        value={apiKey}
+                        onChange={(e) => {
+                          setInputError(null);
+                          setApiKey(e.target.value.slice(0, MAX_API_KEY_LEN));
+                        }}
+                        placeholder="gsk_... | sk-... | AIzaSy..."
+                        className="w-full bg-[#0A0C10]/85 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
+                        maxLength={MAX_API_KEY_LEN}
+                        autoComplete="off"
+                      />
+                      <p className="text-[11px] text-gray-500 mt-1.5">Leave empty to use the server default provider.</p>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3.5">
+                      <div className="text-[11px] uppercase tracking-widest text-gray-500 mb-1">API Key Mode</div>
+                      <div className="text-sm text-gray-300 font-semibold">Server-managed only (client keys disabled)</div>
+                    </div>
+                  )}
+
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3.5">
+                    <div className="text-[11px] uppercase tracking-widest text-gray-500 mb-1">Active Model Route</div>
+                    <div className={`text-sm font-bold ${getModelInfo().color}`}>{getModelInfo().icon} {getModelInfo().provider}</div>
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      runAnalysis();
+                    }}
+                    disabled={isScanning || (!selectedFiles && !githubUrl)}
+                    className={`w-full py-3.5 rounded-xl font-extrabold tracking-wide text-white transition-all shadow-xl ${
+                      isScanning || (!selectedFiles && !githubUrl)
+                        ? "bg-white/10 cursor-not-allowed text-gray-400"
+                        : "bg-gradient-to-r from-cyan-600 to-purple-600 hover:scale-[1.02] shadow-purple-500/20"
+                    }`}
+                  >
+                    {isScanning ? "Agents Analyzing..." : "Run Security Scan"}
+                  </button>
+                </div>
+              </section>
             </div>
 
-            <div className="w-full max-w-2xl mt-6 flex gap-4 animate-fade-in">
-               <input 
-                  type="text" 
-                  value={githubUrl}
-                  onChange={(e) => {setGithubUrl(e.target.value); setSelectedFiles(null);}}
-                  placeholder="Or enter Github repo URL (e.g. https://github.com/owner/repo)"
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
-                />
+            <div className="w-full max-w-4xl mt-12 grid gap-4 md:grid-cols-3">
+              <Link href="/history" className="rounded-2xl border border-white/10 bg-white/5 p-5 hover:border-cyan-500/40 transition-colors">
+                <div className="text-sm text-cyan-300 font-semibold">Timeline</div>
+                <div className="text-xl font-bold text-white mt-1">History Explorer</div>
+                <p className="text-xs text-gray-400 mt-2">Compare snapshots and track risk trend over time.</p>
+              </Link>
+              <Link href="/reports" className="rounded-2xl border border-white/10 bg-white/5 p-5 hover:border-cyan-500/40 transition-colors">
+                <div className="text-sm text-cyan-300 font-semibold">Exports</div>
+                <div className="text-xl font-bold text-white mt-1">Reports Center</div>
+                <p className="text-xs text-gray-400 mt-2">Filter previous scans and export ownership-protected PDFs.</p>
+              </Link>
+              <Link href="/settings" className="rounded-2xl border border-white/10 bg-white/5 p-5 hover:border-cyan-500/40 transition-colors">
+                <div className="text-sm text-cyan-300 font-semibold">Profile</div>
+                <div className="text-xl font-bold text-white mt-1">Security Settings</div>
+                <p className="text-xs text-gray-400 mt-2">Configure default persona and secure session behavior.</p>
+              </Link>
             </div>
 
-            {(selectedFiles || githubUrl) && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); runAnalysis(); }}
-                disabled={isScanning}
-                className={`mt-10 px-12 py-4 rounded-xl font-bold text-xl text-white transition-all shadow-xl ${
-                  isScanning 
-                    ? "bg-white/10 cursor-not-allowed animate-pulse" 
-                    : "bg-gradient-to-r from-cyan-600 to-purple-600 hover:scale-105 shadow-purple-500/20"
-                }`}
-              >
-                {isScanning ? "🔮 Agents Analyzing Code..." : "🚀 Run AI Scan"}
-              </button>
-            )}
             {/* --- RECENT HISTORY PREVIEW --- */}
             {history.length > 0 && (
               <div className="w-full max-w-4xl mt-16 p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md animate-fade-in">
@@ -753,9 +930,9 @@ export default function Home() {
                     <span className="text-2xl">🕒</span>
                     Recent Security Scans
                   </h3>
-                  <a href={`/history?user=${encodeURIComponent(loggedInUsername)}`} className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors font-semibold flex items-center gap-1 group">
+                  <Link href="/history" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors font-semibold flex items-center gap-1 group">
                     View All <span className="group-hover:translate-x-1 transition-transform">→</span>
-                  </a>
+                  </Link>
                 </div>
                 <div className="grid gap-4">
                   {history.slice(0, 3).map((scan: any) => (
@@ -793,19 +970,21 @@ export default function Home() {
 
         {/* --- VIEW 3: RESULTS & PDF EXPORT --- */}
         {results && (
-          <div className="w-full mt-10 animate-fade-in">
-             <div className="flex justify-between items-end mb-8">
+          <div className="w-full max-w-6xl mt-10 animate-fade-in">
+             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8 rounded-2xl border border-white/10 bg-[#111722]/80 p-6 backdrop-blur-md relative overflow-hidden">
+               <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(130deg,rgba(255,255,255,0.04),transparent_35%,rgba(0,240,255,0.05)_70%,transparent)]" />
                <div>
-                  <h2 className="text-4xl font-extrabold tracking-tight mb-2">Audit Report</h2>
-                  <p className="text-gray-400">Analysis completed based on your selected persona ({persona}).</p>
+                  <div className="text-[11px] uppercase tracking-widest text-cyan-300 mb-2">Scan Report</div>
+                  <h2 className="text-4xl font-black tracking-tight mb-2">Audit Report</h2>
+                  <p className="text-gray-400">Analysis completed with <span className="text-cyan-300 font-semibold">{persona}</span> persona profile.</p>
                </div>
-               <div className="flex gap-4">
-                 <button onClick={clearResults} className="px-6 py-2 rounded-lg border border-[#30363d] hover:bg-[#161b22] transition-colors">
+               <div className="relative z-10 flex gap-3">
+                 <button onClick={clearResults} className="px-5 py-2.5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition-colors text-sm font-semibold">
                    New Scan
                  </button>
                  <button 
                     onClick={() => downloadReport(results.report_id, loggedInUsername)}
-                    className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-white font-bold shadow-lg shadow-purple-500/20 transition-transform hover:scale-105"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 rounded-xl text-white font-bold shadow-lg shadow-purple-500/20 transition-transform hover:scale-[1.02]"
                   >
                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                    Export PDF
@@ -814,31 +993,32 @@ export default function Home() {
              </div>
 
              {/* Current scan info instead of provider selector */}
-             <div className="bg-white/5 p-4 rounded-2xl border border-white/10 mb-8 flex items-center gap-4">
+             <div className="bg-[#111722]/80 p-4 rounded-2xl border border-white/10 mb-8 flex items-center gap-4 backdrop-blur-md relative overflow-hidden">
+               <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(120deg,rgba(255,255,255,0.03),transparent_40%,rgba(138,43,226,0.06)_80%,transparent)]" />
                <span className="text-2xl">{getModelInfo().icon}</span>
-               <div>
+               <div className="relative z-10">
                  <div className="text-sm font-semibold text-gray-300">Analyzed with <span className={getModelInfo().color}>{getModelInfo().provider}</span> · Persona: <span className="text-cyan-300">{persona}</span></div>
                  <div className="text-xs text-gray-500">Click &quot;New Scan&quot; to start a fresh analysis.</div>
                </div>
              </div>
 
              {/* Metric Cards */}
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 text-center">
-               <div className={`p-6 rounded-xl border ${results.status === 'SAFE' ? 'bg-green-500/10 border-green-500/30' : results.status === 'ERROR' ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+               <div className={`p-5 rounded-2xl border backdrop-blur-sm ${results.status === 'SAFE' ? 'bg-green-500/10 border-green-500/30' : results.status === 'ERROR' ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
                  <div className={`text-3xl font-black mb-1 ${results.status === 'SAFE' ? 'text-green-400' : results.status === 'ERROR' ? 'text-yellow-400' : 'text-red-500'}`}>{results.status}</div>
-                 <div className="text-sm text-gray-500 uppercase tracking-wide">Status</div>
+                 <div className="text-xs text-gray-500 uppercase tracking-widest">Status</div>
                </div>
-               <div className="p-6 rounded-xl bg-[#161b22] border border-[#30363d]">
+               <div className="p-5 rounded-2xl bg-[#131c28]/80 border border-[#2d3a4c] backdrop-blur-sm">
                  <div className="text-3xl font-black text-red-500 mb-1">{results.stats.High}</div>
-                 <div className="text-sm text-gray-500 uppercase tracking-wide">High Risk</div>
+                 <div className="text-xs text-gray-500 uppercase tracking-widest">High Risk</div>
                </div>
-               <div className="p-6 rounded-xl bg-[#161b22] border border-[#30363d]">
+               <div className="p-5 rounded-2xl bg-[#1f1b13]/80 border border-[#4f4123] backdrop-blur-sm">
                  <div className="text-3xl font-black text-yellow-500 mb-1">{results.stats.Medium}</div>
-                 <div className="text-sm text-gray-500 uppercase tracking-wide">Medium Risk</div>
+                 <div className="text-xs text-gray-500 uppercase tracking-widest">Medium Risk</div>
                </div>
-               <div className="p-6 rounded-xl bg-[#161b22] border border-[#30363d]">
+               <div className="p-5 rounded-2xl bg-[#141b2a]/80 border border-[#2f4367] backdrop-blur-sm">
                  <div className="text-3xl font-black text-blue-400 mb-1">{results.stats.Low}</div>
-                 <div className="text-sm text-gray-500 uppercase tracking-wide">Low Risk</div>
+                 <div className="text-xs text-gray-500 uppercase tracking-widest">Low Risk</div>
                </div>
              </div>
 
@@ -859,12 +1039,12 @@ export default function Home() {
 
              {/* Findings Grouped by File */}
              <div className="space-y-8">
-                <div className="flex items-center justify-between border-b border-[#30363d] pb-2">
+                <div className="flex items-center justify-between border-b border-[#30363d] pb-3">
                   <h3 className="text-2xl font-bold">Identified Vulnerabilities by File</h3>
                   {results.findings && results.findings.length > 0 && (
                     <button
                       onClick={toggleAllFiles}
-                      className="px-4 py-2 bg-[#161b22] border border-[#30363d] rounded-lg hover:bg-[#1c2128] transition-colors text-sm font-medium flex items-center gap-2"
+                      className="px-4 py-2 bg-[#161b22] border border-[#30363d] rounded-xl hover:bg-[#1c2128] transition-colors text-sm font-medium flex items-center gap-2"
                     >
                       <svg className={`w-4 h-4 transition-transform ${expandedFiles.size === Object.keys(groupedFindings).length ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -884,10 +1064,10 @@ export default function Home() {
                     }, {});
                     
                     return (
-                      <div key={fileName} className="rounded-xl border border-[#30363d] overflow-hidden">
+                      <div key={fileName} className="rounded-2xl border border-[#30363d] overflow-hidden bg-[#121922]/70 backdrop-blur-sm">
                         <button 
                           onClick={() => toggleFileExpansion(fileName)}
-                          className="w-full bg-[#161b22] p-4 border-b border-[#30363d] flex items-center justify-between hover:bg-[#1c2128] transition-colors"
+                          className="w-full bg-[#161b22]/90 p-4 border-b border-[#30363d] flex items-center justify-between hover:bg-[#1c2128] transition-colors"
                         >
                           <div className="flex items-center gap-3">
                             <svg 
