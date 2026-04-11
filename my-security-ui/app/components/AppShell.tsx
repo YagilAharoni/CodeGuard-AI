@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { clearAuthSession, getStoredUser } from "../lib/auth";
+import { getStoredUser, logoutSession } from "../lib/auth";
 
 interface AppShellProps {
   title: string;
@@ -23,8 +23,8 @@ export default function AppShell({ title, subtitle, children }: AppShellProps) {
   const router = useRouter();
   const username = getStoredUser()?.username ?? "anonymous";
 
-  const logout = () => {
-    clearAuthSession();
+  const logout = async () => {
+    await logoutSession();
     router.push("/");
   };
 

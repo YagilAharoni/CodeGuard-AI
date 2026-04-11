@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppShell from "../components/AppShell";
-import { clearAuthSession, getStoredUser, isAuthenticated } from "../lib/auth";
+import { getStoredUser, isAuthenticated, logoutSession } from "../lib/auth";
 
 const SETTINGS_KEY = "codeguard_preferences";
 
@@ -50,8 +50,8 @@ export default function SettingsPage() {
     window.setTimeout(() => setSavedMessage(""), 1800);
   };
 
-  const logoutEverywhere = () => {
-    clearAuthSession();
+  const logoutEverywhere = async () => {
+    await logoutSession();
     router.replace("/");
   };
 

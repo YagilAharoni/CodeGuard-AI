@@ -1,352 +1,273 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { clearAuthSession, isAuthenticated, saveAuthSession } from "./lib/auth";
-import {
-  MAX_EMAIL_LEN,
-  MAX_LOGIN_LEN,
-  MAX_PASSWORD_LEN,
-  MAX_USERNAME_LEN,
-  normalizeText,
-  validateEmail,
-  validateLoginField,
-  validatePassword,
-  validateUsername,
-} from "./lib/validation";
+import { saveAuthSession } from "./lib/auth";
 
-export default function LandingPage() {
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+export default function Home() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
-  
-  // Form State
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    if (isAuthenticated()) {
-      router.replace("/dashboard");
-    }
-  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    const cleanUsername = normalizeText(username, MAX_USERNAME_LEN);
-    const cleanEmail = normalizeText(email, MAX_EMAIL_LEN).toLowerCase();
-    const cleanPassword = password.slice(0, MAX_PASSWORD_LEN);
-    const loginValue = cleanEmail || cleanUsername;
-
-    if (!isLogin) {
-      const usernameError = validateUsername(cleanUsername);
-      if (usernameError) {
-        setError(usernameError);
-        return;
-      }
-
-      const emailError = validateEmail(cleanEmail);
-      if (emailError) {
-        setError(emailError);
-        return;
-      }
-    } else {
-      const loginError = validateLoginField(loginValue);
-      if (loginError) {
-        setError(loginError);
-        return;
-      }
-    }
-
-    const passwordError = validatePassword(cleanPassword);
-    if (passwordError) {
-      setError(passwordError);
-      return;
-    }
-
-    setIsLoading(true);
-
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const endpoint = isLogin ? "/api/login" : "/api/register";
-      const payload = isLogin 
-        ? { login: loginValue, password: cleanPassword } 
-        : { username: cleanUsername, email: cleanEmail, password: cleanPassword };
+      const trimmedUsername = username.trim();
 
-      const res = await fetch(`${apiBase}${endpoint}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      if (isLogin) {
+        // Login Flow
 
-      const data = await res.json();
+        const res = await fetch(`${API_BASE}/api/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ login: trimmedUsername, password }),
+        });
 
-      if (!res.ok) {
-        throw new Error(data.detail || "Authentication failed");
-      }
-
-      if (!isLogin) {
-        // Switch to login mode after successful registration
-        setIsLogin(true);
-        setError("Registration successful! Please login.");
-        // Ensure fields are cleared for the login attempt
-        setUsername("");
-        setEmail("");
-        setPassword("");
-      } else {
-        if (data.user && data.token) {
-          saveAuthSession(data.token, data.expires_in || 28800, data.user);
+        if (res.ok) {
+          const data = await res.json();
+          saveAuthSession(data.token, data.expires_in, data.user);
+          router.push("/dashboard");
         } else {
-          clearAuthSession();
-          throw new Error("Login response is missing session token");
+          const data = await res.json().catch(() => null);
+          setError(data?.detail || "Invalid credentials");
         }
-        router.push("/dashboard");
+      } else {
+        // Register Flow
+        const normalizedEmail = email.trim();
+        const effectiveEmail = normalizedEmail || `${trimmedUsername.toLowerCase()}@codeguard.local`;
+        const res = await fetch(`${API_BASE}/api/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username: trimmedUsername, email: effectiveEmail, password }),
+        });
+
+        if (res.ok) {
+          const loginRes = await fetch(`${API_BASE}/api/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ login: trimmedUsername, password }),
+          });
+
+          if (loginRes.ok) {
+            const data = await loginRes.json();
+            saveAuthSession(data.token, data.expires_in, data.user);
+            router.push("/dashboard");
+          } else {
+            setIsLogin(true);
+            setError("Node initialized. Please authenticate.");
+          }
+        } else {
+          try {
+            const data = await res.json();
+            setError(data.detail || "Error creating node");
+          } catch {
+            setError("Network anomaly. Node registration failed.");
+          }
+        }
       }
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
-    } finally {
-      setIsLoading(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
     }
   };
 
-  if (!mounted) {
-    return (
-      <div className="relative min-h-screen bg-[#0A0C10] overflow-hidden flex items-center justify-center">
-        {/* Simple background shell for initial SSR render */}
-        <div className="absolute inset-0 bg-[#0A0C10]" />
-        <div className="relative z-10 w-full max-w-6xl mx-auto px-6 py-12 flex flex-col items-center gap-8 animate-pulse">
-           <div className="w-48 h-12 bg-white/5 rounded-full" />
-           <div className="w-96 h-24 bg-white/5 rounded-2xl" />
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="relative min-h-screen bg-[#0A0C10] overflow-hidden font-sans text-white flex items-center justify-center selection:bg-cyan-500/30">
+    <div className="min-h-screen bg-[#050505] text-white selection:bg-[#E8FF5A] selection:text-black overflow-hidden relative">
+      {/* Background Neon Elements */}
+      <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-[#E8FF5A]/10 rounded-full blur-[150px] -z-10 mix-blend-screen pointer-events-none animate-float"></div>
+      <div className="absolute top-1/2 left-1/4 w-[500px] h-[500px] bg-[#00F0FF]/10 rounded-full blur-[120px] -z-10 mix-blend-screen pointer-events-none animate-float transition-all delay-700"></div>
       
-      {/* Background Cybery Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#8A2BE2]/15 blur-[130px] pointer-events-none transition-transform duration-1000 animate-pulse-slow" />
-      <div className="absolute top-[20%] right-[-10%] w-[40%] h-[60%] rounded-full bg-[#00F0FF]/15 blur-[150px] pointer-events-none transition-transform duration-1000" />
-      <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[40%] rounded-full bg-[#8A2BE2]/10 blur-[120px] pointer-events-none" />
-      
-      {/* Grid Overlay */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGRlZnM+PHBhdHRlcm4gaWQ9ImciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgNDBoNDBWMEgweiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZykiLz48L3N2Zz4=')] pointer-events-none opacity-50" />
-
-      {/* Floating Network Lines */}
-      <div className="absolute inset-0 pointer-events-none opacity-25">
-         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-             <path d="M -100 200 Q 200 400 500 150 T 1200 300" stroke="url(#cyan-grad)" strokeWidth="1" fill="none" />
-             <path d="M -100 700 Q 400 500 700 800 T 1300 500" stroke="url(#purple-grad)" strokeWidth="1" fill="none" />
-             <defs>
-               <linearGradient id="cyan-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                 <stop offset="0%" stopColor="#0A0C10" stopOpacity="0" />
-                 <stop offset="50%" stopColor="#00F0FF" stopOpacity="1" />
-                 <stop offset="100%" stopColor="#0A0C10" stopOpacity="0" />
-               </linearGradient>
-               <linearGradient id="purple-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                 <stop offset="0%" stopColor="#0A0C10" stopOpacity="0" />
-                 <stop offset="50%" stopColor="#8A2BE2" stopOpacity="1" />
-                 <stop offset="100%" stopColor="#0A0C10" stopOpacity="0" />
-               </linearGradient>
-             </defs>
-         </svg>
-      </div>
-
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-6 py-12 flex flex-col lg:flex-row items-center gap-16">
-        
-        {/* Left Side: Copy & Branding */}
-        <div className="flex-1 text-left space-y-8 animate-fade-in-up">
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-[0_0_15px_rgba(0,240,255,0.1)]">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00F0FF]"></span>
-            <span className="text-sm font-semibold tracking-wider text-cyan-100 uppercase">Enterprise Grade Security</span>
+      {/* Navigation */}
+      <nav className="fixed w-full z-50 top-0 pt-6 px-10 flex justify-between items-center bg-gradient-to-b from-[#050505] to-transparent pb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-[#E8FF5A] flex items-center justify-center font-bold text-black border-2 border-[#E8FF5A]/50">
+            CG
           </div>
-          
-          <h1 className="text-6xl md:text-7xl font-black tracking-tight leading-[1.1]">
-            One-click for <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 drop-shadow-[0_0_30px_rgba(138,43,226,0.3)]">
-              Asset Defense
-            </span>
-          </h1>
-          
-          <p className="text-lg text-gray-400 max-w-xl leading-relaxed">
-            Dive into zero-day prevention where innovative blockchain technology meets robust AI security expertise. Secure your application instantly and autonomously.
-          </p>
-
-          <div className="flex items-center gap-8 pt-4">
-             <div className="flex items-center gap-3 text-cyan-200/90 text-sm font-semibold tracking-wide">
-                <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                  <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                </div>
-                Real-time Audit
-             </div>
-             <div className="flex items-center gap-3 text-purple-200/90 text-sm font-semibold tracking-wide">
-                <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                </div>
-                Military Grade
-             </div>
-          </div>
+          <span className="text-xl font-bold tracking-tight text-white hover:text-[#E8FF5A] transition-colors">CodeGuard<span className="text-[#E8FF5A]">AI</span></span>
         </div>
+        <div className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
+          <a href="#features" className="hover:text-white transition-colors cursor-pointer">Features</a>
+          <a href="#how-it-works" className="hover:text-white transition-colors cursor-pointer">Protocol</a>
+          <a href="#auth" className="hover:text-white transition-colors cursor-pointer">Launch App</a>
+        </div>
+        <a href="#auth" className="px-5 py-2 rounded-full border border-white/10 hover:border-[#E8FF5A]/50 hover:bg-[#E8FF5A]/10 transition-all font-semibold text-sm">
+          Connect System
+        </a>
+      </nav>
 
-        {/* Right Side: Auth Form */}
-        <div className="w-full max-w-md animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-          <div className="relative p-8 rounded-[2rem] bg-[#11131A]/70 backdrop-blur-2xl border border-white/5 shadow-2xl overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-cyan-500/10 before:to-purple-600/10 before:pointer-events-none hover:border-cyan-500/30 transition-colors duration-500">
-            
-            <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-4 relative z-10">
-              <button 
-                onClick={() => {
-                  setIsLogin(true); 
-                  setError("");
-                  setUsername("");
-                  setEmail("");
-                  setPassword("");
-                }}
-                className={`text-lg font-bold transition-all duration-300 ${isLogin ? 'text-cyan-400 drop-shadow-[0_0_10px_rgba(0,240,255,0.5)]' : 'text-gray-500 hover:text-white'}`}
-              >
-                Sign In
-              </button>
-              <div className="w-px h-6 bg-white/10"></div>
-              <button 
-                onClick={() => {
-                  setIsLogin(false); 
-                  setError("");
-                  setUsername("");
-                  setEmail("");
-                  setPassword("");
-                }}
-                className={`text-lg font-bold transition-all duration-300 ${!isLogin ? 'text-purple-400 drop-shadow-[0_0_10px_rgba(138,43,226,0.5)]' : 'text-gray-500 hover:text-white'}`}
-              >
-                Create Account
-              </button>
+      <main className="pt-32 flex flex-col items-center">
+        {/* Hero Section */}
+        <section className="relative w-full max-w-7xl mx-auto px-6 py-20 flex flex-col items-center text-center grid-bg min-h-[80vh] justify-center">
+           <div className="absolute inset-0 bg-[url('https://transparenttextures.com/patterns/cubes.png')] opacity-5 mask-image-gradient"></div>
+           
+           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#E8FF5A]/30 bg-[#E8FF5A]/5 text-[#E8FF5A] text-xs font-semibold uppercase tracking-widest mb-8">
+             <span className="w-2 h-2 rounded-full bg-[#E8FF5A] animate-pulse"></span>
+             v2.0 Next-Gen Threat Intel Live
+           </div>
+
+           <h1 className="text-6xl md:text-8xl font-black tracking-tighter max-w-5xl leading-[1.1] mb-8">
+             UNBREAKABLE <br /> 
+             <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#E8FF5A] to-[#00F0FF]">SECURITY INTELLIGENCE</span>
+           </h1>
+           
+           <p className="text-gray-400 text-lg md:text-2xl max-w-2xl font-light leading-relaxed mb-12">
+             An AI-driven code analysis network powered by decentralized knowledge. Discover, isolate, and terminate vulnerabilities before they enter production.
+           </p>
+           
+           <div className="flex gap-4 items-center">
+             <a href="#auth" className="px-8 py-4 bg-[#E8FF5A] hover:bg-[#d4e84d] text-black font-bold rounded-full transition-transform hover:scale-105 shadow-[0_0_30px_rgba(232,255,90,0.3)]">
+               Initialize Scan
+             </a>
+             <a href="#features" className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-full transition-all">
+               Explore Engine
+             </a>
+           </div>
+        </section>
+
+        {/* Features Rolling Section */}
+        <section id="features" className="w-full bg-[#030303] py-32 border-t border-b border-white/5 relative">
+          <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-8 relative z-10">
+             
+             <div className="p-8 rounded-3xl glass-panel group hover:-translate-y-2 transition-transform duration-500">
+               <div className="w-12 h-12 rounded-xl bg-[#E8FF5A]/10 text-[#E8FF5A] flex items-center justify-center mb-6 text-2xl font-black">
+                 01
+               </div>
+               <h3 className="text-2xl font-bold mb-4 group-hover:text-[#E8FF5A] transition-colors">Hybrid Scan Protocol</h3>
+               <p className="text-gray-400 leading-relaxed">Multi-dimensional analysis combining lightweight deterministic regex with advanced LLM semantic verification mapping.</p>
+             </div>
+
+             <div className="p-8 rounded-3xl glass-panel group hover:-translate-y-2 transition-transform duration-500 delay-100">
+               <div className="w-12 h-12 rounded-xl bg-[#00F0FF]/10 text-[#00F0FF] flex items-center justify-center mb-6 text-2xl font-black">
+                 02
+               </div>
+               <h3 className="text-2xl font-bold mb-4 group-hover:text-[#00F0FF] transition-colors">Instant Patch Export</h3>
+               <p className="text-gray-400 leading-relaxed">Zero-click remediation. Auto-generate git patches ready to be piped directly into your codebase for frictionless merges.</p>
+             </div>
+
+             <div className="p-8 rounded-3xl glass-panel group hover:-translate-y-2 transition-transform duration-500 delay-200">
+               <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-6 text-2xl font-black">
+                 03
+               </div>
+               <h3 className="text-2xl font-bold mb-4 group-hover:text-purple-400 transition-colors">PDF Threat Briefs</h3>
+               <p className="text-gray-400 leading-relaxed">Cryptographically stamped, executive-ready PDF audit trails that break down complex zero-days into readable intel.</p>
+             </div>
+
+          </div>
+        </section>
+
+        <section id="how-it-works" className="w-full py-24 px-6 bg-[#070707] border-b border-white/5">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-3xl md:text-5xl font-black text-white mb-10 text-center">Protocol Flow</h2>
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="glass-panel rounded-2xl p-6">
+                <p className="text-xs tracking-[0.2em] text-[#E8FF5A] mb-3">STEP 01</p>
+                <h3 className="text-xl font-bold text-white mb-2">Authenticate</h3>
+                <p className="text-gray-400 text-sm">Sign in and establish a secure session token before starting any analysis job.</p>
+              </div>
+              <div className="glass-panel rounded-2xl p-6">
+                <p className="text-xs tracking-[0.2em] text-[#00F0FF] mb-3">STEP 02</p>
+                <h3 className="text-xl font-bold text-white mb-2">Scan</h3>
+                <p className="text-gray-400 text-sm">Launch repository analysis from the dashboard and inspect findings generated by the backend AI pipeline.</p>
+              </div>
+              <div className="glass-panel rounded-2xl p-6">
+                <p className="text-xs tracking-[0.2em] text-purple-300 mb-3">STEP 03</p>
+                <h3 className="text-xl font-bold text-white mb-2">Export</h3>
+                <p className="text-gray-400 text-sm">Navigate to reports to download PDF evidence and patch files tied to each scan ID.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Authentication Section */}
+        <section id="auth" className="w-full py-32 relative flex justify-center items-center overflow-hidden min-h-[90vh]">
+          {/* Decorative radar lines */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(232,255,90,0.05)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20"></div>
+
+          <div className="w-full max-w-sm relative z-10 glass-panel p-10 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+            <div className="mb-10 text-center">
+              <h2 className="text-3xl font-black tracking-tight">{isLogin ? "System Login" : "Initialize Auth"}</h2>
+              <p className="text-sm text-gray-400 mt-2">
+                {isLogin ? "Authenticate to access terminal" : "Create new secure identity"}
+              </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6 relative z-10" autoComplete="off">
-              
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+              <div className="relative">
+                <input
+                  suppressHydrationWarning
+                  type="text"
+                  placeholder="Username"
+                  className="w-full bg-[#111] border border-white/10 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-[#E8FF5A]/50 focus:ring-1 focus:ring-[#E8FF5A]/20 transition-all font-mono text-sm"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="relative">
+                <input
+                  suppressHydrationWarning
+                  type="password"
+                  placeholder="Passphrase"
+                  className="w-full bg-[#111] border border-white/10 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-[#E8FF5A]/50 focus:ring-1 focus:ring-[#E8FF5A]/20 transition-all font-mono text-sm"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
               {!isLogin && (
-                <div className="space-y-1.5 group">
-                  <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-1 group-focus-within:text-cyan-400 transition-colors">Username</label>
-                  <input 
-                    type="text" 
-                    required={!isLogin}
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.slice(0, MAX_USERNAME_LEN))}
-                    className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
-                    placeholder="neo_1337"
-                    autoComplete="off"
-                    maxLength={MAX_USERNAME_LEN}
+                <div className="relative">
+                  <input
+                    type="email"
+                    placeholder="Email (optional)"
+                    className="w-full bg-[#111] border border-white/10 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-[#E8FF5A]/50 focus:ring-1 focus:ring-[#E8FF5A]/20 transition-all font-mono text-sm"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               )}
-
-              <div className="space-y-1.5 group">
-                <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-1 group-focus-within:text-cyan-400 transition-colors">
-                  {isLogin ? "Email or Username" : "Email Address"}
-                </label>
-                <input 
-                  type="text" 
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value.slice(0, MAX_LOGIN_LEN))}
-                  className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm"
-                  placeholder={isLogin ? "neo / neo@matrix.com" : "neo@matrix.com"}
-                  autoComplete="off"
-                  maxLength={MAX_LOGIN_LEN}
-                />
-              </div>
-
-              <div className="space-y-1.5 group">
-                <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-1 group-focus-within:text-purple-400 transition-colors">Password</label>
-                <input 
-                  type="password" 
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value.slice(0, MAX_PASSWORD_LEN))}
-                  className="w-full bg-[#0A0C10]/80 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all font-mono text-sm"
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                  maxLength={MAX_PASSWORD_LEN}
-                />
-              </div>
-
+              
               {error && (
-                <div className={`p-4 rounded-xl text-sm font-semibold flex items-center gap-2 ${error.includes('successful') ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-                  {error.includes('successful') ? (
-                    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                  ) : (
-                    <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                  )}
+                <div className="mx-auto block p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-mono text-center max-w-[90%] break-words">
                   {error}
                 </div>
               )}
 
-              <button 
+              <button
+                suppressHydrationWarning
                 type="submit"
-                disabled={isLoading}
-                className="relative w-full overflow-hidden group rounded-xl mt-6 border border-white/10"
+                className="w-full bg-white text-black font-bold rounded-xl py-4 mt-2 hover:bg-[#E8FF5A] hover:shadow-[0_0_20px_rgba(232,255,90,0.4)] transition-all duration-300"
               >
-                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-cyan-600/80 to-purple-600/80 transition-transform duration-500 group-hover:scale-105"></div>
-                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-cyan-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-md"></div>
-                <div className="relative w-full px-6 py-4 flex items-center justify-center font-bold text-white tracking-wider uppercase text-sm">
-                  {isLoading ? (
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  ) : (
-                    isLogin ? "Authenticate" : "Initialize Identity"
-                  )}
-                </div>
+                {isLogin ? "A C C E S S" : "E N R O L L"}
               </button>
-
-              <div className="mt-6 flex justify-between items-center text-[10px] sm:text-xs text-gray-500">
-                <button 
-                  type="button" 
-                  onClick={() => setError("Password reset protocol initiated. Please check your secure comms or contact administrator.")}
-                  className="hover:text-cyan-400 transition-colors uppercase tracking-widest font-mono"
-                >
-                  [ Forgot Password? ]
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setError("");
-                    setUsername("");
-                    setEmail("");
-                    setPassword("");
-                  }}
-                  className="text-cyan-400 hover:text-cyan-300 font-bold uppercase tracking-widest font-mono"
-                >
-                  {isLogin ? ">> Register Operator" : ">> Back to Login"}
-                </button>
-              </div>
             </form>
-          </div>
-        </div>
 
-      </div>
-      
-      <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-up {
-          animation: fadeInUp 0.8s ease-out forwards;
-        }
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.05); }
-        }
-        .animate-pulse-slow {
-          animation: pulse-slow 8s infinite ease-in-out;
-        }
-      `}</style>
+            <div className="mt-8 text-center text-sm font-medium text-gray-500">
+              {isLogin ? "No identity sequence? " : "Already initialized? "}
+              <button
+                suppressHydrationWarning
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-white hover:text-[#E8FF5A] transition-colors font-bold border-b border-transparent hover:border-[#E8FF5A]"
+              >
+                {isLogin ? "Register Node" : "Access Node"}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="w-full py-8 border-t border-white/5 text-center text-gray-600 text-xs font-mono">
+          © {new Date().getFullYear()} CodeGuard AI. Secure the decentralized future.
+        </footer>
+      </main>
     </div>
   );
 }

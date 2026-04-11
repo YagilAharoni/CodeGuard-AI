@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export interface StoredUser {
   id: number;
   username: string;
@@ -12,13 +14,15 @@ const USER_KEY = "codeguard_user";
 const AUTH_KEY = "codeguard_auth";
 const SESSION_API_KEY_STORAGE_KEY = "codeguard_session_api_key";
 const hasWindow = () => typeof window !== "undefined";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+axios.defaults.withCredentials = true;
 
 export const saveAuthSession = (token: string, expiresInSeconds: number, user: StoredUser) => {
   if (!hasWindow()) return;
-  const expiresAt = Date.now() + expiresInSeconds * 1000;
-  const auth: StoredAuth = { token, expiresAt };
   localStorage.setItem(USER_KEY, JSON.stringify(user));
-  localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+  localStorage.removeItem(AUTH_KEY);
+  sessionStorage.removeItem(SESSION_API_KEY_STORAGE_KEY);
 };
 
 export const clearAuthSession = () => {
@@ -26,6 +30,20 @@ export const clearAuthSession = () => {
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(AUTH_KEY);
   sessionStorage.removeItem(SESSION_API_KEY_STORAGE_KEY);
+};
+
+export const logoutSession = async (): Promise<void> => {
+  if (!hasWindow()) {
+    return;
+  }
+
+  try {
+    await axios.post(`${API_BASE}/api/logout`, {});
+  } catch {
+    // Best-effort logout: local state still gets cleared even if the network call fails.
+  } finally {
+    clearAuthSession();
+  }
 };
 
 export const getStoredUser = (): StoredUser | null => {
@@ -66,4 +84,4 @@ export const getAuthHeaders = (): Record<string, string> => {
   return { Authorization: `Bearer ${token}` };
 };
 
-export const isAuthenticated = (): boolean => Boolean(getAuthToken() && getStoredUser());
+export const isAuthenticated = (): boolean => Boolean(getStoredUser());

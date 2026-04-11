@@ -3,6 +3,7 @@ import logging
 import os
 import time
 import uuid
+import secrets
 import threading
 import asyncio
 import base64
@@ -17,7 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, Depends, HTTPException, Request, Form, UploadFile, File, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Depends, HTTPException, Request, Form, UploadFile, File, WebSocket, WebSocketDisconnect, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -52,11 +53,17 @@ MAX_TOTAL_SCAN_SIZE = 10 * 1024 * 1024  # 10 MB total across all files
 # Users don't need their own API key — the server provides a Groq key as default.
 # Set DEFAULT_GROQ_API_KEY in your Railway environment variables.
 DEFAULT_GROQ_API_KEY = os.getenv("DEFAULT_GROQ_API_KEY", "")
-ALLOW_CLIENT_API_KEYS = os.getenv("ALLOW_CLIENT_API_KEYS", "true").strip().lower() == "true"
+ALLOW_CLIENT_API_KEYS = os.getenv("ALLOW_CLIENT_API_KEYS", "false").strip().lower() == "true"
 
 # --- Auth Token Settings ---
-AUTH_TOKEN_SECRET = os.getenv("AUTH_TOKEN_SECRET", "dev-change-this-secret")
+_configured_auth_secret = os.getenv("AUTH_TOKEN_SECRET", "").strip()
+if len(_configured_auth_secret) >= 32:
+    AUTH_TOKEN_SECRET = _configured_auth_secret
+else:
+    AUTH_TOKEN_SECRET = secrets.token_urlsafe(48)
+    logger.warning("AUTH_TOKEN_SECRET is not configured; using an ephemeral in-memory secret for this process.")
 AUTH_TOKEN_TTL_SECONDS = int(os.getenv("AUTH_TOKEN_TTL_SECONDS", "28800"))
+AUTH_COOKIE_NAME = "codeguard_auth_token"
 
 # --- Input Validation Limits ---
 MAX_USERNAME_LEN = 32
@@ -82,13 +89,17 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(
     CORSMiddleware,
     # Allow production frontend URLs along with local development ones
-    allow_origins=os.getenv(
-        "CORS_ALLOWED_ORIGINS", 
-        "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,https://codeguard-ai.up.railway.app"
-    ).split(","),
+    allow_origins=[
+        origin.strip()
+        for origin in os.getenv(
+            "CORS_ALLOWED_ORIGINS",
+            "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,https://codeguard-ai.up.railway.app"
+        ).split(",")
+        if origin.strip()
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
     expose_headers=["Content-Disposition"],
 )
 
@@ -189,12 +200,12 @@ def verify_auth_token(token: str) -> Optional[str]:
 
 def get_bearer_token(request: Request) -> Optional[str]:
     auth_header = request.headers.get("Authorization", "")
-    if not auth_header:
-        return None
-    if not auth_header.lower().startswith("bearer "):
-        return None
-    token = auth_header.split(" ", 1)[1].strip()
-    return token or None
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+        return token or None
+
+    cookie_token = request.cookies.get(AUTH_COOKIE_NAME, "").strip()
+    return cookie_token or None
 
 
 def get_optional_authenticated_user(request: Request) -> Optional[str]:
@@ -284,6 +295,30 @@ def _validate_uuid_field(raw: str, field_name: str, max_len: int) -> str:
     except Exception:
         raise HTTPException(status_code=400, detail=f"Invalid {field_name} format")
 
+
+def _safe_diff_filename(file_name: str) -> str:
+    cleaned = (file_name or "").replace("\r", "").replace("\n", "").replace("\x00", "")
+    cleaned = cleaned.replace("\\", "/").split("/")[-1]
+    cleaned = re.sub(r"[^A-Za-z0-9._-]", "_", cleaned)
+    return cleaned or "file"
+
+
+def _set_auth_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=AUTH_COOKIE_NAME,
+        value=token,
+        max_age=AUTH_TOKEN_TTL_SECONDS,
+        expires=AUTH_TOKEN_TTL_SECONDS,
+        httponly=True,
+        secure=not DEBUG_MODE,
+        samesite="lax",
+        path="/",
+    )
+
+
+def _clear_auth_cookie(response: Response) -> None:
+    response.delete_cookie(key=AUTH_COOKIE_NAME, path="/")
+
 class RegisterRequest(BaseModel):
     username: str
     email: str
@@ -311,7 +346,7 @@ async def register(request: Request, req: RegisterRequest):
     c = conn.cursor()
     
     # check if user exists
-    c.execute("SELECT id FROM users WHERE username = ? OR email = ?", (username, email))
+    c.execute("SELECT id FROM users WHERE username = ? COLLATE NOCASE OR email = ?", (username, email))
     if c.fetchone():
         conn.close()
         raise HTTPException(status_code=400, detail="Username or email already exists")
@@ -331,7 +366,7 @@ async def register(request: Request, req: RegisterRequest):
 
 @app.post("/api/login")
 @limiter.limit("20/minute")
-async def login(request: Request, req: LoginRequest):
+async def login(request: Request, req: LoginRequest, response: Response):
     login_value = _validate_text_field(req.login, "login", MAX_LOGIN_LEN, required=True)
     password = _validate_text_field(req.password, "password", MAX_PASSWORD_LEN, required=True)
 
@@ -341,7 +376,7 @@ async def login(request: Request, req: LoginRequest):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     
-    c.execute("SELECT id, username, password_hash FROM users WHERE username = ? OR email = ?", (login_value, login_value.lower()))
+    c.execute("SELECT id, username, password_hash FROM users WHERE username = ? COLLATE NOCASE OR email = ?", (login_value, login_value.lower()))
     user = c.fetchone()
     conn.close()
     
@@ -353,6 +388,7 @@ async def login(request: Request, req: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_auth_token(username)
+    _set_auth_cookie(response, token)
         
     return {
         "message": "Login successful",
@@ -652,11 +688,12 @@ class ApplyFixRequest(BaseModel):
 def build_fix_preview_diff(file_name: str, source_code: str, fixed_code: str) -> str:
     source_lines = source_code.splitlines(keepends=True)
     fixed_lines = fixed_code.splitlines(keepends=True)
+    safe_name = _safe_diff_filename(file_name)
     diff_lines = difflib.unified_diff(
         source_lines,
         fixed_lines,
-        fromfile=f"a/{file_name}",
-        tofile=f"b/{file_name}",
+        fromfile=f"a/{safe_name}",
+        tofile=f"b/{safe_name}",
         lineterm="",
     )
     return "\n".join(diff_lines)
@@ -682,6 +719,60 @@ def save_scan_history(history: List[Dict[str, Any]]) -> None:
                 json.dump(history, f, indent=4)
         except Exception as e:
             logger.error(f"Error saving scan history: {e}")
+
+
+MAX_ZIP_ENTRIES = 50
+
+
+def _is_safe_zip_member_name(member_name: str) -> bool:
+    normalized = (member_name or "").replace("\\", "/").strip()
+    if not normalized or normalized.startswith("/") or "\x00" in normalized:
+        return False
+    if normalized in {".", ".."}:
+        return False
+    if normalized.startswith("../") or "/../" in normalized or normalized.endswith("/.."): 
+        return False
+    return True
+
+
+def _extract_supported_files_from_zip_bytes(archive_name: str, content_bytes: bytes) -> List[Dict[str, str]]:
+    extracted_files: List[Dict[str, str]] = []
+    total_uncompressed_size = 0
+
+    with zipfile.ZipFile(io.BytesIO(content_bytes)) as archive:
+        for index, entry in enumerate(archive.infolist()):
+            if index >= MAX_ZIP_ENTRIES or len(extracted_files) >= MAX_FILES_PER_SCAN:
+                break
+            if entry.is_dir():
+                continue
+
+            entry_name = entry.filename.replace("\\", "/").lstrip("./")
+            if not _is_safe_zip_member_name(entry_name):
+                continue
+            if not is_supported_source_file(entry_name):
+                continue
+            if entry.file_size > MAX_FILE_SIZE:
+                logger.warning("Skipping oversized archive member %s from %s (%s bytes)", entry_name, archive_name, entry.file_size)
+                continue
+
+            projected_total = total_uncompressed_size + entry.file_size
+            if projected_total > MAX_TOTAL_SCAN_SIZE:
+                logger.warning("Archive %s exceeds total uncompressed size budget; stopping extraction.", archive_name)
+                break
+
+            with archive.open(entry) as internal_file:
+                file_bytes = internal_file.read(MAX_FILE_SIZE + 1)
+                if len(file_bytes) > MAX_FILE_SIZE:
+                    logger.warning("Skipping archive member %s from %s after read-size validation.", entry_name, archive_name)
+                    continue
+
+                extracted_files.append({
+                    "name": entry_name,
+                    "content": file_bytes.decode("utf-8", errors="ignore"),
+                })
+                total_uncompressed_size += len(file_bytes)
+
+    return extracted_files
 
 def append_scan_history(entry: Dict[str, Any]):
     history = load_scan_history()
@@ -1740,19 +1831,7 @@ def process_raw_file_payloads(raw_files: List[Dict[str, Any]]) -> List[Dict[str,
 
         if filename.lower().endswith(".zip"):
             try:
-                with zipfile.ZipFile(io.BytesIO(content_bytes)) as z:
-                    for z_filename in z.namelist():
-                        if ".." in z_filename or z_filename.startswith("/"):
-                            continue
-                        if z_filename.startswith("__"):
-                            continue
-                        if not is_supported_source_file(z_filename):
-                            continue
-                        with z.open(z_filename) as internal_file:
-                            files_to_scan.append({
-                                "name": z_filename,
-                                "content": internal_file.read().decode("utf-8", errors="ignore"),
-                            })
+                files_to_scan.extend(_extract_supported_files_from_zip_bytes(filename, content_bytes))
             except Exception as e:
                 logger.error(f"ZIP parsing error for {filename}: {e}")
         else:
@@ -2017,8 +2096,11 @@ async def analyze_endpoint(
         })
         
     except Exception as e:
-        logger.error(f"Error processing analysis: {str(e)}")
-        return build_error_scan_response(str(e), report_id=locals().get("report_id"))
+        logger.error(f"Error processing analysis: {redact_sensitive_text(e)}")
+        return build_error_scan_response(
+            "An unexpected error occurred while processing the analysis request.",
+            report_id=locals().get("report_id"),
+        )
     finally:
         # Reduce secret lifetime in request-local variables.
         effective_key = ""
@@ -2063,6 +2145,8 @@ async def analyze_github_endpoint(
             repo = url_parts[github_index + 2]
             if repo.endswith(".git"):
                 repo = repo[:-4]
+            if not re.fullmatch(r"[A-Za-z0-9_.-]+", owner) or not re.fullmatch(r"[A-Za-z0-9_.-]+", repo):
+                raise HTTPException(status_code=400, detail="Invalid GitHub repository identifier")
             
             # Check for specific branch in URL (e.g., /tree/branch_name)
             target_branch = None
@@ -2104,7 +2188,7 @@ async def analyze_github_endpoint(
 
         for branch in branches_to_try:
             try:
-                zip_url = f"https://github.com/{owner}/{repo}/archive/refs/heads/{branch}.zip"
+                zip_url = f"https://github.com/{owner}/{repo}/archive/refs/heads/{requests.utils.quote(branch, safe='')}.zip"
                 tried_branches.append(branch)
                 resp = requests.get(zip_url, timeout=30, allow_redirects=True, headers={"User-Agent": "CodeGuard-AI/1.0"})
                 if resp.status_code == 200:
@@ -2124,23 +2208,7 @@ async def analyze_github_endpoint(
             raise HTTPException(status_code=400, detail=f"Could not download repository '{owner}/{repo}'. Tried branches: {', '.join(tried_branches)}. Ensure it is public and valid.")
             
         content_bytes = zip_response.content
-        files_to_scan = []
-        with zipfile.ZipFile(io.BytesIO(content_bytes)) as z:
-            for z_filename in z.namelist():
-                ext = z_filename.split('.')[-1].lower()
-                if is_supported_source_file(z_filename) and not z_filename.startswith('__') and "/." not in z_filename and "/node_modules/" not in z_filename:
-                    with z.open(z_filename) as internal_file:
-                        try:
-                            file_content = internal_file.read().decode("utf-8")
-                            if file_content.strip():
-                                files_to_scan.append({
-                                    "name": z_filename,
-                                    "content": file_content
-                                })
-                        except UnicodeDecodeError:
-                            pass
-                            
-        files_to_scan = files_to_scan[:30] # Limit file scan
+        files_to_scan = _extract_supported_files_from_zip_bytes(f"{owner}/{repo}.zip", content_bytes)
         report_id = str(uuid.uuid4())
         
         if not files_to_scan:
@@ -2190,8 +2258,11 @@ async def analyze_github_endpoint(
         })
         
     except Exception as e:
-        logger.error(f"Error processing github analysis: {str(e)}")
-        return build_error_scan_response(str(e), report_id=locals().get("report_id"))
+        logger.error(f"Error processing github analysis: {redact_sensitive_text(e)}")
+        return build_error_scan_response(
+            "An unexpected error occurred while processing the GitHub analysis request.",
+            report_id=locals().get("report_id"),
+        )
     finally:
         # Reduce secret lifetime in request-local variables.
         api_key = None
@@ -2303,11 +2374,11 @@ async def export_pdf_endpoint(request: Request, report_id: str, username: Option
         )
         
     except Exception as e:
-        logger.error(f"PDF generation error: {str(e)}")
+        logger.error(f"PDF generation error: {redact_sensitive_text(e)}")
         logger.error(f"Error type: {type(e)}")
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="PDF generation failed")
 
 
 @app.get("/export-patch")
@@ -2490,6 +2561,7 @@ async def apply_fix_preview_endpoint(request: Request, payload: ApplyFixRequest)
     file_name = _validate_text_field(payload.file_name, "file_name", 512, required=True)
     source_code = payload.source_code or ""
     fixed_code = payload.fixed_code or ""
+    file_name = _safe_diff_filename(file_name)
 
     if len(source_code) > 1_000_000 or len(fixed_code) > 1_000_000:
         raise HTTPException(status_code=400, detail="Source or fixed code exceeds size limits")
@@ -2512,6 +2584,13 @@ async def apply_fix_preview_endpoint(request: Request, payload: ApplyFixRequest)
         "diff": diff,
         "message": "Preview generated. Validate side effects with tests before applying fixes.",
     }
+
+
+@app.post("/api/logout")
+async def logout(response: Response):
+    _clear_auth_cookie(response)
+    response.headers["Cache-Control"] = "no-store"
+    return {"message": "Logged out"}
 
 # ---------------------------------------------------------------------------
 # Dependency Vulnerability Scanner
@@ -2710,8 +2789,8 @@ async def scan_dependencies_endpoint(
         })
     
     except Exception as e:
-        logger.error(f"Dependency scan error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Dependency scan error: {redact_sensitive_text(e)}")
+        raise HTTPException(status_code=500, detail="Dependency scan failed")
 
 
 if __name__ == "__main__":

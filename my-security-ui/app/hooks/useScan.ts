@@ -62,7 +62,7 @@ export interface DependencyScanResult {
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const CLIENT_API_KEYS_ENABLED = process.env.NEXT_PUBLIC_ALLOW_CLIENT_API_KEYS !== 'false';
+const CLIENT_API_KEYS_ENABLED = process.env.NEXT_PUBLIC_ALLOW_CLIENT_API_KEYS === 'true';
 const ALLOWED_PERSONAS = new Set(['Student', 'Professional']);
 const ALLOWED_PROVIDERS = new Set(['auto', 'groq', 'openai', 'gemini']);
 
