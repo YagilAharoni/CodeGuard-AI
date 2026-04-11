@@ -663,5 +663,660 @@
         "username": "tst1",
         "improvement_suggestions": [],
         "source": "github:YagilAharoni/LADD"
+    },
+    {
+        "scan_id": "d6cc6d24-8e56-4fa5-bf5c-c168c46ec371",
+        "timestamp": "2026-04-11 15:44:08",
+        "persona": "Professional",
+        "provider": "auto",
+        "status": "VULNERABLE",
+        "stats": {
+            "High": 1,
+            "Medium": 0,
+            "Low": 14,
+            "Safe": 0,
+            "Vuln": 14,
+            "Error": 0
+        },
+        "findings": [
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Possible SQL injection",
+                "root_problem": "SQL query string interpolation may allow attacker-controlled input to alter queries.",
+                "suggested_solution": "Use parameterized queries or ORM parameter binding for all dynamic values.",
+                "suggested_fix": "Refactor query construction to parameterized placeholders and pass values separately via driver APIs.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                "source_code": "",
+                "fixed_code": ""
+            }
+        ],
+        "findings_by_file": {
+            "CodeGuard-AI-main/app.py": [
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Possible SQL injection",
+                    "root_problem": "SQL query string interpolation may allow attacker-controlled input to alter queries.",
+                    "suggested_solution": "Use parameterized queries or ORM parameter binding for all dynamic values.",
+                    "suggested_fix": "Refactor query construction to parameterized placeholders and pass values separately via driver APIs.",
+                    "source_code": "",
+                    "fixed_code": ""
+                }
+            ],
+            "CodeGuard-AI-main/check_db.py": [],
+            "CodeGuard-AI-main/my-security-ui/app/components/AppShell.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/dashboard/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/history/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/hooks/useScan.ts": [],
+            "CodeGuard-AI-main/my-security-ui/app/layout.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/lib/auth.ts": [],
+            "CodeGuard-AI-main/my-security-ui/app/lib/validation.ts": [],
+            "CodeGuard-AI-main/my-security-ui/app/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/reports/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/settings/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/next.config.ts": [],
+            "CodeGuard-AI-main/utils.py": [],
+            "unknown": [
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
+                    "source_code": "",
+                    "fixed_code": ""
+                }
+            ]
+        },
+        "overall_reviews_by_file": {
+            "CodeGuard-AI-main/app.py": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/check_db.py": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/components/AppShell.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/dashboard/page.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/history/page.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/hooks/useScan.ts": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/layout.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/lib/auth.ts": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/lib/validation.ts": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/page.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/reports/page.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/settings/page.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/next.config.ts": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/utils.py": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: No API key available for analysis.",
+                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "unknown": {
+                "summary": "This file has 14 issue(s): 0 high, 0 medium, and 14 low severity. Security hardening should prioritize high-impact vulnerabilities first.",
+                "strengths": [
+                    "The scan provided concrete remediation guidance for identified issues.",
+                    "Findings are categorized by severity for prioritization."
+                ],
+                "key_risks": [
+                    "Unresolved findings can lead to security exposure in production.",
+                    "Compounded medium and low findings may still become exploitable in chained attacks."
+                ],
+                "maintainability_assessment": "Maintainability is currently affected by the number of unresolved security findings.",
+                "test_recommendations": [
+                    "Introduce focused tests for each vulnerability path and remediation.",
+                    "Add regression tests to prevent reintroduction of fixed issues."
+                ],
+                "priority_actions": [
+                    "Fix all high-severity issues before release.",
+                    "Schedule remediation for medium and low issues with owners and due dates."
+                ]
+            }
+        },
+        "executive_summary": {
+            "status": "ERROR",
+            "stats": {
+                "High": 0,
+                "Medium": 0,
+                "Low": 0
+            },
+            "findings": [
+                {
+                    "file_name": "unknown",
+                    "issue_description": "Provider Error: No API key available for analysis.",
+                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
+                }
+            ],
+            "most_important_findings": [],
+            "immediate_next_steps": [],
+            "overall_assessment": "Executive summary generated from scan findings."
+        },
+        "security_score": {
+            "score": 24,
+            "grade": "F",
+            "total_files": 15,
+            "weights": {
+                "high": 20,
+                "medium": 10,
+                "low": 4,
+                "error": 15
+            },
+            "rationale": "Score starts at 100 and subtracts weighted penalties for unresolved findings."
+        },
+        "username": "tst1",
+        "improvement_suggestions": [],
+        "source": "github:YagilAharoni/CodeGuard-AI"
     }
 ]

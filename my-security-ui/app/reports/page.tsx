@@ -163,8 +163,34 @@ export default function ReportsPage() {
                     Inspect
                   </button>
                   <button
+                    onClick={async () => {
+                      try {
+                        const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+                        const response = await axios.get(`${apiBase}/export-patch`, {
+                          params: { report_id: item.scan_id },
+                          responseType: "blob",
+                          headers: { ...getAuthHeaders() },
+                        });
+                        const blob = new Blob([response.data]);
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `remediations_${item.scan_id}.patch`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                      } catch {
+                        setError("Failed to download code patches for this report.");
+                      }
+                    }}
+                    className="px-3 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm hover:from-emerald-500 hover:to-teal-500 whitespace-nowrap"
+                  >
+                    Export Patch
+                  </button>
+                  <button
                     onClick={() => downloadReport(item.scan_id)}
-                    className="px-3 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-purple-600 text-white text-sm hover:from-cyan-500 hover:to-purple-500"
+                    className="px-3 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-purple-600 text-white text-sm hover:from-cyan-500 hover:to-purple-500 whitespace-nowrap"
                   >
                     Export PDF
                   </button>
