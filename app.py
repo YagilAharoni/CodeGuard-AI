@@ -618,8 +618,8 @@ async def notify_scan_subscribers(scan_id: str) -> None:
         try:
             await ws.send_json(payload)
             alive.append(ws)
-        except Exception:
-            continue
+        except Exception as exc:
+            logger.debug("Dropping stale scan subscriber for %s: %s", scan_id, exc)
     SCAN_SUBSCRIBERS[scan_id] = alive
 
 
@@ -972,17 +972,27 @@ def _try_parse_json_relaxed(text: str) -> Optional[Dict[str, Any]]:
         candidates.append(extracted)
 
     for candidate in candidates:
+        parsed: Optional[Dict[str, Any]] = None
         try:
-            return json.loads(candidate)
-        except Exception:
-            pass
+            loaded = json.loads(candidate)
+            if isinstance(loaded, dict):
+                parsed = loaded
+        except (json.JSONDecodeError, TypeError) as exc:
+            logger.debug("Direct JSON parse failed during relaxed parse: %s", exc)
+        if parsed is not None:
+            return parsed
 
         # Repair pass: remove trailing commas before closing braces/brackets.
         repaired = re.sub(r",\s*([}\]])", r"\1", candidate)
+        repaired_parsed: Optional[Dict[str, Any]] = None
         try:
-            return json.loads(repaired)
-        except Exception:
-            continue
+            repaired_loaded = json.loads(repaired)
+            if isinstance(repaired_loaded, dict):
+                repaired_parsed = repaired_loaded
+        except (json.JSONDecodeError, TypeError) as exc:
+            logger.debug("Repaired JSON parse failed during relaxed parse: %s", exc)
+        if repaired_parsed is not None:
+            return repaired_parsed
 
     return None
 
@@ -2656,4 +2666,5 @@ async def scan_dependencies_endpoint(
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=(ENV_MODE == "development"))
+    host = os.getenv("UVICORN_HOST", "127.0.0.1")
+    uvicorn.run("app:app", host=host, port=port, reload=(ENV_MODE == "development"))

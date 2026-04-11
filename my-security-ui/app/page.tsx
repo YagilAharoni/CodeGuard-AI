@@ -331,7 +331,7 @@ export default function LandingPage() {
 
       </div>
       
-      <style dangerouslySetInnerHTML={{__html: `
+      <style>{`
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
@@ -346,7 +346,7 @@ export default function LandingPage() {
         .animate-pulse-slow {
           animation: pulse-slow 8s infinite ease-in-out;
         }
-      `}} />
+      `}</style>
     </div>
   );
 }

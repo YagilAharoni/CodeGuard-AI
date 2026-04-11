@@ -11,3 +11,4 @@ bcrypt
 pillow
 python-dotenv
 matplotlib
+cryptography>=46.0.7

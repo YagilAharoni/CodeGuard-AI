@@ -10,7 +10,7 @@ admin_tool.py
 
 # Environments
 .venv/
-env/
+.env/
 venv/
 ENV/
 

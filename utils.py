@@ -45,8 +45,8 @@ def process_uploaded_files(uploaded_files):
                                     "name": filename,
                                     "content": internal_file.read().decode("utf-8", errors="ignore")
                                 })
-            except Exception:
-                continue
+            except (zipfile.BadZipFile, OSError, RuntimeError, UnicodeDecodeError) as exc:
+                logger.warning("Skipping unreadable ZIP upload %s: %s", getattr(f, 'name', '<unknown>'), exc)
         else:
             files_to_scan.append({
                 "name": f.name,
