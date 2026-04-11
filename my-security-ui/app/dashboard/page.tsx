@@ -1,21 +1,115 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import AppShell from "../components/AppShell";
 import { useScan } from "../hooks/useScan";
-import { getStoredUser } from "../lib/auth";
+import { getAuthHeaders, getStoredUser } from "../lib/auth";
 
 export default function Dashboard() {
+  interface EngineOption {
+    id: string;
+    name: string;
+    available: boolean;
+  }
+
+  interface ExploreEngineResponse {
+    engines?: Array<{
+      id?: string;
+      name?: string;
+      available?: boolean;
+    }>;
+  }
+
+  const searchParams = useSearchParams();
+  const providerRef = useRef<HTMLSelectElement | null>(null);
   const [repoUrl, setRepoUrl] = useState("");
   const [provider, setProvider] = useState("groq");
   const [persona] = useState("Student");
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
+  const [localError, setLocalError] = useState("");
+  const [engineOptions, setEngineOptions] = useState<EngineOption[]>([
+    { id: "groq", name: "Groq Engine", available: true },
+    { id: "openai", name: "OpenAI Matrix", available: true },
+    { id: "gemini", name: "Gemini Core", available: true },
+  ]);
   const username = getStoredUser()?.username;
-  const { results, isScanning, error, scanGithubUrl } = useScan();
+  const { results, isScanning, error, scanGithubUrl, uploadFile } = useScan();
+
+  useEffect(() => {
+    const loadEngines = async () => {
+      try {
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const response = await fetch(`${apiBase}/explore-engine`, {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            ...getAuthHeaders(),
+          },
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as ExploreEngineResponse;
+        if (Array.isArray(data?.engines) && data.engines.length > 0) {
+          const parsed = data.engines
+            .map((engine) => ({
+              id: String(engine.id || "").toLowerCase(),
+              name: String(engine.name || engine.id || "Engine"),
+              available: Boolean(engine.available),
+            }))
+            .filter((engine) => ["groq", "openai", "gemini"].includes(engine.id));
+
+          if (parsed.length > 0) {
+            setEngineOptions(parsed);
+            setProvider((currentProvider) => {
+              const stillValid = parsed.some((engine) => engine.id === currentProvider && engine.available);
+              if (stillValid) return currentProvider;
+              return parsed.find((engine) => engine.available)?.id || parsed[0].id;
+            });
+          }
+        }
+      } catch {
+        // Keep local fallback options when backend discovery fails.
+      }
+    };
+
+    loadEngines();
+  }, []);
+
+  useEffect(() => {
+    const action = (searchParams.get("action") || "").toLowerCase();
+    if (action === "explore") {
+      providerRef.current?.focus();
+    }
+  }, [searchParams]);
 
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault();
-    scanGithubUrl(repoUrl, persona, undefined, provider, username);
+    setLocalError("");
+    if (selectedFiles && selectedFiles.length > 0) {
+      uploadFile(selectedFiles, persona, undefined, provider, username);
+      return;
+    }
+    if (repoUrl.trim()) {
+      scanGithubUrl(repoUrl, persona, undefined, provider, username);
+      return;
+    }
+    setLocalError("Provide a GitHub URL or upload files before launching a scan.");
   };
+
+  const actionHint = (() => {
+    const action = (searchParams.get("action") || "").toLowerCase();
+    if (action === "initialize") {
+      return "Initialize Scan is ready. Enter a GitHub URL or upload files, then click Start Scan.";
+    }
+    if (action === "explore") {
+      return "Engine list loaded. Choose an engine and start your scan.";
+    }
+    return "";
+  })();
 
   return (
     <AppShell title="Dashboard" subtitle="Launch scans and inspect findings">
@@ -37,25 +131,39 @@ export default function Dashboard() {
              Initialize Scan Target
           </h2>
 
-          <form onSubmit={handleScan} className="flex flex-col lg:flex-row gap-4">
+          <form onSubmit={handleScan} className="flex flex-col gap-4">
             <input
               type="text"
-              placeholder="Launch target (e.g. https://github.com/user/repo)"
+              placeholder="Launch target URL (e.g. https://github.com/user/repo)"
               className="flex-grow p-4 bg-[#111] rounded-2xl border border-white/20 focus:border-[#E8FF5A]/50 focus:ring-1 focus:ring-[#E8FF5A]/30 text-white font-mono transition-all outline-none"
               value={repoUrl}
               onChange={(e) => setRepoUrl(e.target.value)}
-              required
             />
+
+            <div className="rounded-2xl border border-white/10 bg-[#0f0f0f] p-4">
+              <label className="block text-xs uppercase tracking-wider text-gray-400 font-mono mb-2">
+                Or upload source files
+              </label>
+              <input
+                type="file"
+                multiple
+                className="w-full text-sm text-gray-300 file:mr-4 file:rounded-xl file:border-0 file:bg-[#E8FF5A] file:px-4 file:py-2 file:font-bold file:text-black hover:file:bg-[#d4e84d]"
+                onChange={(e) => setSelectedFiles(e.target.files)}
+              />
+            </div>
             
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-col lg:flex-row">
                <select
+                 ref={providerRef}
                  className="p-4 bg-[#111] border border-white/20 rounded-2xl text-white outline-none cursor-pointer focus:border-[#00F0FF]/50"
                  value={provider}
                  onChange={(e) => setProvider(e.target.value)}
                >
-                 <option value="groq">Groq Engine</option>
-                 <option value="openai">OpenAI Matrix</option>
-                 <option value="gemini">Gemini Core</option>
+                 {engineOptions.map((engine) => (
+                   <option key={engine.id} value={engine.id} disabled={!engine.available}>
+                     {engine.name}{engine.available ? "" : " (Unavailable)"}
+                   </option>
+                 ))}
                </select>
 
                <button
@@ -67,11 +175,16 @@ export default function Dashboard() {
                    <span className="flex items-center gap-2">
                      <span className="w-4 h-4 rounded-full border-2 border-t-black animate-spin"></span> Scanning
                    </span>
-                 ) : "Launch"}
+                 ) : "Start Scan"}
                </button>
             </div>
+
+              <p className="text-xs text-gray-500 font-mono">
+                Provide a GitHub URL or upload one or more files to initialize a scan.
+              </p>
           </form>
-          {error && <p className="text-red-400 mt-4 font-mono text-sm border-l-2 border-red-500 pl-4">{error}</p>}
+          {(error || localError) && <p className="text-red-400 mt-4 font-mono text-sm border-l-2 border-red-500 pl-4">{error || localError}</p>}
+          {actionHint && <p className="text-cyan-300 mt-3 font-mono text-sm border-l-2 border-cyan-500/60 pl-4">{actionHint}</p>}
         </section>
 
         {results && (

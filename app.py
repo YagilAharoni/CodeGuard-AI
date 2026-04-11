@@ -115,7 +115,9 @@ async def root():
             "export_pdf": "GET /export-pdf - Download PDF report",
             "register": "POST /api/register - Register a new user",
             "login": "POST /api/login - Login a user",
-            "analyze-github": "POST /analyze-github - Analyze github repo url"
+            "analyze-github": "POST /analyze-github - Analyze github repo url",
+            "initialize-scan": "POST /initialize-scan - Start async GitHub scan job",
+            "explore-engine": "GET /explore-engine - List available AI engines"
         }
     }
 
@@ -327,6 +329,14 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     login: str  # can be email or username
     password: str
+
+
+class InitializeScanRequest(BaseModel):
+    github_url: str
+    persona: str = "Student"
+    provider: Optional[str] = None
+    api_key: Optional[str] = None
+    username: Optional[str] = None
 
 @app.post("/api/register")
 @limiter.limit("10/minute")
@@ -1845,6 +1855,85 @@ def process_raw_file_payloads(raw_files: List[Dict[str, Any]]) -> List[Dict[str,
     return files_to_scan
 
 
+def fetch_github_repo_files(github_url: str) -> Dict[str, Any]:
+    # Advanced URL parsing: support owner/repo and owner/repo/tree/branch forms.
+    clean_url = github_url.split('?')[0].rstrip('/')
+    url_parts = clean_url.split('/')
+
+    try:
+        github_index = next(i for i, part in enumerate(url_parts) if "github.com" in part)
+        owner = url_parts[github_index + 1]
+        repo = url_parts[github_index + 2]
+        if repo.endswith(".git"):
+            repo = repo[:-4]
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+", owner) or not re.fullmatch(r"[A-Za-z0-9_.-]+", repo):
+            raise HTTPException(status_code=400, detail="Invalid GitHub repository identifier")
+
+        target_branch = None
+        if len(url_parts) > github_index + 4 and url_parts[github_index + 3] == "tree":
+            target_branch = url_parts[github_index + 4]
+            logger.info(f"Target branch from URL: {target_branch}")
+    except (ValueError, IndexError):
+        raise HTTPException(status_code=400, detail="Invalid GitHub URL. Use format: https://github.com/owner/repo or https://github.com/owner/repo/tree/branch")
+
+    zip_response = None
+    tried_branches: List[str] = []
+    branches_to_try: List[str] = []
+
+    if target_branch:
+        branches_to_try.append(target_branch)
+    else:
+        try:
+            api_url = f"https://api.github.com/repos/{owner}/{repo}"
+            api_resp = requests.get(api_url, timeout=10, headers={"User-Agent": "CodeGuard-AI/1.0"})
+            if api_resp.status_code == 200:
+                repo_info = api_resp.json()
+                default_branch = repo_info.get("default_branch")
+                if default_branch:
+                    logger.info(f"Detected default branch: {default_branch}")
+                    branches_to_try.append(default_branch)
+            elif api_resp.status_code == 403:
+                logger.warning("GitHub API rate limit hit, falling back to manual branch trial.")
+        except Exception as e:
+            logger.error(f"Error fetching GitHub default branch: {e}")
+
+    for branch_name in ["main", "master"]:
+        if branch_name not in branches_to_try:
+            branches_to_try.append(branch_name)
+
+    logger.info(f"Attempting to download from [{owner}/{repo}] branches: {branches_to_try}")
+    for branch in branches_to_try:
+        try:
+            zip_url = f"https://github.com/{owner}/{repo}/archive/refs/heads/{requests.utils.quote(branch, safe='')}.zip"
+            tried_branches.append(branch)
+            resp = requests.get(zip_url, timeout=30, allow_redirects=True, headers={"User-Agent": "CodeGuard-AI/1.0"})
+            if resp.status_code == 200:
+                logger.info(f"Found valid branch: {branch}")
+                zip_response = resp
+                break
+            if resp.status_code == 404:
+                continue
+            logger.warning(f"Unexpected status {resp.status_code} for branch {branch}")
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request error for branch {branch}: {e}")
+
+    if zip_response is None or zip_response.status_code != 200:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Could not download repository '{owner}/{repo}'. Tried branches: {', '.join(tried_branches)}. Ensure it is public and valid.",
+        )
+
+    files_to_scan = _extract_supported_files_from_zip_bytes(f"{owner}/{repo}.zip", zip_response.content)
+    if not files_to_scan:
+        raise HTTPException(status_code=400, detail="No valid source files found in repo.")
+
+    return {
+        "owner": owner,
+        "repo": repo,
+        "files_to_scan": files_to_scan,
+    }
+
+
 def run_hybrid_analysis_for_files(
     files_to_scan: List[Dict[str, str]],
     effective_key: str,
@@ -2134,85 +2223,11 @@ async def analyze_github_endpoint(
         # Resolve effective API key: user-supplied > server default
         api_key = (api_key or "").strip() or DEFAULT_GROQ_API_KEY or ""
 
-        # Advanced URL parsing: handle both owner/repo and owner/repo/tree/branch
-        clean_url = github_url.split('?')[0].rstrip('/')
-        url_parts = clean_url.split('/')
-        
-        # Find the owner and repo indices
-        try:
-            github_index = next(i for i, part in enumerate(url_parts) if "github.com" in part)
-            owner = url_parts[github_index + 1]
-            repo = url_parts[github_index + 2]
-            if repo.endswith(".git"):
-                repo = repo[:-4]
-            if not re.fullmatch(r"[A-Za-z0-9_.-]+", owner) or not re.fullmatch(r"[A-Za-z0-9_.-]+", repo):
-                raise HTTPException(status_code=400, detail="Invalid GitHub repository identifier")
-            
-            # Check for specific branch in URL (e.g., /tree/branch_name)
-            target_branch = None
-            if len(url_parts) > github_index + 4 and url_parts[github_index + 3] == "tree":
-                target_branch = url_parts[github_index + 4]
-                logger.info(f"Target branch from URL: {target_branch}")
-        except (ValueError, IndexError):
-            raise HTTPException(status_code=400, detail="Invalid GitHub URL. Use format: https://github.com/owner/repo or https://github.com/owner/repo/tree/branch")
-
-        zip_response = None
-        tried_branches = []
-        
-        # Determine branch to try first
-        branches_to_try = []
-        if target_branch:
-            branches_to_try.append(target_branch)
-        else:
-            # Try to fetch default branch from GitHub API
-            try:
-                api_url = f"https://api.github.com/repos/{owner}/{repo}"
-                api_resp = requests.get(api_url, timeout=10, headers={"User-Agent": "CodeGuard-AI/1.0"})
-                if api_resp.status_code == 200:
-                    repo_info = api_resp.json()
-                    default_branch = repo_info.get("default_branch")
-                    if default_branch:
-                        logger.info(f"Detected default branch: {default_branch}")
-                        branches_to_try.append(default_branch)
-                elif api_resp.status_code == 403:
-                    logger.warning("GitHub API rate limit hit, falling back to manual branch trial.")
-            except Exception as e:
-                logger.error(f"Error fetching GitHub default branch: {e}")
-        
-        # Add fallbacks
-        for b in ["main", "master"]:
-            if b not in branches_to_try:
-                branches_to_try.append(b)
-
-        logger.info(f"Attempting to download from [{owner}/{repo}] branches: {branches_to_try}")
-
-        for branch in branches_to_try:
-            try:
-                zip_url = f"https://github.com/{owner}/{repo}/archive/refs/heads/{requests.utils.quote(branch, safe='')}.zip"
-                tried_branches.append(branch)
-                resp = requests.get(zip_url, timeout=30, allow_redirects=True, headers={"User-Agent": "CodeGuard-AI/1.0"})
-                if resp.status_code == 200:
-                    logger.info(f"✓ Found valid branch: {branch}")
-                    zip_response = resp
-                    break
-                elif resp.status_code == 404:
-                    continue  # try next branch
-                else:
-                    logger.warning(f"Unexpected status {resp.status_code} for branch {branch}")
-                    continue
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Request error for branch {branch}: {e}")
-                continue
-            
-        if zip_response is None or zip_response.status_code != 200:
-            raise HTTPException(status_code=400, detail=f"Could not download repository '{owner}/{repo}'. Tried branches: {', '.join(tried_branches)}. Ensure it is public and valid.")
-            
-        content_bytes = zip_response.content
-        files_to_scan = _extract_supported_files_from_zip_bytes(f"{owner}/{repo}.zip", content_bytes)
+        github_data = fetch_github_repo_files(github_url)
+        owner = github_data["owner"]
+        repo = github_data["repo"]
+        files_to_scan = github_data["files_to_scan"]
         report_id = str(uuid.uuid4())
-        
-        if not files_to_scan:
-            return JSONResponse(status_code=400, content={"message": "No valid source files found in repo."})
              
         individual_results = run_hybrid_analysis_for_files(files_to_scan, api_key, persona, provider)
         
@@ -2266,6 +2281,111 @@ async def analyze_github_endpoint(
     finally:
         # Reduce secret lifetime in request-local variables.
         api_key = None
+
+
+@app.get("/explore-engine")
+@limiter.limit("60/minute")
+async def explore_engine_endpoint(request: Request):
+    get_optional_authenticated_user(request)
+
+    has_server_groq_key = bool((DEFAULT_GROQ_API_KEY or "").strip())
+    client_keys_enabled = ALLOW_CLIENT_API_KEYS
+
+    engines = [
+        {
+            "id": "groq",
+            "name": "Groq Engine",
+            "available": bool(has_server_groq_key or client_keys_enabled),
+            "requires_client_api_key": bool(not has_server_groq_key),
+        },
+        {
+            "id": "openai",
+            "name": "OpenAI Matrix",
+            "available": bool(client_keys_enabled),
+            "requires_client_api_key": True,
+        },
+        {
+            "id": "gemini",
+            "name": "Gemini Core",
+            "available": bool(client_keys_enabled),
+            "requires_client_api_key": True,
+        },
+    ]
+
+    default_engine = "groq" if engines[0]["available"] else "auto"
+    if default_engine == "auto":
+        for engine in engines:
+            if engine["available"]:
+                default_engine = engine["id"]
+                break
+
+    return {
+        "engines": engines,
+        "default_engine": default_engine,
+        "client_api_keys_enabled": client_keys_enabled,
+    }
+
+
+@app.post("/initialize-scan", response_model=AsyncScanResponse)
+@limiter.limit("10/hour")
+async def initialize_scan_endpoint(request: Request, payload: InitializeScanRequest):
+    authenticated_user = get_optional_authenticated_user(request)
+
+    github_url = _validate_github_url(payload.github_url)
+    persona = _validate_persona(payload.persona)
+    provider = _validate_provider(payload.provider)
+    api_key = _validate_api_key(payload.api_key)
+    username = _validate_optional_username(payload.username)
+
+    if api_key and not ALLOW_CLIENT_API_KEYS:
+        raise HTTPException(
+            status_code=400,
+            detail="Direct API key submission is disabled. Configure DEFAULT_GROQ_API_KEY on the server.",
+        )
+
+    effective_key = (api_key or "").strip() or DEFAULT_GROQ_API_KEY or ""
+    github_data = fetch_github_repo_files(github_url)
+    owner = github_data["owner"]
+    repo = github_data["repo"]
+    files_to_scan = github_data["files_to_scan"]
+
+    scan_id = str(uuid.uuid4())
+    effective_username = authenticated_user or username or "anonymous"
+    source = f"github:{owner}/{repo}"
+
+    _set_scan_task(
+        scan_id,
+        scan_id=scan_id,
+        report_id=None,
+        status="queued",
+        phase="queued",
+        progress_percent=0,
+        message="Scan accepted",
+        source=source,
+        user=effective_username,
+        created_at=_utc_timestamp(),
+        current_file=None,
+        result=None,
+        error=None,
+        provider=provider or "auto",
+        persona=persona,
+        total_files=len(files_to_scan),
+    )
+    await notify_scan_subscribers(scan_id)
+
+    asyncio.create_task(
+        run_async_scan_job(
+            scan_id=scan_id,
+            files_to_scan=files_to_scan,
+            persona=persona,
+            effective_key=effective_key,
+            provider=provider,
+            username=effective_username,
+            source=source,
+        )
+    )
+
+    return AsyncScanResponse(scan_id=scan_id, status="queued", ws_path=f"/ws/scans/{scan_id}")
 
 @app.get("/history")
 @limiter.limit("60/minute")

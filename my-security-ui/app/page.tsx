@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveAuthSession } from "./lib/auth";
+import { isAuthenticated, saveAuthSession } from "./lib/auth";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -13,6 +13,17 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  const handleHeroAction = (action: "initialize" | "explore") => {
+    if (isAuthenticated()) {
+      router.push(`/dashboard?action=${action}`);
+      return;
+    }
+
+    const authSection = document.getElementById("auth");
+    authSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setError("Please log in first to start a scan.");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,12 +134,20 @@ export default function Home() {
            </p>
            
            <div className="flex gap-4 items-center">
-             <a href="#auth" className="px-8 py-4 bg-[#E8FF5A] hover:bg-[#d4e84d] text-black font-bold rounded-full transition-transform hover:scale-105 shadow-[0_0_30px_rgba(232,255,90,0.3)]">
+             <button
+               type="button"
+               onClick={() => handleHeroAction("initialize")}
+               className="px-8 py-4 bg-[#E8FF5A] hover:bg-[#d4e84d] text-black font-bold rounded-full transition-transform hover:scale-105 shadow-[0_0_30px_rgba(232,255,90,0.3)]"
+             >
                Initialize Scan
-             </a>
-             <a href="#features" className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-full transition-all">
+             </button>
+             <button
+               type="button"
+               onClick={() => handleHeroAction("explore")}
+               className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-full transition-all"
+             >
                Explore Engine
-             </a>
+             </button>
            </div>
         </section>
 
@@ -246,7 +265,7 @@ export default function Home() {
                 type="submit"
                 className="w-full bg-white text-black font-bold rounded-xl py-4 mt-2 hover:bg-[#E8FF5A] hover:shadow-[0_0_20px_rgba(232,255,90,0.4)] transition-all duration-300"
               >
-                {isLogin ? "A C C E S S" : "E N R O L L"}
+                {isLogin ? "Log In" : "Create Account"}
               </button>
             </form>
 
@@ -257,7 +276,7 @@ export default function Home() {
                 onClick={() => setIsLogin(!isLogin)}
                 className="text-white hover:text-[#E8FF5A] transition-colors font-bold border-b border-transparent hover:border-[#E8FF5A]"
               >
-                {isLogin ? "Register Node" : "Access Node"}
+                {isLogin ? "Sign Up" : "Log In"}
               </button>
             </div>
           </div>

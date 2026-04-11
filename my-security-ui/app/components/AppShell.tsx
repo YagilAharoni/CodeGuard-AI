@@ -97,7 +97,7 @@ export default function AppShell({ title, subtitle, children }: AppShellProps) {
                 onClick={logout}
                 className="px-4 py-2 rounded-full border border-white/10 bg-[#121212] text-white hover:bg-red-500 hover:border-red-500 transition-colors text-sm font-semibold"
               >
-                Exit
+                Sign Out
               </button>
             </div>
           </div>
