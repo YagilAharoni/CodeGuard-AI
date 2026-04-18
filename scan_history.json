@@ -1,670 +1,5 @@
 [
     {
-        "scan_id": "f08396b4-49b3-4663-9332-8e207964d3ac",
-        "timestamp": "2026-04-09 19:55:05",
-        "persona": "Student",
-        "provider": "auto",
-        "status": "VULNERABLE",
-        "stats": {
-            "High": 3,
-            "Medium": 5,
-            "Low": 2,
-            "Safe": 0,
-            "Vuln": 2,
-            "Error": 0
-        },
-        "findings": [
-            {
-                "file_name": "LogIntel-Analyzer.py",
-                "issue_description": "[HIGH] Potential Path Traversal Vulnerability",
-                "root_problem": "The script does not validate or sanitize the folder path, which could lead to a path traversal attack.",
-                "suggested_solution": "Validate and sanitize user input to prevent path traversal attacks.",
-                "suggested_fix": "Use the `os.path.abspath()` and `os.path.normpath()` functions to normalize the folder path.",
-                "source_code": "folder_path = 'logs'",
-                "fixed_code": "import os\nfolder_path = os.path.abspath(os.path.normpath('logs'))"
-            },
-            {
-                "file_name": "opsec_final_analyzer.py",
-                "issue_description": "[HIGH] Hardcoded API Key",
-                "root_problem": "The API key is hardcoded in the script, which is a significant security risk if the script is exposed.",
-                "suggested_solution": "Use environment variables to store sensitive information like API keys.",
-                "suggested_fix": "Replace API_KEY = 'ENTER_YOUR_API_KEY' with import os; API_KEY = os.environ.get('VT_API_KEY') and set the VT_API_KEY environment variable.",
-                "source_code": "API_KEY = 'ENTER_YOUR_API_KEY'",
-                "fixed_code": "import os; API_KEY = os.environ.get('VT_API_KEY')"
-            },
-            {
-                "file_name": "opsec_final_analyzer.py",
-                "issue_description": "[HIGH] Insecure Log File Parsing",
-                "root_problem": "The script uses a regular expression to parse log files, which can lead to security issues if the logs contain malicious data.",
-                "suggested_solution": "Use a secure log parsing library or validate user input.",
-                "suggested_fix": "Use a library like logparser or validate the log data before parsing it.",
-                "source_code": "match = re.search(LOG_PATTERN, line)",
-                "fixed_code": "Use a secure log parsing library"
-            },
-            {
-                "file_name": "LogIntel-Analyzer.py",
-                "issue_description": "[MEDIUM] Insecure File Handling",
-                "root_problem": "The script does not handle file exceptions properly, which could lead to data corruption or information disclosure.",
-                "suggested_solution": "Implement try-except blocks to handle file-related exceptions.",
-                "suggested_fix": "Use a try-except block to catch and handle exceptions when opening and reading files.",
-                "source_code": "with open(file_path, 'r') as f:",
-                "fixed_code": "try:\n    with open(file_path, 'r') as f:\n        # file operations\nexcept FileNotFoundError:\n    print(f\"Error: File '{file_path}' not found.\")\nexcept Exception as e:\n    print(f\"Error: {str(e)}\")"
-            },
-            {
-                "file_name": "LogIntel-Analyzer.py",
-                "issue_description": "[MEDIUM] Potential Denial of Service (DoS) Vulnerability",
-                "root_problem": "The script does not limit the number of files it processes, which could lead to a denial of service attack.",
-                "suggested_solution": "Implement a limit on the number of files to process.",
-                "suggested_fix": "Use a counter to limit the number of files processed.",
-                "source_code": "for filename in os.listdir(folder_path):",
-                "fixed_code": "file_count = 0\nmax_files = 1000\nfor filename in os.listdir(folder_path):\n    if file_count >= max_files:\n        break\n    # process file\n    file_count += 1"
-            },
-            {
-                "file_name": "opsec_final_analyzer.py",
-                "issue_description": "[MEDIUM] Missing Error Handling",
-                "root_problem": "The script does not handle errors properly, which can lead to unexpected behavior or crashes.",
-                "suggested_solution": "Add try-except blocks to handle potential errors.",
-                "suggested_fix": "Add try-except blocks around the code that interacts with external resources, such as the VirusTotal API.",
-                "source_code": "response = requests.get(f\"{VT_URL}{ip}\", headers=headers)",
-                "fixed_code": "try: response = requests.get(f\"{VT_URL}{ip}\", headers=headers); except requests.exceptions.RequestException as e: print(f\"Error: {e}\")"
-            },
-            {
-                "file_name": "opsec_final_analyzer.py",
-                "issue_description": "[MEDIUM] Insecure File Access",
-                "root_problem": "The script accesses files without proper validation, which can lead to security issues.",
-                "suggested_solution": "Validate file paths and permissions before accessing files.",
-                "suggested_fix": "Use the os.path.abspath function to validate file paths and check file permissions before accessing files.",
-                "source_code": "with open(os.path.join(LOG_DIRECTORY, filename), 'r', encoding='utf-8', errors='ignore') as file:",
-                "fixed_code": "file_path = os.path.abspath(os.path.join(LOG_DIRECTORY, filename)); if os.path.isfile(file_path): with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:"
-            },
-            {
-                "file_name": "opsec_final_analyzer.py",
-                "issue_description": "[MEDIUM] Missing Input Validation",
-                "root_problem": "The script does not validate user input, which can lead to security issues.",
-                "suggested_solution": "Validate user input to prevent security issues.",
-                "suggested_fix": "Validate the log directory and file names to prevent potential security issues.",
-                "source_code": "for filename in os.listdir(LOG_DIRECTORY):",
-                "fixed_code": "for filename in os.listdir(LOG_DIRECTORY): if os.path.isfile(os.path.join(LOG_DIRECTORY, filename)): # process the file"
-            },
-            {
-                "file_name": "LogIntel-Analyzer.py",
-                "issue_description": "[LOW] Inefficient Data Processing",
-                "root_problem": "The script uses a simple loop to process log data, which could be inefficient for large datasets.",
-                "suggested_solution": "Use more efficient data processing techniques, such as parallel processing or data streaming.",
-                "suggested_fix": "Use the `concurrent.futures` module to parallelize data processing.",
-                "source_code": "for line in f:",
-                "fixed_code": "import concurrent.futures\nwith concurrent.futures.ThreadPoolExecutor() as executor:\n    futures = [executor.submit(process_line, line) for line in f]\n    results = [future.result() for future in futures]"
-            },
-            {
-                "file_name": "opsec_final_analyzer.py",
-                "issue_description": "[LOW] Missing Type Hints",
-                "root_problem": "The script does not use type hints, which can make the code harder to understand and maintain.",
-                "suggested_solution": "Add type hints to function parameters and return types.",
-                "suggested_fix": "Add type hints to the function parameters and return types, such as def analyze_logs() -> None:",
-                "source_code": "def analyze_logs():",
-                "fixed_code": "def analyze_logs() -> None:"
-            }
-        ],
-        "findings_by_file": {
-            "LogIntel-Analyzer.py": [
-                {
-                    "file_name": "LogIntel-Analyzer.py",
-                    "issue_description": "[HIGH] Potential Path Traversal Vulnerability",
-                    "root_problem": "The script does not validate or sanitize the folder path, which could lead to a path traversal attack.",
-                    "suggested_solution": "Validate and sanitize user input to prevent path traversal attacks.",
-                    "suggested_fix": "Use the `os.path.abspath()` and `os.path.normpath()` functions to normalize the folder path.",
-                    "source_code": "folder_path = 'logs'",
-                    "fixed_code": "import os\nfolder_path = os.path.abspath(os.path.normpath('logs'))"
-                },
-                {
-                    "file_name": "LogIntel-Analyzer.py",
-                    "issue_description": "[MEDIUM] Insecure File Handling",
-                    "root_problem": "The script does not handle file exceptions properly, which could lead to data corruption or information disclosure.",
-                    "suggested_solution": "Implement try-except blocks to handle file-related exceptions.",
-                    "suggested_fix": "Use a try-except block to catch and handle exceptions when opening and reading files.",
-                    "source_code": "with open(file_path, 'r') as f:",
-                    "fixed_code": "try:\n    with open(file_path, 'r') as f:\n        # file operations\nexcept FileNotFoundError:\n    print(f\"Error: File '{file_path}' not found.\")\nexcept Exception as e:\n    print(f\"Error: {str(e)}\")"
-                },
-                {
-                    "file_name": "LogIntel-Analyzer.py",
-                    "issue_description": "[MEDIUM] Potential Denial of Service (DoS) Vulnerability",
-                    "root_problem": "The script does not limit the number of files it processes, which could lead to a denial of service attack.",
-                    "suggested_solution": "Implement a limit on the number of files to process.",
-                    "suggested_fix": "Use a counter to limit the number of files processed.",
-                    "source_code": "for filename in os.listdir(folder_path):",
-                    "fixed_code": "file_count = 0\nmax_files = 1000\nfor filename in os.listdir(folder_path):\n    if file_count >= max_files:\n        break\n    # process file\n    file_count += 1"
-                },
-                {
-                    "file_name": "LogIntel-Analyzer.py",
-                    "issue_description": "[LOW] Inefficient Data Processing",
-                    "root_problem": "The script uses a simple loop to process log data, which could be inefficient for large datasets.",
-                    "suggested_solution": "Use more efficient data processing techniques, such as parallel processing or data streaming.",
-                    "suggested_fix": "Use the `concurrent.futures` module to parallelize data processing.",
-                    "source_code": "for line in f:",
-                    "fixed_code": "import concurrent.futures\nwith concurrent.futures.ThreadPoolExecutor() as executor:\n    futures = [executor.submit(process_line, line) for line in f]\n    results = [future.result() for future in futures]"
-                }
-            ],
-            "opsec_final_analyzer.py": [
-                {
-                    "file_name": "opsec_final_analyzer.py",
-                    "issue_description": "[HIGH] Hardcoded API Key",
-                    "root_problem": "The API key is hardcoded in the script, which is a significant security risk if the script is exposed.",
-                    "suggested_solution": "Use environment variables to store sensitive information like API keys.",
-                    "suggested_fix": "Replace API_KEY = 'ENTER_YOUR_API_KEY' with import os; API_KEY = os.environ.get('VT_API_KEY') and set the VT_API_KEY environment variable.",
-                    "source_code": "API_KEY = 'ENTER_YOUR_API_KEY'",
-                    "fixed_code": "import os; API_KEY = os.environ.get('VT_API_KEY')"
-                },
-                {
-                    "file_name": "opsec_final_analyzer.py",
-                    "issue_description": "[HIGH] Insecure Log File Parsing",
-                    "root_problem": "The script uses a regular expression to parse log files, which can lead to security issues if the logs contain malicious data.",
-                    "suggested_solution": "Use a secure log parsing library or validate user input.",
-                    "suggested_fix": "Use a library like logparser or validate the log data before parsing it.",
-                    "source_code": "match = re.search(LOG_PATTERN, line)",
-                    "fixed_code": "Use a secure log parsing library"
-                },
-                {
-                    "file_name": "opsec_final_analyzer.py",
-                    "issue_description": "[MEDIUM] Missing Error Handling",
-                    "root_problem": "The script does not handle errors properly, which can lead to unexpected behavior or crashes.",
-                    "suggested_solution": "Add try-except blocks to handle potential errors.",
-                    "suggested_fix": "Add try-except blocks around the code that interacts with external resources, such as the VirusTotal API.",
-                    "source_code": "response = requests.get(f\"{VT_URL}{ip}\", headers=headers)",
-                    "fixed_code": "try: response = requests.get(f\"{VT_URL}{ip}\", headers=headers); except requests.exceptions.RequestException as e: print(f\"Error: {e}\")"
-                },
-                {
-                    "file_name": "opsec_final_analyzer.py",
-                    "issue_description": "[MEDIUM] Insecure File Access",
-                    "root_problem": "The script accesses files without proper validation, which can lead to security issues.",
-                    "suggested_solution": "Validate file paths and permissions before accessing files.",
-                    "suggested_fix": "Use the os.path.abspath function to validate file paths and check file permissions before accessing files.",
-                    "source_code": "with open(os.path.join(LOG_DIRECTORY, filename), 'r', encoding='utf-8', errors='ignore') as file:",
-                    "fixed_code": "file_path = os.path.abspath(os.path.join(LOG_DIRECTORY, filename)); if os.path.isfile(file_path): with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:"
-                },
-                {
-                    "file_name": "opsec_final_analyzer.py",
-                    "issue_description": "[MEDIUM] Missing Input Validation",
-                    "root_problem": "The script does not validate user input, which can lead to security issues.",
-                    "suggested_solution": "Validate user input to prevent security issues.",
-                    "suggested_fix": "Validate the log directory and file names to prevent potential security issues.",
-                    "source_code": "for filename in os.listdir(LOG_DIRECTORY):",
-                    "fixed_code": "for filename in os.listdir(LOG_DIRECTORY): if os.path.isfile(os.path.join(LOG_DIRECTORY, filename)): # process the file"
-                },
-                {
-                    "file_name": "opsec_final_analyzer.py",
-                    "issue_description": "[LOW] Missing Type Hints",
-                    "root_problem": "The script does not use type hints, which can make the code harder to understand and maintain.",
-                    "suggested_solution": "Add type hints to function parameters and return types.",
-                    "suggested_fix": "Add type hints to the function parameters and return types, such as def analyze_logs() -> None:",
-                    "source_code": "def analyze_logs():",
-                    "fixed_code": "def analyze_logs() -> None:"
-                }
-            ]
-        },
-        "username": "tst1",
-        "improvement_suggestions": [
-            "Use a more robust logging mechanism, such as the `logging` module, to handle errors and exceptions.",
-            "Implement input validation and sanitization to prevent security vulnerabilities.",
-            "Consider using a more efficient data processing framework, such as Apache Spark or pandas, to handle large datasets.",
-            "Use a secure log parsing library to parse log files.",
-            "Validate user input to prevent security issues.",
-            "Use environment variables to store sensitive information like API keys."
-        ],
-        "source": "github:YagilAharoni/Python"
-    },
-    {
-        "scan_id": "0f4186e4-b385-470d-8bdf-13462b03c0bd",
-        "timestamp": "2026-04-09 20:06:07",
-        "persona": "Professional",
-        "provider": "auto",
-        "status": "ERROR",
-        "stats": {
-            "High": 0,
-            "Medium": 0,
-            "Low": 2,
-            "Safe": 0,
-            "Vuln": 0,
-            "Error": 2
-        },
-        "findings": [
-            {
-                "file_name": "unknown",
-                "issue_description": "Gemini Error: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-                "suggested_fix": "Check API key or rate limits."
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "Gemini Error: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-                "suggested_fix": "Check API key or rate limits."
-            }
-        ],
-        "findings_by_file": {
-            "unknown": [
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Gemini Error: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-                    "suggested_fix": "Check API key or rate limits."
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Gemini Error: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-                    "suggested_fix": "Check API key or rate limits."
-                }
-            ]
-        },
-        "overall_reviews_by_file": {
-            "unknown": {
-                "summary": "No professional code review was returned by the model.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Not assessed.",
-                "test_recommendations": [],
-                "priority_actions": []
-            }
-        },
-        "executive_summary": {
-            "status": "ERROR",
-            "stats": {
-                "High": 0,
-                "Medium": 0,
-                "Low": 0
-            },
-            "findings": [
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Gemini Error: 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}",
-                    "suggested_fix": "Check API key or rate limits."
-                }
-            ],
-            "most_important_findings": [],
-            "immediate_next_steps": [],
-            "overall_assessment": "Executive summary generated from scan findings."
-        },
-        "username": "tst1",
-        "improvement_suggestions": [],
-        "source": "github:YagilAharoni/LADD"
-    },
-    {
-        "scan_id": "4bb1a47d-655a-4d11-a411-0e37a826664d",
-        "timestamp": "2026-04-09 20:06:49",
-        "persona": "Professional",
-        "provider": "auto",
-        "status": "VULNERABLE",
-        "stats": {
-            "High": 4,
-            "Medium": 3,
-            "Low": 0,
-            "Safe": 0,
-            "Vuln": 2,
-            "Error": 0
-        },
-        "findings": [
-            {
-                "file_name": "filereader.cpp",
-                "issue_description": "[HIGH] Unvalidated User Input in Command Line Arguments",
-                "root_problem": "The program does not validate user input from command line arguments, which can lead to security vulnerabilities.",
-                "suggested_solution": "Validate all user input to prevent potential security vulnerabilities.",
-                "suggested_fix": "Use a library like getopt to parse command line arguments and validate user input.",
-                "source_code": "if (argc == 2) { std::string arg1 = argv[1]; ... }",
-                "fixed_code": "int opt; while ((opt = getopt(argc, argv, \"o:\")) != -1) { ... }"
-            },
-            {
-                "file_name": "filereader.cpp",
-                "issue_description": "[HIGH] Potential Buffer Overflow in Config File Parsing",
-                "root_problem": "The program uses std::getline to read lines from the config file, which can lead to buffer overflows if the lines are very long.",
-                "suggested_solution": "Use a safer method to read lines from the config file, such as using a fixed-size buffer.",
-                "suggested_fix": "Use std::getline with a fixed-size buffer, such as std::array<char, 1024>.",
-                "source_code": "std::string line; while (std::getline(configFile, line)) { ... }",
-                "fixed_code": "std::array<char, 1024> line; while (configFile.getline(line.data(), line.size())) { ... }"
-            },
-            {
-                "file_name": "filereader.cpp",
-                "issue_description": "[HIGH] Lack of Error Handling in File Operations",
-                "root_problem": "The program does not handle errors properly when performing file operations, which can lead to security vulnerabilities.",
-                "suggested_solution": "Implement proper error handling for file operations to prevent security vulnerabilities.",
-                "suggested_fix": "Use try-catch blocks to catch exceptions and handle errors properly.",
-                "source_code": "std::ofstream outputFile(outputFilename, openMode); if (!outputFile.is_open()) { ... }",
-                "fixed_code": "try { std::ofstream outputFile(outputFilename, openMode); if (!outputFile.is_open()) { throw std::runtime_error(\"Failed to open output file\"); } } catch (const std::exception& e) { ... }"
-            },
-            {
-                "file_name": "ladd.h",
-                "issue_description": "[HIGH] Potential for Anti-Debugging Evasion Techniques",
-                "root_problem": "The declaration of an anti-debugging detection function may indicate an attempt to evade debugging or reverse engineering, potentially hiding malicious behavior.",
-                "suggested_solution": "Implement secure coding practices and ensure the function's purpose is legitimate and transparent.",
-                "suggested_fix": "Remove or refactor the anti-debugging detection function to ensure it does not facilitate malicious activities. Consider implementing logging or monitoring mechanisms to detect and respond to potential security incidents.",
-                "source_code": "void detect_debugger(void);",
-                "fixed_code": "/* Removed or refactored for security and transparency */"
-            },
-            {
-                "file_name": "filereader.cpp",
-                "issue_description": "[MEDIUM] Hardcoded Config File Name",
-                "root_problem": "The program uses a hardcoded config file name, which can make it difficult to change the config file location.",
-                "suggested_solution": "Use a configurable config file name to make the program more flexible.",
-                "suggested_fix": "Use a command line argument or an environment variable to specify the config file name.",
-                "source_code": "std::string configFilename = \\\"config.env\\\";",
-                "fixed_code": "std::string configFilename = argv[1];"
-            },
-            {
-                "file_name": "filereader.cpp",
-                "issue_description": "[MEDIUM] Lack of Input Validation in Config File Parsing",
-                "root_problem": "The program does not validate input in the config file, which can lead to security vulnerabilities.",
-                "suggested_solution": "Validate all input in the config file to prevent security vulnerabilities.",
-                "suggested_fix": "Use a library like boost::property_tree to parse the config file and validate input.",
-                "source_code": "std::stringstream ss(line); std::string key, value; ...",
-                "fixed_code": "boost::property_tree::ptree config; boost::property_tree::read_ini(configFile, config);"
-            },
-            {
-                "file_name": "filereader.cpp",
-                "issue_description": "[MEDIUM] Potential Resource Leak in File Operations",
-                "root_problem": "The program does not close files properly in all cases, which can lead to resource leaks.",
-                "suggested_solution": "Use smart pointers or RAII to ensure that files are closed properly.",
-                "suggested_fix": "Use std::unique_ptr to manage file pointers.",
-                "source_code": "std::ifstream configFile(configFilename); ...",
-                "fixed_code": "std::unique_ptr<std::ifstream> configFile = std::make_unique<std::ifstream>(configFilename);"
-            }
-        ],
-        "findings_by_file": {
-            "filereader.cpp": [
-                {
-                    "file_name": "filereader.cpp",
-                    "issue_description": "[HIGH] Unvalidated User Input in Command Line Arguments",
-                    "root_problem": "The program does not validate user input from command line arguments, which can lead to security vulnerabilities.",
-                    "suggested_solution": "Validate all user input to prevent potential security vulnerabilities.",
-                    "suggested_fix": "Use a library like getopt to parse command line arguments and validate user input.",
-                    "source_code": "if (argc == 2) { std::string arg1 = argv[1]; ... }",
-                    "fixed_code": "int opt; while ((opt = getopt(argc, argv, \"o:\")) != -1) { ... }"
-                },
-                {
-                    "file_name": "filereader.cpp",
-                    "issue_description": "[HIGH] Potential Buffer Overflow in Config File Parsing",
-                    "root_problem": "The program uses std::getline to read lines from the config file, which can lead to buffer overflows if the lines are very long.",
-                    "suggested_solution": "Use a safer method to read lines from the config file, such as using a fixed-size buffer.",
-                    "suggested_fix": "Use std::getline with a fixed-size buffer, such as std::array<char, 1024>.",
-                    "source_code": "std::string line; while (std::getline(configFile, line)) { ... }",
-                    "fixed_code": "std::array<char, 1024> line; while (configFile.getline(line.data(), line.size())) { ... }"
-                },
-                {
-                    "file_name": "filereader.cpp",
-                    "issue_description": "[HIGH] Lack of Error Handling in File Operations",
-                    "root_problem": "The program does not handle errors properly when performing file operations, which can lead to security vulnerabilities.",
-                    "suggested_solution": "Implement proper error handling for file operations to prevent security vulnerabilities.",
-                    "suggested_fix": "Use try-catch blocks to catch exceptions and handle errors properly.",
-                    "source_code": "std::ofstream outputFile(outputFilename, openMode); if (!outputFile.is_open()) { ... }",
-                    "fixed_code": "try { std::ofstream outputFile(outputFilename, openMode); if (!outputFile.is_open()) { throw std::runtime_error(\"Failed to open output file\"); } } catch (const std::exception& e) { ... }"
-                },
-                {
-                    "file_name": "filereader.cpp",
-                    "issue_description": "[MEDIUM] Hardcoded Config File Name",
-                    "root_problem": "The program uses a hardcoded config file name, which can make it difficult to change the config file location.",
-                    "suggested_solution": "Use a configurable config file name to make the program more flexible.",
-                    "suggested_fix": "Use a command line argument or an environment variable to specify the config file name.",
-                    "source_code": "std::string configFilename = \\\"config.env\\\";",
-                    "fixed_code": "std::string configFilename = argv[1];"
-                },
-                {
-                    "file_name": "filereader.cpp",
-                    "issue_description": "[MEDIUM] Lack of Input Validation in Config File Parsing",
-                    "root_problem": "The program does not validate input in the config file, which can lead to security vulnerabilities.",
-                    "suggested_solution": "Validate all input in the config file to prevent security vulnerabilities.",
-                    "suggested_fix": "Use a library like boost::property_tree to parse the config file and validate input.",
-                    "source_code": "std::stringstream ss(line); std::string key, value; ...",
-                    "fixed_code": "boost::property_tree::ptree config; boost::property_tree::read_ini(configFile, config);"
-                },
-                {
-                    "file_name": "filereader.cpp",
-                    "issue_description": "[MEDIUM] Potential Resource Leak in File Operations",
-                    "root_problem": "The program does not close files properly in all cases, which can lead to resource leaks.",
-                    "suggested_solution": "Use smart pointers or RAII to ensure that files are closed properly.",
-                    "suggested_fix": "Use std::unique_ptr to manage file pointers.",
-                    "source_code": "std::ifstream configFile(configFilename); ...",
-                    "fixed_code": "std::unique_ptr<std::ifstream> configFile = std::make_unique<std::ifstream>(configFilename);"
-                }
-            ],
-            "ladd.h": [
-                {
-                    "file_name": "ladd.h",
-                    "issue_description": "[HIGH] Potential for Anti-Debugging Evasion Techniques",
-                    "root_problem": "The declaration of an anti-debugging detection function may indicate an attempt to evade debugging or reverse engineering, potentially hiding malicious behavior.",
-                    "suggested_solution": "Implement secure coding practices and ensure the function's purpose is legitimate and transparent.",
-                    "suggested_fix": "Remove or refactor the anti-debugging detection function to ensure it does not facilitate malicious activities. Consider implementing logging or monitoring mechanisms to detect and respond to potential security incidents.",
-                    "source_code": "void detect_debugger(void);",
-                    "fixed_code": "/* Removed or refactored for security and transparency */"
-                }
-            ]
-        },
-        "overall_reviews_by_file": {
-            "filereader.cpp": {
-                "summary": "No professional code review was returned by the model.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Not assessed.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "ladd.h": {
-                "summary": "The provided header file declares a function that may be used for anti-debugging purposes, which raises security concerns. The code lacks transparency and may facilitate malicious activities.",
-                "strengths": [],
-                "key_risks": [
-                    "Potential for hiding malicious behavior",
-                    "Lack of transparency and security"
-                ],
-                "maintainability_assessment": "The code's maintainability is compromised due to the potential security risks and lack of transparency.",
-                "test_recommendations": [
-                    "Implement comprehensive testing to ensure the function's purpose is legitimate and does not facilitate malicious activities",
-                    "Conduct regular security audits and code reviews to identify potential vulnerabilities"
-                ],
-                "priority_actions": [
-                    "Refactor or remove the anti-debugging detection function",
-                    "Implement secure coding practices and ensure transparency"
-                ]
-            }
-        },
-        "executive_summary": {
-            "overall_assessment": "The application has multiple high-severity vulnerabilities that require immediate attention to prevent potential security breaches.",
-            "most_important_findings": [
-                {
-                    "title": "Unvalidated User Input in Command Line Arguments",
-                    "severity": "High",
-                    "cwe_ids": [
-                        "CWE-20"
-                    ],
-                    "owasp_categories": [
-                        "A03:2021 - Injection"
-                    ],
-                    "affected_files": [
-                        "filereader.cpp"
-                    ],
-                    "why_it_matters": "Unvalidated user input can lead to security vulnerabilities such as command injection, allowing attackers to execute arbitrary commands.",
-                    "attack_scenario": "An attacker could inject malicious commands through the command line arguments, potentially leading to unauthorized access or data breaches.",
-                    "business_impact": "A successful attack could compromise the confidentiality, integrity, and availability of sensitive data, resulting in significant financial and reputational losses.",
-                    "recommended_actions": [
-                        "Validate all user input from command line arguments using a library like getopt.",
-                        "Implement input sanitization and whitelisting to prevent malicious input.",
-                        "Conduct regular security testing and code reviews to identify and address potential vulnerabilities."
-                    ]
-                },
-                {
-                    "title": "Potential Buffer Overflow in Config File Parsing",
-                    "severity": "High",
-                    "cwe_ids": [
-                        "CWE-121"
-                    ],
-                    "owasp_categories": [
-                        "A08:2021 - Software and Data Integrity Failures"
-                    ],
-                    "affected_files": [
-                        "filereader.cpp"
-                    ],
-                    "why_it_matters": "Buffer overflows can lead to arbitrary code execution, allowing attackers to gain unauthorized access to sensitive data or systems.",
-                    "attack_scenario": "An attacker could craft a malicious config file with long lines, causing a buffer overflow and potentially leading to code execution.",
-                    "business_impact": "A successful attack could compromise the integrity and availability of sensitive data, resulting in significant financial and reputational losses.",
-                    "recommended_actions": [
-                        "Use a safer method to read lines from the config file, such as using a fixed-size buffer.",
-                        "Implement bounds checking and input validation to prevent buffer overflows.",
-                        "Conduct regular security testing and code reviews to identify and address potential vulnerabilities."
-                    ]
-                },
-                {
-                    "title": "Lack of Error Handling in File Operations",
-                    "severity": "High",
-                    "cwe_ids": [
-                        "CWE-703"
-                    ],
-                    "owasp_categories": [
-                        "A08:2021 - Software and Data Integrity Failures"
-                    ],
-                    "affected_files": [
-                        "filereader.cpp"
-                    ],
-                    "why_it_matters": "Inadequate error handling can lead to security vulnerabilities, such as information disclosure or denial-of-service attacks.",
-                    "attack_scenario": "An attacker could exploit a file operation error to gain unauthorized access to sensitive data or disrupt system operations.",
-                    "business_impact": "A successful attack could compromise the confidentiality, integrity, and availability of sensitive data, resulting in significant financial and reputational losses.",
-                    "recommended_actions": [
-                        "Implement proper error handling for file operations using try-catch blocks.",
-                        "Log and monitor errors to detect and respond to potential security incidents.",
-                        "Conduct regular security testing and code reviews to identify and address potential vulnerabilities."
-                    ]
-                }
-            ],
-            "immediate_next_steps": [
-                "Conduct an emergency security review to identify and address all high-severity vulnerabilities.",
-                "Implement the recommended actions for each high-severity finding.",
-                "Schedule a follow-up security review to verify the effectiveness of the implemented fixes and identify potential new vulnerabilities."
-            ]
-        },
-        "username": "tst1",
-        "improvement_suggestions": [],
-        "source": "github:YagilAharoni/LADD"
-    },
-    {
-        "scan_id": "10117967-7dcd-4482-8ca0-a081acc0f3a2",
-        "timestamp": "2026-04-09 20:25:12",
-        "persona": "Professional",
-        "provider": "auto",
-        "status": "ERROR",
-        "stats": {
-            "High": 0,
-            "Medium": 0,
-            "Low": 2,
-            "Safe": 0,
-            "Vuln": 0,
-            "Error": 2
-        },
-        "findings": [
-            {
-                "file_name": "unknown",
-                "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                "suggested_fix": "Start Ollama via command line."
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                "suggested_fix": "Start Ollama via command line."
-            }
-        ],
-        "findings_by_file": {
-            "LADD-main/filereader.cpp": [],
-            "LADD-main/ladd.h": [],
-            "unknown": [
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                    "suggested_fix": "Start Ollama via command line."
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                    "suggested_fix": "Start Ollama via command line."
-                }
-            ]
-        },
-        "overall_reviews_by_file": {
-            "LADD-main/filereader.cpp": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                        "suggested_fix": "Start Ollama via command line."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "LADD-main/ladd.h": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                        "suggested_fix": "Start Ollama via command line."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "unknown": {
-                "summary": "This file has 2 issue(s): 0 high, 0 medium, and 2 low severity. Security hardening should prioritize high-impact vulnerabilities first.",
-                "strengths": [
-                    "The scan provided concrete remediation guidance for identified issues.",
-                    "Findings are categorized by severity for prioritization."
-                ],
-                "key_risks": [
-                    "Unresolved findings can lead to security exposure in production.",
-                    "Compounded medium and low findings may still become exploitable in chained attacks."
-                ],
-                "maintainability_assessment": "Maintainability is currently affected by the number of unresolved security findings.",
-                "test_recommendations": [
-                    "Introduce focused tests for each vulnerability path and remediation.",
-                    "Add regression tests to prevent reintroduction of fixed issues."
-                ],
-                "priority_actions": [
-                    "Fix all high-severity issues before release.",
-                    "Schedule remediation for medium and low issues with owners and due dates."
-                ]
-            }
-        },
-        "executive_summary": {
-            "status": "ERROR",
-            "stats": {
-                "High": 0,
-                "Medium": 0,
-                "Low": 0
-            },
-            "findings": [
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Ollama Error: HTTPConnectionPool(host='localhost', port=11434): Max retries exceeded with url: /api/generate (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=11434): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))",
-                    "suggested_fix": "Start Ollama via command line."
-                }
-            ],
-            "most_important_findings": [],
-            "immediate_next_steps": [],
-            "overall_assessment": "Executive summary generated from scan findings."
-        },
-        "username": "tst1",
-        "improvement_suggestions": [],
-        "source": "github:YagilAharoni/LADD"
-    },
-    {
         "scan_id": "d6cc6d24-8e56-4fa5-bf5c-c168c46ec371",
         "timestamp": "2026-04-11 15:44:08",
         "persona": "Professional",
@@ -1943,6 +1278,602 @@
             "score": 44,
             "grade": "F",
             "total_files": 15,
+            "weights": {
+                "high": 20,
+                "medium": 10,
+                "low": 4,
+                "error": 15
+            },
+            "rationale": "Score starts at 100 and subtracts weighted penalties for unresolved findings."
+        },
+        "username": "tst1",
+        "improvement_suggestions": [],
+        "source": "github:YagilAharoni/CodeGuard-AI"
+    },
+    {
+        "scan_id": "ec2253c3-1b75-4ee1-956c-c1d8d96102be",
+        "timestamp": "2026-04-18 13:18:53",
+        "persona": "Student",
+        "provider": "groq",
+        "status": "VULNERABLE",
+        "stats": {
+            "High": 0,
+            "Medium": 0,
+            "Low": 13,
+            "Safe": 0,
+            "Vuln": 13,
+            "Error": 0
+        },
+        "findings": [
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            },
+            {
+                "file_name": "unknown",
+                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                "root_problem": "",
+                "suggested_solution": "",
+                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                "source_code": "",
+                "fixed_code": ""
+            }
+        ],
+        "findings_by_file": {
+            "CodeGuard-AI-main/app.py": [],
+            "CodeGuard-AI-main/check_db.py": [],
+            "CodeGuard-AI-main/my-security-ui/app/components/AppShell.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/dashboard/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/history/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/hooks/useScan.ts": [],
+            "CodeGuard-AI-main/my-security-ui/app/layout.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/lib/auth.ts": [],
+            "CodeGuard-AI-main/my-security-ui/app/lib/validation.ts": [],
+            "CodeGuard-AI-main/my-security-ui/app/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/reports/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/settings/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/next.config.ts": [],
+            "unknown": [
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                },
+                {
+                    "file_name": "unknown",
+                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
+                    "root_problem": "",
+                    "suggested_solution": "",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
+                    "source_code": "",
+                    "fixed_code": ""
+                }
+            ]
+        },
+        "overall_reviews_by_file": {
+            "CodeGuard-AI-main/app.py": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/check_db.py": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/components/AppShell.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/dashboard/page.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/history/page.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/hooks/useScan.ts": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/layout.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/lib/auth.ts": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/lib/validation.ts": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/page.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/reports/page.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/app/settings/page.tsx": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "CodeGuard-AI-main/my-security-ui/next.config.ts": {
+                "status": "ERROR",
+                "stats": {
+                    "High": 0,
+                    "Medium": 0,
+                    "Low": 0
+                },
+                "findings": [
+                    {
+                        "file_name": "unknown",
+                        "issue_description": "Provider Error: Missing API key for Groq.",
+                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                    }
+                ],
+                "summary": "Professional review generated from file content and findings.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "unknown": {
+                "summary": "This file has 13 issue(s): 0 high, 0 medium, and 13 low severity. Security hardening should prioritize high-impact vulnerabilities first.",
+                "strengths": [
+                    "The scan provided concrete remediation guidance for identified issues.",
+                    "Findings are categorized by severity for prioritization."
+                ],
+                "key_risks": [
+                    "Unresolved findings can lead to security exposure in production.",
+                    "Compounded medium and low findings may still become exploitable in chained attacks."
+                ],
+                "maintainability_assessment": "Maintainability is currently affected by the number of unresolved security findings.",
+                "test_recommendations": [
+                    "Introduce focused tests for each vulnerability path and remediation.",
+                    "Add regression tests to prevent reintroduction of fixed issues."
+                ],
+                "priority_actions": [
+                    "Fix all high-severity issues before release.",
+                    "Schedule remediation for medium and low issues with owners and due dates."
+                ]
+            }
+        },
+        "executive_summary": {
+            "status": "ERROR",
+            "stats": {
+                "High": 0,
+                "Medium": 0,
+                "Low": 0
+            },
+            "findings": [
+                {
+                    "file_name": "unknown",
+                    "issue_description": "Provider Error: Missing API key for Groq.",
+                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
+                }
+            ],
+            "most_important_findings": [],
+            "immediate_next_steps": [],
+            "overall_assessment": "Executive summary generated from scan findings."
+        },
+        "security_score": {
+            "score": 48,
+            "grade": "F",
+            "total_files": 14,
             "weights": {
                 "high": 20,
                 "medium": 10,
