@@ -91,151 +91,168 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white selection:bg-[#E8FF5A] selection:text-black overflow-hidden relative">
-      {/* Background Neon Elements */}
-      <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-[#E8FF5A]/10 rounded-full blur-[150px] -z-10 mix-blend-screen pointer-events-none animate-float"></div>
-      <div className="absolute top-1/2 left-1/4 w-[500px] h-[500px] bg-[#00F0FF]/10 rounded-full blur-[120px] -z-10 mix-blend-screen pointer-events-none animate-float transition-all delay-700"></div>
+    <div className="min-h-screen bg-[#030303] text-white selection:bg-[#E8FF5A] selection:text-black overflow-hidden relative font-sans">
+      {/* Dynamic Background Orbs */}
+      <div className="absolute top-[-10%] right-[-5%] w-[800px] h-[800px] bg-gradient-to-br from-[#E8FF5A]/10 to-[#00F0FF]/5 rounded-full blur-[150px] -z-10 mix-blend-screen animate-float"></div>
+      <div className="absolute top-[40%] left-[-10%] w-[600px] h-[600px] bg-gradient-to-tr from-[#8B5CF6]/10 to-[#00F0FF]/10 rounded-full blur-[120px] -z-10 mix-blend-screen animate-float transition-all delay-700"></div>
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiIvPjxpbGluZSB4MT0iMCIgeTE9IjgiIHgyPSI4IiB5Mj0iMCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utb3BhY2l0eT0iMC4wMSIvPjwvc3ZnPg==')] opacity-30 mix-blend-overlay pointer-events-none -z-10"></div>
       
       {/* Navigation */}
-      <nav className="fixed w-full z-50 top-0 pt-6 px-10 flex justify-between items-center bg-gradient-to-b from-[#050505] to-transparent pb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#E8FF5A] flex items-center justify-center font-bold text-black border-2 border-[#E8FF5A]/50">
-            CG
+      <nav className="fixed w-full z-50 top-0 pt-6 px-4 md:px-10 flex justify-between items-center bg-gradient-to-b from-[#030303] to-transparent pb-6 backdrop-blur-sm mask-image-gradient">
+        <div className="flex items-center gap-4 group cursor-pointer">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#E8FF5A] to-[#22D3EE] flex items-center justify-center font-bold text-black shadow-[0_0_20px_rgba(232,255,90,0.3)] group-hover:scale-105 transition-transform">
+            <div className="w-4 h-4 bg-black rounded-sm rotate-45 group-hover:rotate-90 transition-transform duration-500" />
           </div>
-          <span className="text-xl font-bold tracking-tight text-white hover:text-[#E8FF5A] transition-colors">CodeGuard<span className="text-[#E8FF5A]">AI</span></span>
+          <span className="text-2xl font-black tracking-tighter text-white">CodeGuard<span className="text-[#E8FF5A]">AI</span></span>
         </div>
-        <div className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
-          <a href="#features" className="hover:text-white transition-colors cursor-pointer">Features</a>
+        <div className="hidden md:flex gap-10 text-sm font-semibold text-gray-400">
+          <a href="#features" className="hover:text-white transition-colors cursor-pointer">Platform</a>
           <a href="#how-it-works" className="hover:text-white transition-colors cursor-pointer">Protocol</a>
-          <a href="#auth" className="hover:text-white transition-colors cursor-pointer">Launch App</a>
+          <a href="#auth" className="hover:text-[#E8FF5A] transition-colors cursor-pointer">Connect</a>
         </div>
-        <a href="#auth" className="px-5 py-2 rounded-full border border-white/10 hover:border-[#E8FF5A]/50 hover:bg-[#E8FF5A]/10 transition-all font-semibold text-sm">
-          Connect System
+        <a href="#auth" className="px-6 py-2.5 rounded-full bg-white/5 border border-white/10 hover:border-[#E8FF5A]/50 hover:bg-[#E8FF5A]/10 transition-all font-bold text-sm shadow-[0_0_15px_rgba(255,255,255,0.02)]">
+          Launch Console
         </a>
       </nav>
 
-      <main className="pt-32 flex flex-col items-center">
+      <main className="flex flex-col items-center">
         {/* Hero Section */}
-        <section className="relative w-full max-w-7xl mx-auto px-6 py-20 flex flex-col items-center text-center grid-bg min-h-[80vh] justify-center">
-           <div className="absolute inset-0 bg-[url('https://transparenttextures.com/patterns/cubes.png')] opacity-5 mask-image-gradient"></div>
-           
-           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#E8FF5A]/30 bg-[#E8FF5A]/5 text-[#E8FF5A] text-xs font-semibold uppercase tracking-widest mb-8">
-             <span className="w-2 h-2 rounded-full bg-[#E8FF5A] animate-pulse"></span>
-             v2.0 Next-Gen Threat Intel Live
+        <section className="relative w-full max-w-7xl mx-auto px-6 pt-40 pb-20 flex flex-col items-center text-center justify-center min-h-screen">
+           <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 text-[#E8FF5A] text-xs font-bold uppercase tracking-[0.2em] mb-10 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+             <span className="w-2.5 h-2.5 rounded-full bg-[#E8FF5A] shadow-[0_0_10px_rgba(232,255,90,0.8)] animate-pulse-glow"></span>
+             v2.0 Next-Gen Core Online
            </div>
 
-           <h1 className="text-6xl md:text-8xl font-black tracking-tighter max-w-5xl leading-[1.1] mb-8">
-             UNBREAKABLE <br /> 
+           <h1 className="text-6xl md:text-[7rem] font-black tracking-tighter max-w-6xl leading-[1.05] mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+             UNBREAKABLE <br className="hidden md:block"/> 
              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-[#E8FF5A] to-[#00F0FF]">SECURITY INTELLIGENCE</span>
            </h1>
            
-           <p className="text-gray-400 text-lg md:text-2xl max-w-2xl font-light leading-relaxed mb-12">
-             An AI-driven code analysis network powered by decentralized knowledge. Discover, isolate, and terminate vulnerabilities before they enter production.
+           <p className="text-gray-400 text-xl md:text-2xl max-w-3xl font-medium leading-relaxed mb-12 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+             A decentralized AI matrix for code auditing. Isolate vulnerabilities, generate exact patches, and fortify your applications before they deploy.
            </p>
            
-           <div className="flex gap-4 items-center">
+           <div className="flex flex-col sm:flex-row gap-6 items-center animate-slide-up" style={{ animationDelay: '0.4s' }}>
              <button
                type="button"
                onClick={() => handleHeroAction("initialize")}
-               className="px-8 py-4 bg-[#E8FF5A] hover:bg-[#d4e84d] text-black font-bold rounded-full transition-transform hover:scale-105 shadow-[0_0_30px_rgba(232,255,90,0.3)]"
+               className="group relative px-10 py-5 bg-[#E8FF5A] text-black font-black uppercase tracking-wide rounded-2xl transition-all hover:scale-105 shadow-[0_0_40px_rgba(232,255,90,0.4)] overflow-hidden"
              >
-               Initialize Scan
+               <span className="relative z-10 flex items-center gap-2">Initialize Scan <span className="text-xl leading-none group-hover:translate-x-1 transition-transform">→</span></span>
+               <div className="absolute inset-0 bg-white/30 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300"></div>
              </button>
              <button
                type="button"
                onClick={() => handleHeroAction("explore")}
-               className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-full transition-all"
+               className="px-10 py-5 bg-transparent border border-white/20 text-white font-bold uppercase tracking-wide rounded-2xl hover:bg-white/10 hover:border-white/40 transition-all backdrop-blur-md"
              >
-               Explore Engine
+               Explore Matrix
              </button>
            </div>
         </section>
 
         {/* Features Rolling Section */}
-        <section id="features" className="w-full bg-[#030303] py-32 border-t border-b border-white/5 relative">
+        <section id="features" className="w-full bg-[#050505] py-32 border-t border-white/5 relative overflow-hidden">
+          <div className="absolute right-0 bottom-0 w-1/2 h-1/2 bg-[#00F0FF]/5 blur-[120px] rounded-full pointer-events-none"></div>
+          
           <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-8 relative z-10">
              
-             <div className="p-8 rounded-3xl glass-panel group hover:-translate-y-2 transition-transform duration-500">
-               <div className="w-12 h-12 rounded-xl bg-[#E8FF5A]/10 text-[#E8FF5A] flex items-center justify-center mb-6 text-2xl font-black">
+             <div className="p-10 rounded-3xl glass-panel hover-glow group transition-all">
+               <div className="w-14 h-14 rounded-2xl bg-[#E8FF5A]/10 text-[#E8FF5A] flex items-center justify-center mb-8 text-2xl font-black border border-[#E8FF5A]/20 group-hover:bg-[#E8FF5A] group-hover:text-black transition-colors">
                  01
                </div>
-               <h3 className="text-2xl font-bold mb-4 group-hover:text-[#E8FF5A] transition-colors">Hybrid Scan Protocol</h3>
-               <p className="text-gray-400 leading-relaxed">Multi-dimensional analysis combining lightweight deterministic regex with advanced LLM semantic verification mapping.</p>
+               <h3 className="text-2xl font-bold mb-4 text-white">Hybrid Engine</h3>
+               <p className="text-gray-400 leading-relaxed font-medium">Multi-dimensional analysis combining lightweight deterministic regex with advanced LLM semantic verification mapping.</p>
              </div>
 
-             <div className="p-8 rounded-3xl glass-panel group hover:-translate-y-2 transition-transform duration-500 delay-100">
-               <div className="w-12 h-12 rounded-xl bg-[#00F0FF]/10 text-[#00F0FF] flex items-center justify-center mb-6 text-2xl font-black">
+             <div className="p-10 rounded-3xl glass-panel hover-glow group transition-all md:translate-y-8">
+               <div className="w-14 h-14 rounded-2xl bg-[#00F0FF]/10 text-[#00F0FF] flex items-center justify-center mb-8 text-2xl font-black border border-[#00F0FF]/20 group-hover:bg-[#00F0FF] group-hover:text-black transition-colors">
                  02
                </div>
-               <h3 className="text-2xl font-bold mb-4 group-hover:text-[#00F0FF] transition-colors">Instant Patch Export</h3>
-               <p className="text-gray-400 leading-relaxed">Zero-click remediation. Auto-generate git patches ready to be piped directly into your codebase for frictionless merges.</p>
+               <h3 className="text-2xl font-bold mb-4 text-white">Instant Patch Matrix</h3>
+               <p className="text-gray-400 leading-relaxed font-medium">Zero-click remediation. Auto-generate git patches ready to be piped directly into your codebase for frictionless merges.</p>
              </div>
 
-             <div className="p-8 rounded-3xl glass-panel group hover:-translate-y-2 transition-transform duration-500 delay-200">
-               <div className="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-6 text-2xl font-black">
+             <div className="p-10 rounded-3xl glass-panel hover-glow group transition-all md:translate-y-16">
+               <div className="w-14 h-14 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-8 text-2xl font-black border border-purple-500/20 group-hover:bg-purple-500 group-hover:text-black transition-colors">
                  03
                </div>
-               <h3 className="text-2xl font-bold mb-4 group-hover:text-purple-400 transition-colors">PDF Threat Briefs</h3>
-               <p className="text-gray-400 leading-relaxed">Cryptographically stamped, executive-ready PDF audit trails that break down complex zero-days into readable intel.</p>
+               <h3 className="text-2xl font-bold mb-4 text-white">Cryptographic Briefs</h3>
+               <p className="text-gray-400 leading-relaxed font-medium">Executive-ready PDF audit trails cryptographically stamped, breaking down complex zero-days into actionable readable intel.</p>
              </div>
 
           </div>
         </section>
 
-        <section id="how-it-works" className="w-full py-24 px-6 bg-[#070707] border-b border-white/5">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-black text-white mb-10 text-center">Protocol Flow</h2>
-            <div className="grid gap-6 md:grid-cols-3">
-              <div className="glass-panel rounded-2xl p-6">
-                <p className="text-xs tracking-[0.2em] text-[#E8FF5A] mb-3">STEP 01</p>
-                <h3 className="text-xl font-bold text-white mb-2">Authenticate</h3>
-                <p className="text-gray-400 text-sm">Sign in and establish a secure session token before starting any analysis job.</p>
+        <section id="how-it-works" className="w-full py-32 px-6 bg-[#030303] border-t border-b border-white/5 relative">
+          <div className="absolute left-[-10%] top-[40%] w-[40%] h-[40%] bg-[#E8FF5A]/5 blur-[120px] rounded-full pointer-events-none"></div>
+
+          <div className="max-w-6xl mx-auto relative z-10">
+            <h2 className="text-4xl md:text-6xl font-black text-white mb-16 text-center">Execute Protocol</h2>
+            <div className="grid gap-8 md:grid-cols-3 relative">
+              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-y-1/2 hidden md:block z-0"></div>
+              
+              <div className="glass-panel rounded-3xl p-8 relative z-10 hover:-translate-y-2 transition-transform duration-500 border border-t-[#E8FF5A]/30">
+                <span className="absolute -top-4 -left-4 w-12 h-12 bg-[#050505] border border-white/10 rounded-xl flex items-center justify-center text-[#E8FF5A] font-black shadow-[0_0_15px_rgba(232,255,90,0.2)]">I</span>
+                <p className="text-xs tracking-[0.2em] font-bold text-[#E8FF5A] mb-4 mt-2">LINK DEVICE</p>
+                <h3 className="text-2xl font-bold text-white mb-3">Establish Uplink</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">Sign in with secure credentials to establish an encrypted session token with the mainframe.</p>
               </div>
-              <div className="glass-panel rounded-2xl p-6">
-                <p className="text-xs tracking-[0.2em] text-[#00F0FF] mb-3">STEP 02</p>
-                <h3 className="text-xl font-bold text-white mb-2">Scan</h3>
-                <p className="text-gray-400 text-sm">Launch repository analysis from the dashboard and inspect findings generated by the backend AI pipeline.</p>
+
+              <div className="glass-panel rounded-3xl p-8 relative z-10 hover:-translate-y-2 transition-transform duration-500 border border-t-[#00F0FF]/30 mt-0 md:mt-12">
+                <span className="absolute -top-4 -left-4 w-12 h-12 bg-[#050505] border border-white/10 rounded-xl flex items-center justify-center text-[#00F0FF] font-black shadow-[0_0_15px_rgba(0,240,255,0.2)]">II</span>
+                <p className="text-xs tracking-[0.2em] font-bold text-[#00F0FF] mb-4 mt-2">EXECUTE SCAN</p>
+                <h3 className="text-2xl font-bold text-white mb-3">Deploy Sensors</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">Target a repository or local files. The AI swarm analyzes abstract syntax trees for deep vulnerabilities.</p>
               </div>
-              <div className="glass-panel rounded-2xl p-6">
-                <p className="text-xs tracking-[0.2em] text-purple-300 mb-3">STEP 03</p>
-                <h3 className="text-xl font-bold text-white mb-2">Export</h3>
-                <p className="text-gray-400 text-sm">Navigate to reports to download PDF evidence and patch files tied to each scan ID.</p>
+
+              <div className="glass-panel rounded-3xl p-8 relative z-10 hover:-translate-y-2 transition-transform duration-500 border border-t-purple-400/30 mt-0 md:mt-24">
+                <span className="absolute -top-4 -left-4 w-12 h-12 bg-[#050505] border border-white/10 rounded-xl flex items-center justify-center text-purple-400 font-black shadow-[0_0_15px_rgba(168,85,247,0.2)]">III</span>
+                <p className="text-xs tracking-[0.2em] font-bold text-purple-400 mb-4 mt-2">EXTRACT INTEL</p>
+                <h3 className="text-2xl font-bold text-white mb-3">Download Briefs</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">Retrieve fully parsed, C-level read-ready PDF reports and raw code patches to merge immediately.</p>
               </div>
             </div>
           </div>
         </section>
 
         {/* Authentication Section */}
-        <section id="auth" className="w-full py-32 relative flex justify-center items-center overflow-hidden min-h-[90vh]">
+        <section id="auth" className="w-full py-32 relative flex justify-center items-center px-4 overflow-hidden min-h-[90vh]">
           {/* Decorative radar lines */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(232,255,90,0.05)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(232,255,90,0.05)_1px,transparent_1px)] bg-[size:40px_40px] opacity-30"></div>
+          
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-white/5 rounded-full animate-[spin_60s_linear_infinite]"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-white/5 rounded-full animate-[spin_40s_linear_infinite_reverse]"></div>
 
-          <div className="w-full max-w-sm relative z-10 glass-panel p-10 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+          <div className="w-full max-w-md relative z-10 glass-panel p-10 md:p-14 rounded-[2.5rem] shadow-[0_0_80px_rgba(0,0,0,0.8)] border border-white/10">
             <div className="mb-10 text-center">
-              <h2 className="text-3xl font-black tracking-tight">{isLogin ? "System Login" : "Initialize Auth"}</h2>
-              <p className="text-sm text-gray-400 mt-2">
-                {isLogin ? "Authenticate to access terminal" : "Create new secure identity"}
+              <div className="w-16 h-16 mx-auto bg-[#111] border border-white/10 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+                <div className="w-6 h-6 border-2 border-[#E8FF5A] rounded-md animate-pulse"></div>
+              </div>
+              <h2 className="text-3xl font-black tracking-tight text-white mb-2">{isLogin ? "System Link" : "Initialize Identity"}</h2>
+              <p className="text-sm text-gray-400 font-medium">
+                {isLogin ? "Authenticate to access terminal matrix" : "Create new encrypted identity"}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-              <div className="relative">
+              <div className="relative group">
                 <input
                   suppressHydrationWarning
                   type="text"
                   placeholder="Username"
-                  className="w-full bg-[#111] border border-white/10 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-[#E8FF5A]/50 focus:ring-1 focus:ring-[#E8FF5A]/20 transition-all font-mono text-sm"
+                  className="w-full bg-[#0A0A0A] border border-white/10 rounded-2xl px-6 py-5 text-white focus:outline-none focus:border-[#E8FF5A]/50 focus:ring-1 focus:ring-[#E8FF5A]/30 transition-all font-mono text-sm placeholder:text-gray-600"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
                 />
               </div>
-              <div className="relative">
+              <div className="relative group">
                 <input
                   suppressHydrationWarning
                   type="password"
                   placeholder="Passphrase"
-                  className="w-full bg-[#111] border border-white/10 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-[#E8FF5A]/50 focus:ring-1 focus:ring-[#E8FF5A]/20 transition-all font-mono text-sm"
+                  className="w-full bg-[#0A0A0A] border border-white/10 rounded-2xl px-6 py-5 text-white focus:outline-none focus:border-[#E8FF5A]/50 focus:ring-1 focus:ring-[#E8FF5A]/30 transition-all font-mono text-sm placeholder:text-gray-600"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -243,11 +260,11 @@ export default function Home() {
               </div>
 
               {!isLogin && (
-                <div className="relative">
+                <div className="relative group">
                   <input
                     type="email"
-                    placeholder="Email (optional)"
-                    className="w-full bg-[#111] border border-white/10 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-[#E8FF5A]/50 focus:ring-1 focus:ring-[#E8FF5A]/20 transition-all font-mono text-sm"
+                    placeholder="Email Address (Optional)"
+                    className="w-full bg-[#0A0A0A] border border-white/10 rounded-2xl px-6 py-5 text-white focus:outline-none focus:border-[#E8FF5A]/50 focus:ring-1 focus:ring-[#E8FF5A]/30 transition-all font-mono text-sm placeholder:text-gray-600"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -255,7 +272,7 @@ export default function Home() {
               )}
               
               {error && (
-                <div className="mx-auto block p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-mono text-center max-w-[90%] break-words">
+                <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 text-sm font-medium text-center animate-slide-up">
                   {error}
                 </div>
               )}
@@ -263,9 +280,9 @@ export default function Home() {
               <button
                 suppressHydrationWarning
                 type="submit"
-                className="w-full bg-white text-black font-bold rounded-xl py-4 mt-2 hover:bg-[#E8FF5A] hover:shadow-[0_0_20px_rgba(232,255,90,0.4)] transition-all duration-300"
+                className="w-full bg-white text-black font-black uppercase tracking-wider rounded-2xl py-5 mt-4 hover:bg-[#E8FF5A] hover:shadow-[0_0_30px_rgba(232,255,90,0.5)] transition-all duration-300"
               >
-                {isLogin ? "Log In" : "Create Account"}
+                {isLogin ? "Establish Link" : "Generate Node"}
               </button>
             </form>
 
@@ -274,17 +291,24 @@ export default function Home() {
               <button
                 suppressHydrationWarning
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-white hover:text-[#E8FF5A] transition-colors font-bold border-b border-transparent hover:border-[#E8FF5A]"
+                className="text-white hover:text-[#E8FF5A] transition-colors font-bold border-b border-transparent hover:border-[#E8FF5A] ml-1"
               >
-                {isLogin ? "Sign Up" : "Log In"}
+                {isLogin ? "Install Credentials" : "Auth Link"}
               </button>
             </div>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="w-full py-8 border-t border-white/5 text-center text-gray-600 text-xs font-mono">
-          © {new Date().getFullYear()} CodeGuard AI. Secure the decentralized future.
+        <footer className="w-full py-10 border-t border-white/5 bg-[#030303] flex justify-center items-center">
+          <div className="text-center">
+            <div className="w-8 h-8 rounded-xl bg-[#E8FF5A]/10 text-[#E8FF5A] flex items-center justify-center font-bold mx-auto mb-4 border border-[#E8FF5A]/20">
+              CG
+            </div>
+            <p className="text-gray-500 text-xs font-mono font-medium">
+              © {new Date().getFullYear()} CodeGuard AI Core. Secure the decentralized future.
+            </p>
+          </div>
         </footer>
       </main>
     </div>

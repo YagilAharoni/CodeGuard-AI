@@ -21,7 +21,9 @@ axios.defaults.withCredentials = true;
 export const saveAuthSession = (token: string, expiresInSeconds: number, user: StoredUser) => {
   if (!hasWindow()) return;
   localStorage.setItem(USER_KEY, JSON.stringify(user));
-  localStorage.removeItem(AUTH_KEY);
+  // Persist the token with a TTL so getAuthHeaders() can include it in API requests.
+  const expiresAt = Date.now() + (expiresInSeconds || 3600) * 1000;
+  localStorage.setItem(AUTH_KEY, JSON.stringify({ token, expiresAt }));
   sessionStorage.removeItem(SESSION_API_KEY_STORAGE_KEY);
 };
 

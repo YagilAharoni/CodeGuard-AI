@@ -23,6 +23,9 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
+import groq
+from google import genai
+import openai
 import io
 import sqlite3
 import bcrypt
@@ -31,9 +34,6 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-import groq
-from openai import OpenAI
-from google import genai
 from utils import generate_pdf_report
 import zipfile
 
@@ -78,7 +78,7 @@ MAX_REPORT_ID_LEN = 64
 MAX_SCAN_ID_LEN = 64
 
 ALLOWED_PERSONAS = {"Student", "Professional"}
-ALLOWED_PROVIDERS = {"auto", "groq", "openai", "gemini"}
+ALLOWED_PROVIDERS = {"local"}
 SUPPORTED_CODE_EXTENSIONS = {"py", "cpp", "h", "c", "js", "ts", "tsx", "jsx", "tf", "tfvars"}
 
 limiter = Limiter(key_func=get_remote_address)
@@ -477,104 +477,480 @@ def build_static_issue(
     }
 
 
-def run_lightweight_sast(filename: str, content: str) -> List[Dict[str, Any]]:
+def _extract_snippet(content: str, pattern: str, flags: int = re.IGNORECASE) -> str:
+    """Return the first matching line for display as source_code snippet."""
+    try:
+        m = re.search(pattern, content, flags)
+        if m:
+            # Walk back to start of line for context
+            line_start = content.rfind("\n", 0, m.start()) + 1
+            line_end = content.find("\n", m.end())
+            if line_end == -1:
+                line_end = len(content)
+            return content[line_start:line_end].strip()[:300]
+    except Exception:
+        pass
+    return ""
+
+
+def run_full_sast_engine(filename: str, content: str) -> List[Dict[str, Any]]:
+    """
+    Comprehensive self-contained static analysis engine.
+    Covers 50+ vulnerability patterns across multiple languages.
+    Returns findings with severity, source snippet, and remediation.
+    """
     findings: List[Dict[str, Any]] = []
     lowered = content.lower()
+    lines = content.splitlines()
+    ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+    is_python = ext == "py"
+    is_js = ext in {"js", "jsx", "ts", "tsx"}
+    is_c = ext in {"c", "h", "cpp"}
+    is_tf = ext in {"tf", "tfvars"}
+    is_docker = filename.lower() in {"dockerfile", "containerfile"} or filename.lower().endswith(".dockerfile")
 
-    # Hardcoded secret patterns.
+    def add(severity: str, title: str, root: str, solution: str, fix: str, snippet: str = "", fixed: str = ""):
+        findings.append(build_static_issue(filename, severity, title, root, solution, fix, snippet, fixed))
+
+    # ── 1. UNIVERSAL RULES (all languages) ───────────────────────────────────
+
+    # Hardcoded secrets
     secret_patterns = [
-        r"(?i)api[_-]?key\s*=\s*[\"'][A-Za-z0-9_\-]{16,}[\"']",
-        r"(?i)secret\s*=\s*[\"'][^\"']{12,}[\"']",
-        r"(?i)password\s*=\s*[\"'][^\"']{8,}[\"']",
-        r"(?i)token\s*=\s*[\"'][A-Za-z0-9_\-\.]{16,}[\"']",
+        (r"""(?i)(api[_-]?key|apikey)\s*[:=]\s*["'][A-Za-z0-9_\-]{16,}["']""", "Hardcoded API key"),
+        (r"""(?i)(secret[_-]?key|app[_-]?secret)\s*[:=]\s*["'][^"']{12,}["']""", "Hardcoded application secret"),
+        (r"""(?i)password\s*[:=]\s*["'][^"']{6,}["']""", "Hardcoded password"),
+        (r"""(?i)(auth[_-]?token|access[_-]?token|bearer[_-]?token)\s*[:=]\s*["'][A-Za-z0-9_\-\.]{16,}["']""", "Hardcoded auth token"),
+        (r"""(?i)(aws[_-]?secret|aws[_-]?key)\s*[:=]\s*["'][A-Za-z0-9/+=]{20,}["']""", "Hardcoded AWS credential"),
+        (r"""AKIA[0-9A-Z]{16}""", "AWS access key ID exposed"),
+        (r"""(?i)private[_-]?key\s*[:=]\s*["']-----BEGIN""", "Hardcoded private key"),
+        (r"""(?i)(db[_-]?pass|database[_-]?password|mysql[_-]?pass|postgres[_-]?pass)\s*[:=]\s*["'][^"']{6,}["']""", "Hardcoded database password"),
+        (r"""(?i)(smtp[_-]?pass|email[_-]?pass|mail[_-]?password)\s*[:=]\s*["'][^"']{6,}["']""", "Hardcoded mail password"),
+        (r"""ghp_[A-Za-z0-9]{36}""", "GitHub personal access token exposed"),
+        (r"""sk-[A-Za-z0-9]{20,}""", "OpenAI-style API key exposed"),
+        (r"""AIzaSy[A-Za-z0-9_\-]{33}""", "Google API key exposed"),
     ]
-    for pattern in secret_patterns:
-        match = re.search(pattern, content)
-        if match:
-            findings.append(
-                build_static_issue(
-                    filename=filename,
-                    severity="HIGH",
-                    title="Hardcoded secret detected",
-                    root_problem="Sensitive credential material appears directly in source code.",
-                    suggested_solution="Move secrets to environment variables or a managed secret store.",
-                    suggested_fix="Replace hardcoded credential literals with runtime secret retrieval and rotate exposed keys.",
-                    source_code=match.group(0),
-                )
-            )
+    for pattern, label in secret_patterns:
+        snippet = _extract_snippet(content, pattern)
+        if snippet:
+            add("HIGH", label,
+                "Sensitive credential material is embedded directly in source code and will be exposed in version control.",
+                "Move all secrets to environment variables, a secrets manager (e.g. HashiCorp Vault, AWS Secrets Manager), or a .env file excluded from git.",
+                "Replace literal secret with `os.environ['SECRET_NAME']` and add the variable to your deployment environment. Rotate the exposed credential immediately.",
+                snippet, "value = os.environ.get('SECRET_NAME', '')")
+
+    # SQL injection
+    sql_patterns = [
+        r"""(?i)(execute|cursor\.execute|query|db\.run)\s*\(\s*[f"'].*?(SELECT|INSERT|UPDATE|DELETE|DROP)""",
+        r"""(?i)(SELECT|INSERT|UPDATE|DELETE)\s+.*?\+\s*\w""",
+        r"""(?i)(SELECT|INSERT|UPDATE|DELETE)\s+.*?%\s*[(\w]""",
+        r"""(?i)(SELECT|INSERT|UPDATE|DELETE)\s+.*?\.format\s*\(""",
+    ]
+    for pat in sql_patterns:
+        snippet = _extract_snippet(content, pat)
+        if snippet:
+            add("HIGH", "SQL Injection — string-interpolated query",
+                "SQL query is built by concatenating or formatting user-controlled strings, allowing attackers to manipulate the query structure.",
+                "Use parameterized queries / prepared statements with driver-level placeholder binding for all dynamic values.",
+                "Replace string interpolation with positional placeholders: `cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))`",
+                snippet, "cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))")
             break
 
-    # Python eval/exec misuse.
-    if filename.lower().endswith(".py") and re.search(r"\b(eval|exec)\s*\(", content):
-        findings.append(
-            build_static_issue(
-                filename=filename,
-                severity="HIGH",
-                title="Dynamic code execution risk",
-                root_problem="Use of eval/exec can execute untrusted input and lead to remote code execution.",
-                suggested_solution="Use safe parsers and explicit mappings instead of dynamic execution.",
-                suggested_fix="Replace eval/exec with controlled dispatch tables or ast.literal_eval for trusted literal parsing.",
-            )
-        )
+    # Weak cryptography
+    weak_crypto = [
+        (r"""\b(md5|MD5)\b.*?\(""", "Weak hash algorithm: MD5", "CWE-327"),
+        (r"""\b(sha1|SHA1|sha_1)\b.*?\(""", "Weak hash algorithm: SHA-1", "CWE-327"),
+        (r"""\b(des|DES|3des|RC4|rc4)\b""", "Weak symmetric cipher: DES/RC4", "CWE-327"),
+        (r"""(?i)ECB\b""", "Insecure cipher mode: ECB", "CWE-327"),
+        (r"""(?i)(iv|nonce)\s*=\s*["']?[0-9a-fA-F]{16,}["']?""", "Hardcoded cryptographic IV/nonce", "CWE-330"),
+        (r"""key_size\s*=\s*(512|768|1024)\b""", "Weak RSA key size (< 2048 bits)", "CWE-326"),
+    ]
+    for pat, label, _ in weak_crypto:
+        snippet = _extract_snippet(content, pat)
+        if snippet:
+            add("HIGH" if "cipher" in label.lower() or "MD5" in label or "SHA-1" in label else "MEDIUM", label,
+                "Using deprecated or broken cryptographic primitives exposes data to brute-force or collision attacks.",
+                "Use SHA-256 or SHA-3 for hashing; AES-256-GCM or ChaCha20-Poly1305 for encryption; RSA-2048+ or EC keys.",
+                f"Replace the weak primitive with a strong alternative from the `cryptography` library or `hashlib` (sha256/sha3_256).",
+                snippet)
 
-    # SQL injection heuristics.
-    # Split the regex string to prevent the SAST scanner from aggressively flagging its own rules
-    sql_keywords = r"(?i)(s" + r"elect|i" + r"nsert|u" + r"pdate|d" + r"elete)"
-    if re.search(sql_keywords + r".*(\+|%\s*s|\.format\()", content):
-        findings.append(
-            build_static_issue(
-                filename=filename,
-                severity="HIGH",
-                title="Possible SQL injection",
-                root_problem="SQL query string interpolation may allow attacker-controlled input to alter queries.",
-                suggested_solution="Use parameterized queries or ORM parameter binding for all dynamic values.",
-                suggested_fix="Refactor query construction to parameterized placeholders and pass values separately via driver APIs.",
-            )
-        )
+    # Sensitive data in logs
+    log_patterns = [
+        r"""(?i)(logger|logging|log)\.(info|debug|warning|error|critical)\s*\(.*?(password|passwd|secret|token|api.?key|credential)""",
+        r"""(?i)print\s*\(.*?(password|secret|token|api.?key)""",
+    ]
+    for pat in log_patterns:
+        snippet = _extract_snippet(content, pat)
+        if snippet:
+            add("MEDIUM", "Sensitive data written to logs",
+                "Logging credentials or tokens creates exposure in log aggregation systems and audit trails.",
+                "Sanitize all log messages; never log passwords, tokens, or full request bodies with credentials.",
+                "Use a log scrubber or redaction filter. Replace `log.info(f'token={token}')` with `log.info('token=[REDACTED]')`.",
+                snippet)
+            break
 
-    # JavaScript/TypeScript dangerous sinks.
-    if any(filename.lower().endswith(ext) for ext in (".js", ".ts", ".jsx", ".tsx")):
-        if "dangerouslysetinnerhtml" in lowered or "innerhtml =" in lowered:
-            findings.append(
-                build_static_issue(
-                    filename=filename,
-                    severity="MEDIUM",
-                    title="Potential cross-site scripting sink",
-                    root_problem="Direct HTML injection sink is present and may render unsanitized data.",
-                    suggested_solution="Use safe templating and sanitize all untrusted HTML before rendering.",
-                    suggested_fix="Avoid direct HTML sinks; prefer escaped rendering and strict allowlist-based sanitization.",
-                )
-            )
+    # ── 2. PYTHON-SPECIFIC RULES ─────────────────────────────────────────────
+    if is_python:
 
-    # IaC guardrails.
-    if filename.lower().endswith("dockerfile") or filename.lower().endswith("containerfile"):
-        if re.search(r"(?im)^\s*user\s+root", content):
-            findings.append(
-                build_static_issue(
-                    filename=filename,
-                    severity="MEDIUM",
-                    title="Container runs as root",
-                    root_problem="Running containers as root increases impact of container breakout and lateral movement.",
-                    suggested_solution="Use a non-root runtime user and drop unnecessary Linux capabilities.",
-                    suggested_fix="Create and switch to a dedicated low-privilege user before entrypoint execution.",
-                )
-            )
-    if filename.lower().endswith(".tf"):
-        if re.search(r"0\.0\.0\.0/0", content):
-            findings.append(
-                build_static_issue(
-                    filename=filename,
-                    severity="HIGH",
-                    title="Overly permissive network exposure in Terraform",
-                    root_problem="Ingress/egress open to the public internet broadens attack surface.",
-                    suggested_solution="Restrict CIDR ranges to trusted networks and enforce least privilege network policy.",
-                    suggested_fix="Replace 0.0.0.0/0 with explicit trusted CIDR blocks and segment exposed services.",
-                )
-            )
+        # Command injection
+        cmd_patterns = [
+            (r"""os\.system\s*\(""", "os.system() — arbitrary command execution"),
+            (r"""subprocess\.(call|run|Popen|check_output)\s*\(.*?shell\s*=\s*True""", "subprocess with shell=True"),
+            (r"""commands\.(getoutput|getstatusoutput)\s*\(""", "Deprecated `commands` module usage"),
+        ]
+        for pat, label in cmd_patterns:
+            snippet = _extract_snippet(content, pat)
+            if snippet:
+                add("HIGH", f"Command Injection risk — {label}",
+                    "Passing unvalidated input to a shell command allows remote code execution.",
+                    "Use `subprocess.run()` with `shell=False` and pass arguments as a list. Validate/allowlist all inputs.",
+                    "Replace `os.system(cmd)` or `subprocess.run(cmd, shell=True)` with `subprocess.run(['program', arg1, arg2], shell=False)`.",
+                    snippet, "subprocess.run(['ls', '-la', safe_dir], shell=False, check=True)")
 
+        # Code execution via eval/exec/__import__
+        exec_patterns = [
+            (r"""\beval\s*\(""", "eval()"),
+            (r"""\bexec\s*\(""", "exec()"),
+            (r"""\b__import__\s*\(""", "__import__()"),
+            (r"""compile\s*\(.*?,\s*["']exec["']""", "compile(..., 'exec')"),
+        ]
+        for pat, label in exec_patterns:
+            snippet = _extract_snippet(content, pat)
+            if snippet:
+                add("HIGH", f"Remote Code Execution risk — {label}",
+                    f"Passing user-controlled input to `{label}` allows arbitrary Python execution.",
+                    "Remove dynamic execution; use explicit dispatch tables, ast.literal_eval() for safe literals, or a sandboxed interpreter.",
+                    f"Replace `{label}` with an explicit data lookup or ast.literal_eval for trusted literal strings only.",
+                    snippet, "result = safe_dispatch.get(user_input, default_handler)()")
+
+        # Insecure deserialization
+        deser_patterns = [
+            (r"""\bpickle\.(loads?|load)\s*\(""", "pickle.load — arbitrary code execution"),
+            (r"""\byaml\.load\s*\((?!.*Loader\s*=\s*yaml\.(?:safe|base)Loader)""", "yaml.load without SafeLoader"),
+            (r"""\bjsonpickle\.decode\s*\(""", "jsonpickle.decode — arbitrary object instantiation"),
+            (r"""\bshelve\.open\s*\(""", "shelve.open — pickle-based persistence"),
+            (r"""\bmarshal\.loads?\s*\(""", "marshal deserialization"),
+        ]
+        for pat, label in deser_patterns:
+            snippet = _extract_snippet(content, pat)
+            if snippet:
+                add("HIGH", f"Insecure Deserialization — {label}",
+                    "Deserializing untrusted data can lead to remote code execution, data tampering, or privilege escalation.",
+                    "Use safe alternatives: json, yaml.safe_load(), or validate and sign serialized data before deserializing.",
+                    "Replace `pickle.loads(data)` with JSON or `yaml.safe_load(data)`. Never deserialize untrusted input with pickle.",
+                    snippet, "data = yaml.safe_load(raw_input)")
+
+        # Path traversal
+        path_patterns = [
+            r"""open\s*\(\s*(request|form|args|params|user_input|data)\b""",
+            r"""open\s*\(\s*.*?\+\s*(request|form|args|params)\b""",
+            r"""os\.path\.(join|abspath|realpath)\s*\(.*?(request|form|args|params|input)\b""",
+        ]
+        for pat in path_patterns:
+            snippet = _extract_snippet(content, pat)
+            if snippet:
+                add("HIGH", "Path Traversal — user-controlled file path",
+                    "Allowing user input to influence file paths can expose arbitrary server files or allow writes outside intended directories.",
+                    "Resolve and validate the canonical path against an allowlist root directory. Reject paths containing '..' or absolute paths.",
+                    "Use `os.path.realpath()` and assert the resolved path starts with your allowed base directory before opening.",
+                    snippet, "safe = os.path.realpath(os.path.join(BASE_DIR, filename)); assert safe.startswith(BASE_DIR)")
+
+        # SSRF
+        ssrf_patterns = [
+            r"""requests\.(get|post|put|delete|head|options)\s*\(\s*(request|form|args|params|url|user_url)\b""",
+            r"""urllib\.request\.urlopen\s*\(\s*(request|form|args|params)\b""",
+            r"""httpx\.(get|post)\s*\(\s*(request|form|args|params)\b""",
+        ]
+        for pat in ssrf_patterns:
+            snippet = _extract_snippet(content, pat)
+            if snippet:
+                add("HIGH", "Server-Side Request Forgery (SSRF)",
+                    "Making HTTP requests to URLs controlled by the user allows attackers to probe internal services and metadata endpoints.",
+                    "Validate URLs against a strict allowlist of permitted hostnames. Block private IP ranges (10.x, 192.168.x, 169.254.x, 127.x).",
+                    "Reject URLs not matching your allowlist: `if urlparse(url).hostname not in ALLOWED_HOSTS: raise ValueError`.",
+                    snippet)
+
+        # XXE
+        xxe_patterns = [
+            r"""etree\.parse\s*\(""",
+            r"""lxml\.etree\b""",
+            r"""xml\.etree""",
+            r"""minidom\.parse\s*\(""",
+        ]
+        no_xxe_protection = "resolve_entities" not in lowered and "defusedxml" not in lowered
+        if no_xxe_protection:
+            for pat in xxe_patterns:
+                snippet = _extract_snippet(content, pat)
+                if snippet:
+                    add("HIGH", "XML External Entity (XXE) Injection",
+                        "Parsing XML with external entity resolution enabled allows attackers to read local files or perform SSRF.",
+                        "Use `defusedxml` library or disable external entities: `parser = etree.XMLParser(resolve_entities=False, no_network=True)`.",
+                        "Install defusedxml and use `defusedxml.ElementTree.parse(source)` instead of the standard library parsers.",
+                        snippet, "import defusedxml.ElementTree as ET; tree = ET.parse(source)")
+
+        # Template injection
+        if re.search(r"""(render_template_string|Environment\(\)\.from_string|jinja2\.Template)\s*\(.*?(request|input|user|param)""", content):
+            snippet = _extract_snippet(content, r"""render_template_string|Environment\(\)\.from_string""")
+            if snippet:
+                add("HIGH", "Server-Side Template Injection (SSTI)",
+                    "Rendering user-supplied strings as templates allows attackers to execute arbitrary code on the server.",
+                    "Never pass user input as template source. Use static template files and pass data as context variables only.",
+                    "Replace `render_template_string(user_input)` with `render_template('template.html', data=validated_input)`.",
+                    snippet)
+
+        # Insecure random
+        if re.search(r"""\brandom\.(random|randint|choice|randrange|uniform)\s*\(""", content) and \
+           re.search(r"""(token|secret|csrf|nonce|session|otp|key)\s*=\s*.*?random\.""", content, re.IGNORECASE):
+            snippet = _extract_snippet(content, r"""(token|secret|csrf|nonce|session|otp|key)\s*=\s*.*?random\.""", re.IGNORECASE)
+            add("MEDIUM", "Insecure random — `random` module used for security tokens",
+                "The `random` module is not cryptographically secure and must not be used for tokens, secrets, or nonces.",
+                "Use `secrets.token_hex()`, `secrets.token_urlsafe()`, or `os.urandom()` for cryptographically secure random values.",
+                "Replace `random.randint(...)` with `secrets.token_urlsafe(32)` when generating security-sensitive values.",
+                snippet, "import secrets; token = secrets.token_urlsafe(32)")
+
+        # Debug mode
+        if re.search(r"""(?i)(app\.run|debug)\s*\(.*?debug\s*=\s*True""", content) or \
+           re.search(r"""DEBUG\s*=\s*True""", content):
+            snippet = _extract_snippet(content, r"""(app\.run.*?debug\s*=\s*True|DEBUG\s*=\s*True)""", re.IGNORECASE)
+            add("MEDIUM", "Debug mode enabled — do not deploy to production",
+                "Debug mode exposes stack traces, interactive debuggers, and internal state to any client.",
+                "Set `DEBUG = False` and use environment variables. Never enable debug mode in production deployments.",
+                "Use `DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'` and ensure it is False in production.",
+                snippet, "DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'")
+
+        # Broad exception suppression
+        bare_except_count = len(re.findall(r"""^\s*except\s*:\s*$""", content, re.MULTILINE))
+        if bare_except_count >= 2:
+            add("LOW", "Overly broad exception handling (bare except:)",
+                "Catching all exceptions including SystemExit and KeyboardInterrupt masks errors and hinders debugging.",
+                "Catch specific exception types. Use `except Exception as e:` at minimum, and log the exception.",
+                "Replace `except:` with `except (ValueError, TypeError) as e: logger.error(e)` or a specific exception type.",
+                "except:", "except Exception as e:\n    logger.exception('Unexpected error: %s', e)")
+
+        # Missing CSRF
+        has_post_route = bool(re.search(r"""@\w+\.route\s*\(.*?POST""", content))
+        has_csrf = "csrf" in lowered or "csrfprotect" in lowered or "wtforms" in lowered
+        if has_post_route and not has_csrf:
+            add("MEDIUM", "Missing CSRF protection on POST endpoints",
+                "POST endpoints without CSRF tokens allow cross-origin requests to perform state-changing actions on behalf of authenticated users.",
+                "Use Flask-WTF or a CSRF middleware to validate CSRF tokens on all state-changing requests.",
+                "Add `from flask_wtf.csrf import CSRFProtect; csrf = CSRFProtect(app)` and include `{{ csrf_token() }}` in forms.",
+                re.search(r"""@\w+\.route.*?POST""", content).group(0) if re.search(r"""@\w+\.route.*?POST""", content) else "")
+
+        # Python AST analysis for deeper checks
+        try:
+            import ast as _ast
+            tree = _ast.parse(content)
+            for node in _ast.walk(tree):
+                # assert statements disabled with -O flag (security checks)
+                if isinstance(node, _ast.Assert):
+                    pass  # Not flagged generically
+                # Subprocess with shell=True via keyword
+                if isinstance(node, _ast.Call):
+                    func_name = ""
+                    if isinstance(node.func, _ast.Attribute):
+                        func_name = node.func.attr
+                    for kw in node.keywords:
+                        if kw.arg == "shell" and isinstance(kw.value, _ast.Constant) and kw.value.value is True:
+                            if func_name in {"run", "call", "Popen", "check_output", "check_call"}:
+                                line = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
+                                add("HIGH", "Command Injection — shell=True confirmed by AST",
+                                    "subprocess called with shell=True expands the command through /bin/sh, enabling injection.",
+                                    "Refactor to pass a list of arguments with shell=False.",
+                                    "subprocess.run(['program', arg1], shell=False, check=True)",
+                                    line)
+        except SyntaxError:
+            pass
+        except Exception:
+            pass
+
+    # ── 3. JAVASCRIPT / TYPESCRIPT RULES ─────────────────────────────────────
+    if is_js:
+
+        # XSS sinks
+        xss_patterns = [
+            (r"""dangerouslySetInnerHTML\s*=\s*\{""", "React dangerouslySetInnerHTML — XSS sink"),
+            (r"""\.innerHTML\s*=""", "innerHTML assignment — XSS sink"),
+            (r"""document\.write\s*\(""", "document.write() — XSS sink"),
+            (r"""\.outerHTML\s*=""", "outerHTML assignment — XSS sink"),
+            (r"""(?i)insertAdjacentHTML\s*\(""", "insertAdjacentHTML — XSS sink"),
+        ]
+        for pat, label in xss_patterns:
+            snippet = _extract_snippet(content, pat)
+            if snippet:
+                add("HIGH", label,
+                    "Writing unsanitized content to the DOM allows cross-site scripting attacks.",
+                    "Escape all user-supplied content before rendering. Use textContent instead of innerHTML, or a sanitizer like DOMPurify.",
+                    "Replace `element.innerHTML = userInput` with `element.textContent = userInput` or `DOMPurify.sanitize(userInput)`.",
+                    snippet, "element.textContent = userInput; // or DOMPurify.sanitize()")
+
+        # eval() in JS
+        if re.search(r"""\beval\s*\(""", content):
+            snippet = _extract_snippet(content, r"""\beval\s*\(""")
+            add("HIGH", "eval() — Remote Code Execution risk",
+                "eval() executes arbitrary JavaScript code and must never be called with untrusted input.",
+                "Replace eval() with JSON.parse() for data, or explicit function dispatch tables.",
+                "Remove eval(); use `JSON.parse(str)` for data or an explicit map of safe functions.",
+                snippet, "const result = JSON.parse(data);")
+
+        # prototype pollution
+        if re.search(r"""(merge|extend|assign|deepCopy|lodash|_\.merge)\s*\(.*?(req\.|request\.|body\.|params\.|query\.)""", content):
+            snippet = _extract_snippet(content, r"""(merge|extend|assign|deepCopy)\s*\(""")
+            if snippet:
+                add("HIGH", "Prototype Pollution risk",
+                    "Merging user-controlled objects into base objects without sanitization can corrupt Object.prototype.",
+                    "Validate object shapes before merging. Use Object.create(null) for intermediate objects. Avoid recursive merges on user input.",
+                    "Sanitize keys: reject keys like '__proto__', 'constructor', 'prototype' before merging.",
+                    snippet)
+
+        # Insecure JWT handling
+        if re.search(r"""(jwt\.verify|jsonwebtoken)\s*\(.*?algorithm.*?none""", content, re.IGNORECASE) or \
+           re.search(r"""algorithms\s*:\s*\[\s*["']none["']""", content, re.IGNORECASE):
+            add("HIGH", "JWT 'none' algorithm accepted",
+                "Accepting 'none' as JWT algorithm allows attackers to forge tokens without a signature.",
+                "Explicitly specify and enforce a strong signing algorithm (RS256, ES256, HS256). Never allow 'none'.",
+                "Use `jwt.verify(token, secret, { algorithms: ['HS256'] })` — always whitelist algorithms.",
+                "algorithms: ['none']", "algorithms: ['HS256']")
+
+        # Open redirect
+        if re.search(r"""(res\.redirect|window\.location|location\.href)\s*[=(].*?(req\.|request\.|query\.|params\.|body\.)""", content):
+            snippet = _extract_snippet(content, r"""(res\.redirect|window\.location\.href)\s*[=(]""")
+            add("MEDIUM", "Open Redirect — user-controlled redirect URL",
+                "Redirecting to a URL from user input without validation allows phishing and session-token theft attacks.",
+                "Validate redirect targets against an allowlist of permitted URLs or paths.",
+                "Only allow relative paths or explicitly permitted domains: `if not url.startswith('/') or contains_scheme(url): url = '/'`.",
+                snippet)
+
+        # Debug/console.log with sensitive data
+        if re.search(r"""console\.(log|debug|info)\s*\(.*?(password|token|secret|key|credential)""", content, re.IGNORECASE):
+            snippet = _extract_snippet(content, r"""console\.(log|debug|info)\s*\(.*?(password|token|secret|key|credential)""", re.IGNORECASE)
+            add("MEDIUM", "Sensitive data in console output",
+                "Logging credentials or tokens to the console exposes them in browser DevTools and server logs.",
+                "Remove sensitive values from all logging statements. Use structured logging with field redaction.",
+                "Remove console.log with credentials. If debugging is needed, use a logging library with automatic secret masking.",
+                snippet)
+
+    # ── 4. C / C++ RULES ─────────────────────────────────────────────────────
+    if is_c:
+
+        unsafe_funcs = [
+            (r"""\bgets\s*\(""", "gets() — unbounded buffer read (always unsafe)"),
+            (r"""\bstrcpy\s*\(""", "strcpy() — no bounds check, buffer overflow"),
+            (r"""\bstrcat\s*\(""", "strcat() — no bounds check, buffer overflow"),
+            (r"""\bsprintf\s*\(""", "sprintf() — no bounds check, format string risk"),
+            (r"""\bscanf\s*\((?!.*%\d+s)""", "scanf() without width limit — buffer overflow"),
+            (r"""\bmktemp\s*\(""", "mktemp() — insecure temp file creation (TOCTOU)"),
+        ]
+        for pat, label in unsafe_funcs:
+            snippet = _extract_snippet(content, pat)
+            if snippet:
+                add("HIGH", f"Unsafe C function: {label}",
+                    "This function does not check buffer boundaries and can be exploited for buffer overflow attacks.",
+                    "Use bounded safe alternatives: fgets(), strlcpy(), strlcat(), snprintf(), scanf with width specifiers.",
+                    f"Replace with safe variant: `fgets(buf, sizeof(buf), stdin)` / `snprintf(buf, sizeof(buf), fmt, ...)` / `strlcpy(dst, src, sizeof(dst))`.",
+                    snippet)
+
+        # Integer overflow
+        if re.search(r"""(malloc|calloc|realloc)\s*\(.*?\*""", content):
+            snippet = _extract_snippet(content, r"""(malloc|calloc|realloc)\s*\(.*?\*""")
+            add("HIGH", "Integer overflow in memory allocation size",
+                "Multiplying untrusted size values without overflow checking can produce a small allocation, leading to heap overflow.",
+                "Validate sizes before arithmetic. Use calloc() to combine count*size safely, or check for overflow explicitly.",
+                "Use `calloc(count, size)` instead of `malloc(count * size)`. Check: if (count > SIZE_MAX / size) abort();",
+                snippet)
+
+        # Null pointer dereference
+        if re.search(r"""(malloc|calloc|realloc)\s*\([^;]+\)\s*;(?!\s*if)""", content):
+            snippet = _extract_snippet(content, r"""(malloc|calloc)\s*\(""")
+            add("MEDIUM", "Potential null pointer dereference — unchecked allocation",
+                "Not checking the return value of malloc/calloc before use causes undefined behavior when allocation fails.",
+                "Always check pointer results: `if (ptr == NULL) { handle_error(); }`",
+                "Add null check: `p = malloc(n); if (!p) { perror('malloc'); exit(EXIT_FAILURE); }`",
+                snippet)
+
+        # Format string injection
+        if re.search(r"""(printf|fprintf|syslog|sprintf)\s*\(\s*\w+\s*\)""", content):
+            snippet = _extract_snippet(content, r"""(printf|fprintf)\s*\(\s*\w+\s*\)""")
+            add("HIGH", "Format string injection",
+                "Passing a user-controlled string directly as the format argument allows reading/writing arbitrary memory.",
+                "Always use a format literal: `printf(\"%s\", user_string)` — never `printf(user_string)`.",
+                "Change `printf(msg)` to `printf(\"%s\", msg)` to prevent format string exploitation.",
+                snippet, 'printf("%s", msg);')
+
+    # ── 5. TERRAFORM / IaC RULES ─────────────────────────────────────────────
+    if is_tf:
+        tf_checks = [
+            (r"""0\.0\.0\.0/0""", "HIGH", "Overly permissive network exposure (0.0.0.0/0)",
+             "Ingress/egress open to all IP addresses massively broadens the attack surface.",
+             "Restrict CIDR blocks to trusted networks: replace 0.0.0.0/0 with explicit IP ranges.",
+             "cidr_blocks = [\"10.0.0.0/8\"]"),
+            (r"""(?i)encrypted\s*=\s*false""", "HIGH", "Unencrypted storage resource",
+             "Storage without encryption exposes data at rest to unauthorized access.",
+             "Set `encrypted = true` on all storage resources (EBS, RDS, S3).",
+             "encrypted = true"),
+            (r"""(?i)publicly_accessible\s*=\s*true""", "HIGH", "Database publicly accessible",
+             "A publicly accessible database allows direct connection attempts from the internet.",
+             "Set `publicly_accessible = false` and use VPC security groups to restrict access.",
+             "publicly_accessible = false"),
+            (r"""(?i)acl\s*=\s*["'](public-read|public-read-write|authenticated-read)["']""", "HIGH", "Public S3 bucket ACL",
+             "Public bucket ACLs expose all stored objects to anonymous internet access.",
+             "Use private ACL and IAM policies for access control. Enable S3 Block Public Access.",
+             'acl = "private"'),
+            (r"""(?i)force_destroy\s*=\s*true""", "MEDIUM", "Terraform force_destroy enabled on critical resource",
+             "force_destroy allows Terraform to irreversibly delete resources including all data.",
+             "Remove force_destroy from production resources. Use lifecycle protection rules instead.",
+             "prevent_destroy = true"),
+            (r"""(?i)skip_final_snapshot\s*=\s*true""", "MEDIUM", "RDS skip_final_snapshot = true",
+             "Skipping the final snapshot means all database data is permanently lost on destroy.",
+             "Set `skip_final_snapshot = false` and provide a `final_snapshot_identifier`.",
+             "skip_final_snapshot = false"),
+        ]
+        for pat, sev, title, root, solution, fixed in tf_checks:
+            snippet = _extract_snippet(content, pat)
+            if snippet:
+                add(sev, title, root, solution, f"Change to: `{fixed}`", snippet, fixed)
+
+    # ── 6. DOCKERFILE RULES ──────────────────────────────────────────────────
+    if is_docker:
+        docker_checks = [
+            (r"""(?im)^\s*USER\s+root\s*$""", "MEDIUM", "Container runs as root",
+             "Running as root maximizes damage from container breakout exploits.",
+             "Create a non-root user and switch to it before ENTRYPOINT/CMD.",
+             "USER appuser"),
+            (r"""(?im)^\s*ADD\s+https?://""", "MEDIUM", "ADD with remote URL — use CURL+checksum instead",
+             "ADD with HTTP URLs doesn't verify integrity leaving you vulnerable to MITM and supply-chain attacks.",
+             "Use RUN curl/wget with explicit checksum verification instead of ADD with remote URLs.",
+             "RUN curl -fsSL https://... | sha256sum -c - && tar xzf ..."),
+            (r"""(?im)^\s*RUN\s+.*?(curl|wget).*?\|\s*bash""", "HIGH", "Piping curl/wget output directly to bash",
+             "Executing remote scripts without validation enables supply chain attacks.",
+             "Download the script, verify its checksum, inspect it, then execute in a separate RUN step.",
+             "RUN curl -fsSL https://... -o install.sh && sha256sum install.sh && bash install.sh"),
+            (r"""(?im)^(?!.*no-cache).*\bRUN\s+apt-get\s+install\b""", "LOW", "apt-get install without --no-install-recommends",
+             "Installing recommended packages bloats the image and increases attack surface.",
+             "Add `--no-install-recommends` and clean apt cache: `apt-get install -y --no-install-recommends pkg && rm -rf /var/lib/apt/lists/*`",
+             "RUN apt-get install -y --no-install-recommends pkg && rm -rf /var/lib/apt/lists/*"),
+            (r"""(?im)^\s*COPY\s+\.\s+""", "LOW", "COPY . copies entire build context",
+             "Copying the entire directory may include .env files, secrets, and dev configs in the image.",
+             "Use a .dockerignore file to exclude .env, credentials, node_modules, .git, etc.",
+             "# Add .dockerignore: .env, *.key, node_modules, .git"),
+        ]
+        for pat, sev, title, root, solution, fixed in docker_checks:
+            snippet = _extract_snippet(content, pat)
+            if snippet:
+                add(sev, title, root, solution, f"Change to: `{fixed}`", snippet, fixed)
+
+        # Hardcoded secrets in ENV
+        if re.search(r"""(?im)^\s*ENV\s+\S*(password|secret|key|token|api)\S*\s*=?\s*\S{6,}""", content, re.IGNORECASE):
+            snippet = _extract_snippet(content, r"""(?im)^\s*ENV\s+\S*(password|secret|key|token)\S*""", re.IGNORECASE)
+            add("HIGH", "Hardcoded secret in Dockerfile ENV instruction",
+                "Secrets baked into ENV instructions are permanently stored in every image layer and Docker history.",
+                "Pass secrets at runtime via `--env` flags or Docker Secrets. Never hardcode credentials in the Dockerfile.",
+                "Remove ENV instruction for secrets. Use: `docker run --env SECRET=$SECRET myimage`",
+                snippet)
+
+    # Dedup by (file, title prefix)
     deduped: Dict[str, Dict[str, Any]] = {}
     for finding in findings:
-        key = f"{finding.get('file_name','')}|{finding.get('issue_description','')}"
+        key = f"{finding.get('file_name', '')}|{finding.get('issue_description', '')[:80]}"
         deduped[key] = finding
     return list(deduped.values())
 
@@ -886,34 +1262,6 @@ def redact_sensitive_text(text: Any) -> str:
     redacted = re.sub(r"Bearer\s+[A-Za-z0-9._\-]+", "Bearer [REDACTED]", redacted, flags=re.IGNORECASE)
     return redacted
 
-def call_openai(prompt: str, system_prompt: str, api_key: str) -> str:
-    """Call OpenAI API (GPT-4 or GPT-3.5)"""
-    try:
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.1,
-            max_tokens=1024,
-            response_format={"type": "json_object"}
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        safe_error = redact_sensitive_text(e)
-        logger.error(f"OpenAI API Error: {safe_error}")
-        return json.dumps({
-            "status": "ERROR", 
-            "stats": {"High": 0, "Medium": 0, "Low": 0}, 
-            "findings": [{
-                "file_name": "unknown", 
-                "issue_description": f"OpenAI Error: {safe_error}", 
-                "suggested_fix": "Check API key or rate limits."
-            }]
-        })
-
 def call_gemini(prompt: str, system_prompt: str, api_key: str) -> str:
     """Call Google Gemini API using the new google-genai SDK"""
     try:
@@ -967,6 +1315,34 @@ def call_gemini(prompt: str, system_prompt: str, api_key: str) -> str:
                 "suggested_fix": "Check API key or rate limits."
             }]
         })
+
+def call_openai(prompt: str, system_prompt: str, api_key: str, temperature: float = 0.3) -> str:
+    """Call OpenAI API"""
+    try:
+        client = openai.OpenAI(api_key=api_key)
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=temperature,
+            response_format={"type": "json_object"}
+        )
+        return completion.choices[0].message.content
+    except Exception as e:
+        safe_error = redact_sensitive_text(e)
+        logger.error(f"OpenAI API Error: {safe_error}")
+        return json.dumps({
+            "status": "ERROR",
+            "stats": {"High": 0, "Medium": 0, "Low": 0},
+            "findings": [{
+                "file_name": "unknown",
+                "issue_description": f"OpenAI Error: {safe_error}",
+                "suggested_fix": "Check API key, account balance, or rate limits."
+            }]
+        })
+
 
 def call_groq(prompt: str, system_prompt: str, api_key: str, temperature: float = 0.3) -> str:
     """Call Groq API"""
@@ -1024,80 +1400,6 @@ def call_groq(prompt: str, system_prompt: str, api_key: str, temperature: float 
         })
 
 
-def extract_first_json_object(raw: str) -> Optional[str]:
-    """Extract first balanced JSON object from arbitrary text."""
-    if not raw:
-        return None
-
-    text = raw.strip()
-    start = text.find("{")
-    if start == -1:
-        return None
-
-    depth = 0
-    in_string = False
-    escaped = False
-
-    for i in range(start, len(text)):
-        ch = text[i]
-
-        if in_string:
-            if escaped:
-                escaped = False
-            elif ch == "\\":
-                escaped = True
-            elif ch == '"':
-                in_string = False
-            continue
-
-        if ch == '"':
-            in_string = True
-            continue
-        if ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                return text[start:i + 1]
-
-    return None
-
-
-def _try_parse_json_relaxed(text: str) -> Optional[Dict[str, Any]]:
-    """Parse JSON with lightweight repairs for common LLM formatting mistakes."""
-    if not text:
-        return None
-
-    candidates = [text.strip()]
-
-    extracted = extract_first_json_object(text)
-    if extracted:
-        candidates.append(extracted)
-
-    for candidate in candidates:
-        parsed: Optional[Dict[str, Any]] = None
-        try:
-            loaded = json.loads(candidate)
-            if isinstance(loaded, dict):
-                parsed = loaded
-        except (json.JSONDecodeError, TypeError) as exc:
-            logger.debug("Direct JSON parse failed during relaxed parse: %s", exc)
-        if parsed is not None:
-            return parsed
-
-        # Repair pass: remove trailing commas before closing braces/brackets.
-        repaired = re.sub(r",\s*([}\]])", r"\1", candidate)
-        repaired_parsed: Optional[Dict[str, Any]] = None
-        try:
-            repaired_loaded = json.loads(repaired)
-            if isinstance(repaired_loaded, dict):
-                repaired_parsed = repaired_loaded
-        except (json.JSONDecodeError, TypeError) as exc:
-            logger.debug("Repaired JSON parse failed during relaxed parse: %s", exc)
-        if repaired_parsed is not None:
-            return repaired_parsed
-
-    return None
 
 def extract_severity(issue_description: str) -> str:
     """Extract severity from the issue description."""
@@ -1127,6 +1429,27 @@ def build_stats_from_findings(findings: List[dict]) -> Dict[str, int]:
     for finding in findings:
         counts[extract_severity(finding.get("issue_description", ""))] += 1
     return counts
+
+
+def _try_parse_json_relaxed(text: str) -> Optional[Dict[str, Any]]:
+    """
+    Tries to parse JSON from a string that might be wrapped in markers or have trailing text.
+    """
+    clean_text = text.strip()
+    try:
+        return json.loads(clean_text)
+    except json.JSONDecodeError:
+        pass
+
+    try:
+        start = clean_text.find('{')
+        end = clean_text.rfind('}')
+        if start != -1 and end != -1:
+            return json.loads(clean_text[start:end+1])
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    return None
 
 
 def parse_ai_response(ai_text: str, filename: str) -> dict:
@@ -1333,53 +1656,6 @@ def generate_file_overall_review(
     api_key: str,
     provider: Optional[str]
 ) -> Dict[str, Any]:
-    condensed_findings = []
-    for finding in findings[:10]:
-        condensed_findings.append({
-            "issue_description": finding.get("issue_description", ""),
-            "root_problem": finding.get("root_problem", ""),
-            "suggested_solution": finding.get("suggested_solution", ""),
-            "suggested_fix": finding.get("suggested_fix", "")
-        })
-
-    system_prompt = (
-        "You are a Principal Software Reviewer and Application Security Architect. "
-        "Return ONLY one valid JSON object with this exact schema:\n"
-        "{\n"
-        "  \"summary\": \"string\",\n"
-        "  \"strengths\": [\"item 1\", \"item 2\"],\n"
-        "  \"key_risks\": [\"item 1\", \"item 2\"],\n"
-        "  \"maintainability_assessment\": \"string\",\n"
-        "  \"test_recommendations\": [\"item 1\", \"item 2\"],\n"
-        "  \"priority_actions\": [\"item 1\", \"item 2\"]\n"
-        "}\n"
-        "Review the file itself, not only vulnerabilities. Be concrete and professional."
-    )
-
-    prompt = (
-        f"Persona: {persona}\n"
-        f"File name: {filename}\n"
-        "Generate a professional overall code review for this specific file.\n"
-        "Include architecture/readability observations, security posture, maintainability, and test strategy.\n"
-        "Do not output placeholders; provide actionable details.\n\n"
-        f"Findings summary JSON:\n{json.dumps(condensed_findings, ensure_ascii=True)}\n\n"
-        f"File content:\n---\n{content[:12000]}\n---\n"
-    )
-
-    try:
-        raw = call_provider_with_json_prompt(prompt, system_prompt, api_key, provider, temperature=0.1)
-        parsed = _try_parse_json_relaxed(raw)
-        if isinstance(parsed, dict):
-            parsed.setdefault("summary", "Professional review generated from file content and findings.")
-            parsed.setdefault("strengths", [])
-            parsed.setdefault("key_risks", [])
-            parsed.setdefault("maintainability_assessment", "Maintainability assessed based on file structure and risk profile.")
-            parsed.setdefault("test_recommendations", [])
-            parsed.setdefault("priority_actions", [])
-            return parsed
-    except Exception as e:
-        logger.error(f"Failed to generate dedicated file review for {filename}: {e}")
-
     return build_fallback_file_review(findings)
 
 
@@ -1446,62 +1722,8 @@ def generate_executive_vulnerability_summary(
             "suggested_fix": f.get("suggested_fix", "")
         })
 
-    system_prompt = (
-        "You are a Principal Application Security Reviewer. "
-        "Return ONLY valid JSON with this exact schema:\n"
-        "{\n"
-        "  \"overall_assessment\": \"string\",\n"
-        "  \"most_important_findings\": [{\n"
-        "    \"title\": \"string\",\n"
-        "    \"severity\": \"High|Medium|Low\",\n"
-        "    \"cwe_ids\": [\"CWE-79\"],\n"
-        "    \"owasp_categories\": [\"A03:2021 - Injection\"],\n"
-        "    \"affected_files\": [\"file\"],\n"
-        "    \"why_it_matters\": \"detailed explanation\",\n"
-        "    \"attack_scenario\": \"realistic exploitation path\",\n"
-        "    \"business_impact\": \"impact on confidentiality/integrity/availability and operations\",\n"
-        "    \"recommended_actions\": [\"action 1\", \"action 2\", \"action 3\"]\n"
-        "  }],\n"
-        "  \"immediate_next_steps\": [\"step 1\", \"step 2\", \"step 3\"]\n"
-        "}\n"
-        "Prioritize depth, precision, and professional enterprise tone."
-    )
 
-    prompt = (
-        f"Persona: {persona}\n"
-        "Use the findings below and produce a detailed executive summary focused on the most important vulnerabilities.\n"
-        "Focus on concrete risk impact and practical remediation sequencing.\n\n"
-        "For each important finding, map to relevant CWE IDs and OWASP Top 10 (2021) categories.\n"
-        "Keep statements evidence-based and concise enough for leadership review.\n\n"
-        f"Findings JSON:\n{json.dumps(condensed_findings, ensure_ascii=True)}\n"
-    )
 
-    try:
-        raw = call_provider_with_json_prompt(prompt, system_prompt, api_key, provider, temperature=0.1)
-        parsed = _try_parse_json_relaxed(raw)
-        if isinstance(parsed, dict):
-            if "most_important_findings" not in parsed or not isinstance(parsed.get("most_important_findings"), list):
-                parsed["most_important_findings"] = []
-            if "immediate_next_steps" not in parsed or not isinstance(parsed.get("immediate_next_steps"), list):
-                parsed["immediate_next_steps"] = []
-
-            for item in parsed["most_important_findings"]:
-                if not isinstance(item, dict):
-                    continue
-                mapped = map_issue_to_standards(item.get("title", ""))
-                if "cwe_ids" not in item or not isinstance(item.get("cwe_ids"), list) or not item.get("cwe_ids"):
-                    item["cwe_ids"] = mapped["cwe_ids"]
-                if "owasp_categories" not in item or not isinstance(item.get("owasp_categories"), list) or not item.get("owasp_categories"):
-                    item["owasp_categories"] = mapped["owasp_categories"]
-                item.setdefault(
-                    "business_impact",
-                    "This weakness may impact confidentiality, integrity, or availability if exploited in production."
-                )
-
-            parsed.setdefault("overall_assessment", "Executive summary generated from scan findings.")
-            return parsed
-    except Exception as e:
-        logger.error(f"Failed generating executive summary with AI provider: {e}")
 
     fallback_items = []
     for finding in top_findings[:8]:
@@ -1533,124 +1755,133 @@ def generate_executive_vulnerability_summary(
         ]
     }
 
-def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, provider: str = None):
-    if "Student" in persona:
-        system_rules = (
-            "You are a helpful Security Tutor for students. Your goal is to encourage learning and growth. "
-            "You MUST respond with ONLY valid JSON (no markdown, no extra text) following this exact schema:\n"
-            "{\n"
-            "  \"status\": \"SAFE\" or \"VULNERABLE\",\n"
-            "  \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0},\n"
-            "  \"findings\": [{\n"
-            "    \"file_name\": \"filename\",\n"
-            "    \"issue_description\": \"issue title with [SEVERITY]\",\n"
-            "    \"root_problem\": \"one-sentence explanation of the cause\",\n"
-            "    \"suggested_solution\": \"high-level fixing approach\",\n"
-            "    \"suggested_fix\": \"detailed code correction or remediation steps\",\n"
-            "    \"source_code\": \"problematic snippet\",\n"
-            "    \"fixed_code\": \"corrected snippet\"\n"
-            "  }],\n"
-            "  \"overall_code_review\": {\n"
-            "    \"summary\": \"professional review summary\",\n"
-            "    \"strengths\": [\"strength 1\", \"strength 2\"],\n"
-            "    \"key_risks\": [\"risk 1\", \"risk 2\"],\n"
-            "    \"maintainability_assessment\": \"maintainability and code quality assessment\",\n"
-            "    \"test_recommendations\": [\"test recommendation 1\", \"test recommendation 2\"],\n"
-            "    \"priority_actions\": [\"priority 1\", \"priority 2\"]\n"
-            "  },\n"
-            "  \"improvement_suggestions\": [\"suggestion1\", \"suggestion2\", \"suggestion3\"]\n"
-            "}\n\n"
-            "IMPORTANT:\n"
-            "- The heart of this application is the solution for each issue. Every finding MUST include a clear, specific fix.\n"
-            "- If code has minor issues, mark as SAFE but list them in findings.\n"
-            "- Only mark VULNERABLE if there's a severe, exploitable security risk.\n"
-            "- For each finding, start the issue_description with severity in brackets: [HIGH], [MEDIUM], or [LOW].\n"
-            "- Provide a concrete remediation for each issue, not a generic suggestion.\n"
-            "- Provide 2-3 constructive improvement_suggestions for code quality and best practices.\n"
-            "- When possible, include source_code with the problematic snippet and fixed_code with the corrected version.\n"
-            "- Be encouraging and educational in your descriptions."
-        )
-        current_temp = 0.3
-    else:
-        system_rules = (
-            "You are a Senior Lead Cyber-Security Auditor. Be RUTHLESS and thorough. "
-            "You MUST respond with ONLY valid JSON (no markdown, no extra text) following this exact schema:\n"
-            "{\n"
-            "  \"status\": \"SAFE\" or \"VULNERABLE\",\n"
-            "  \"stats\": {\"High\": 0, \"Medium\": 0, \"Low\": 0},\n"
-            "  \"findings\": [{\n"
-            "    \"file_name\": \"filename\",\n"
-            "    \"issue_description\": \"issue title with [SEVERITY]\",\n"
-            "    \"root_problem\": \"one-sentence explanation of the cause\",\n"
-            "    \"suggested_solution\": \"high-level fixing approach\",\n"
-            "    \"suggested_fix\": \"detailed code correction or remediation steps\",\n"
-            "    \"source_code\": \"problematic snippet\",\n"
-            "    \"fixed_code\": \"corrected snippet\"\n"
-            "  }],\n"
-            "  \"overall_code_review\": {\n"
-            "    \"summary\": \"professional review summary\",\n"
-            "    \"strengths\": [\"strength 1\", \"strength 2\"],\n"
-            "    \"key_risks\": [\"risk 1\", \"risk 2\"],\n"
-            "    \"maintainability_assessment\": \"maintainability and code quality assessment\",\n"
-            "    \"test_recommendations\": [\"test recommendation 1\", \"test recommendation 2\"],\n"
-            "    \"priority_actions\": [\"priority 1\", \"priority 2\"]\n"
-            "  }\n"
-            "}\n\n"
-            "IMPORTANT:\n"
-            "- The heart of this application is the solution for each issue. Every finding MUST include a clear, specific fix.\n"
-            "- If there is ANY risk, lack of validation, hardcoded secrets, or best practice violation, mark VULNERABLE.\n"
-            "- Count issues by severity: High, Medium, Low.\n"
-            "- For each finding, start the issue_description with severity in brackets: [HIGH], [MEDIUM], or [LOW].\n"
-            "- Production-grade code must be bulletproof.\n"
-            "- Be explicit and detailed about every vulnerability.\n"
-            "- When possible, include source_code with the problematic snippet and fixed_code with the corrected version.\n"
-            "- Do NOT be lenient with professional code."
-        )
-        current_temp = 0.1
+SECURITY_ANALYSIS_SYSTEM_PROMPT = """You are a Senior Cyber Security Researcher and Pentester with 20+ years of experience in SAST (Static Application Security Testing).
+Your task is to perform a deep security analysis of the provided source code.
+Identify vulnerabilities including OWASP Top 10, SANS Top 25, logic flaws, hardcoded secrets, and insecure configurations.
 
-    user_prompt = (
-        f"Analyze the following file for security vulnerabilities.\n\n"
-        f"File: {filename}\n"
-        f"Persona Context: {persona}\n\n"
-        f"Report Requirements:\n"
-        f"1. Identify every security vulnerability and best-practice violation.\n"
-        f"2. For each issue, provide a clear 'Root Problem', 'Suggested Solution', and'Suggested Fix'.\n"
-        f"3. Each 'Suggested Fix' MUST include real, actionable code examples or exact remediation steps.\n"
-        f"4. Where possible, include 'source_code' with the problematic snippet and 'fixed_code' with the corrected version.\n"
-        f"5. Add an 'overall_code_review' section for this file with professional commentary on strengths, risks, maintainability, test strategy, and priority actions.\n"
-        f"{'6. Suggest 2-3 ways to improve this project (for learning purposes).' if 'Student' in persona else ''}\n\n"
-        f"Code Content:\n"
-        f"---\n"
-        f"{content}\n"
-        f"---\n\n"
-        f"RESPOND WITH ONLY VALID JSON, NO MARKDOWN CODE BLOCKS, NO EXTRA TEXT."
+Return your findings in a strict JSON format with the following structure:
+{
+  "status": "VULNERABLE" | "SAFE",
+  "findings": [
+    {
+      "file_name": "string",
+      "issue_description": "[SEVERITY] Brief title of the issue",
+      "severity": "High" | "Medium" | "Low",
+      "root_problem": "Detailed technical explanation of the root cause",
+      "suggested_solution": "Conceptual fix or mitigation strategy",
+      "suggested_fix": "Concrete code change or command to fix the issue",
+      "source_code": "The vulnerable code snippet",
+      "fixed_code": "The corrected code snippet"
+    }
+  ],
+  "overall_code_review": {
+    "summary": "High-level overview of the file's security posture",
+    "strengths": ["list of positive security patterns"],
+    "key_risks": ["list of main risks"],
+    "maintainability_assessment": "How the code quality affects security",
+    "test_recommendations": ["specific security tests to add"],
+    "priority_actions": ["immediate steps for the developer"]
+  }
+}
+
+Rules:
+1. Ensure all code snippets are properly escaped for valid JSON.
+2. Be specific and technical. No generic advice.
+3. If no vulnerabilities are found, return empty findings and status SAFE.
+4. Always provide 'fixed_code' for every finding.
+"""
+
+SECURITY_ANALYSIS_USER_PROMPT = """Analyze the following file for security vulnerabilities:
+File Name: {filename}
+Persona context: {persona} (Tailor your explanation for this level)
+
+Source Code:
+{content}
+"""
+
+def analyze_code_with_ai(filename: str, content: str, api_key: str, persona: str, provider: str = None) -> Dict[str, Any]:
+    """
+    Calls the AI provider to perform security analysis.
+    """
+    if not (api_key or DEFAULT_GROQ_API_KEY):
+        return {"status": "SAFE", "findings": [], "overall_code_review": {}}
+
+    prompt = SECURITY_ANALYSIS_USER_PROMPT.format(
+        filename=filename,
+        persona=persona,
+        content=content
     )
-
+    
     try:
-        ai_output = call_provider_with_json_prompt(user_prompt, system_rules, api_key, provider, current_temp)
-    except Exception as e:
-        logger.error(f"Unexpected error in analyze_code_logic: {e}")
-        return {"status": "ERROR", "stats": {"High": 0, "Medium": 0, "Low": 0}, "findings": [{"file_name": filename, "issue_description": f"Analysis Error: {redact_sensitive_text(e)}", "suggested_fix": "Try again or contact support."}]}
-
-    parsed = parse_ai_response(ai_output, filename)
-    parsed["scanned_file_name"] = filename
-
-    # Ensure every finding is tied to the correct file, even if the model omitted file_name.
-    for finding in parsed.get("findings", []):
-        if not finding.get("file_name"):
-            finding["file_name"] = filename
-
-    # Force a dedicated per-file review if the model did not return a substantive one.
-    existing_review = parsed.get("overall_code_review", {})
-    if not review_has_substance(existing_review):
-        parsed["overall_code_review"] = generate_file_overall_review(
-            filename,
-            content,
-            parsed.get("findings", []),
-            persona,
+        response_text = call_provider_with_json_prompt(
+            prompt,
+            SECURITY_ANALYSIS_SYSTEM_PROMPT,
             api_key,
             provider
         )
+        return parse_ai_response(response_text, filename)
+    except Exception as e:
+        logger.error(f"AI analysis failed for {filename}: {redact_sensitive_text(e)}")
+        return {"status": "ERROR", "findings": [], "overall_code_review": {}}
+
+
+def analyze_code_logic(filename: str, content: str, api_key: str, persona: str, provider: str = None):
+    """
+    Hybrid analysis: Performs both local SAST and AI-powered analysis.
+    """
+    # 1. Run Local SAST Engine
+    try:
+        local_findings = run_full_sast_engine(filename, content)
+    except Exception as e:
+        logger.error(f"Unexpected error in local SAST engine for {filename}: {e}")
+        local_findings = []
+
+    # 2. Run AI-Powered Analysis (if key available)
+    ai_result = {"status": "SAFE", "findings": [], "overall_code_review": {}}
+    if (api_key or DEFAULT_GROQ_API_KEY) and (provider != "local"):
+        ai_result = analyze_code_with_ai(filename, content, api_key, persona, provider)
+
+    # 3. Merge results
+    seen_issues = set()
+    merged_findings = []
+
+    # Prioritize AI findings
+    for f in ai_result.get("findings", []):
+        desc = f.get("issue_description", "")
+        if desc and desc not in seen_issues:
+            merged_findings.append(f)
+            seen_issues.add(desc)
+
+    for f in local_findings:
+        desc = f.get("issue_description", "")
+        if desc and desc not in seen_issues:
+            merged_findings.append(f)
+            seen_issues.add(desc)
+
+    # Sort merged findings
+    merged_findings = sort_findings_by_severity(merged_findings)
+    
+    # Determine status
+    if ai_result.get("status") == "ERROR":
+        status = "VULNERABLE" if merged_findings else "ERROR"
+    elif merged_findings:
+        status = "VULNERABLE"
+    else:
+        status = "SAFE"
+
+    # Final payload
+    parsed = {
+        "status": status,
+        "stats": build_stats_from_findings(merged_findings),
+        "findings": merged_findings,
+        "scanned_file_name": filename,
+        "overall_code_review": ai_result.get("overall_code_review") or build_fallback_file_review(merged_findings),
+        "improvement_suggestions": ai_result.get("improvement_suggestions", [
+            "Keep dependencies up to date using automated vulnerability scanners.",
+            "Run continuous static analysis on all Pull Requests.",
+            "Enforce linting rules in CI/CD."
+        ])
+    }
 
     return parsed
 
@@ -1944,10 +2175,8 @@ def run_hybrid_analysis_for_files(
     for scanned_file in files_to_scan:
         filename = scanned_file["name"]
         content = scanned_file["content"]
-        llm_result = analyze_code_logic(filename, content, effective_key, persona, provider)
-        sast_findings = run_lightweight_sast(filename, content)
-        merged = merge_hybrid_findings(llm_result, sast_findings, filename)
-        individual_results.append(merged)
+        result = analyze_code_logic(filename, content, effective_key, persona, provider)
+        individual_results.append(result)
     return individual_results
 
 
@@ -1972,10 +2201,8 @@ async def run_hybrid_analysis_for_files_async(
         )
         await notify_scan_subscribers(scan_id)
 
-        llm_result = await asyncio.to_thread(analyze_code_logic, filename, scanned_file["content"], effective_key, persona, provider)
-        sast_findings = run_lightweight_sast(filename, scanned_file["content"])
-        merged = merge_hybrid_findings(llm_result, sast_findings, filename)
-        results.append(merged)
+        result = await asyncio.to_thread(analyze_code_logic, filename, scanned_file["content"], effective_key, persona, provider)
+        results.append(result)
 
         _set_scan_task(
             scan_id,
@@ -2184,8 +2411,11 @@ async def analyze_endpoint(
             "improvement_suggestions": combined.get("improvement_suggestions", [])
         })
         
+    except HTTPException as he:
+        logger.warning(f"HTTP error during analysis: {he.detail}")
+        return build_error_scan_response(he.detail, report_id=locals().get("report_id"))
     except Exception as e:
-        logger.error(f"Error processing analysis: {redact_sensitive_text(e)}")
+        logger.exception(f"Unexpected error processing analysis: {redact_sensitive_text(e)}")
         return build_error_scan_response(
             "An unexpected error occurred while processing the analysis request.",
             report_id=locals().get("report_id"),
@@ -2272,8 +2502,11 @@ async def analyze_github_endpoint(
             "improvement_suggestions": combined.get("improvement_suggestions", [])
         })
         
+    except HTTPException as he:
+        logger.warning(f"HTTP error during github analysis: {he.detail}")
+        return build_error_scan_response(he.detail, report_id=locals().get("report_id"))
     except Exception as e:
-        logger.error(f"Error processing github analysis: {redact_sensitive_text(e)}")
+        logger.exception(f"Unexpected error processing github analysis: {redact_sensitive_text(e)}")
         return build_error_scan_response(
             "An unexpected error occurred while processing the GitHub analysis request.",
             report_id=locals().get("report_id"),
