@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getStoredUser, logoutSession } from "../lib/auth";
@@ -21,7 +21,12 @@ const navItems = [
 export default function AppShell({ title, subtitle, children }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const username = getStoredUser()?.username ?? "anonymous";
+  const [username, setUsername] = useState("anonymous");
+
+  useEffect(() => {
+    const user = getStoredUser();
+    if (user) setUsername(user.username);
+  }, []);
 
   const logout = async () => {
     await logoutSession();

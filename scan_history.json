@@ -1,1296 +1,5 @@
 [
     {
-        "scan_id": "d6cc6d24-8e56-4fa5-bf5c-c168c46ec371",
-        "timestamp": "2026-04-11 15:44:08",
-        "persona": "Professional",
-        "provider": "auto",
-        "status": "VULNERABLE",
-        "stats": {
-            "High": 1,
-            "Medium": 0,
-            "Low": 14,
-            "Safe": 0,
-            "Vuln": 14,
-            "Error": 0
-        },
-        "findings": [
-            {
-                "file_name": "CodeGuard-AI-main/app.py",
-                "issue_description": "[HIGH] Possible SQL injection",
-                "root_problem": "SQL query string interpolation may allow attacker-controlled input to alter queries.",
-                "suggested_solution": "Use parameterized queries or ORM parameter binding for all dynamic values.",
-                "suggested_fix": "Refactor query construction to parameterized placeholders and pass values separately via driver APIs.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                "source_code": "",
-                "fixed_code": ""
-            }
-        ],
-        "findings_by_file": {
-            "CodeGuard-AI-main/app.py": [
-                {
-                    "file_name": "CodeGuard-AI-main/app.py",
-                    "issue_description": "[HIGH] Possible SQL injection",
-                    "root_problem": "SQL query string interpolation may allow attacker-controlled input to alter queries.",
-                    "suggested_solution": "Use parameterized queries or ORM parameter binding for all dynamic values.",
-                    "suggested_fix": "Refactor query construction to parameterized placeholders and pass values separately via driver APIs.",
-                    "source_code": "",
-                    "fixed_code": ""
-                }
-            ],
-            "CodeGuard-AI-main/check_db.py": [],
-            "CodeGuard-AI-main/my-security-ui/app/components/AppShell.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/app/dashboard/page.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/app/history/page.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/app/hooks/useScan.ts": [],
-            "CodeGuard-AI-main/my-security-ui/app/layout.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/app/lib/auth.ts": [],
-            "CodeGuard-AI-main/my-security-ui/app/lib/validation.ts": [],
-            "CodeGuard-AI-main/my-security-ui/app/page.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/app/reports/page.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/app/settings/page.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/next.config.ts": [],
-            "CodeGuard-AI-main/utils.py": [],
-            "unknown": [
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: No API key available for analysis.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment.",
-                    "source_code": "",
-                    "fixed_code": ""
-                }
-            ]
-        },
-        "overall_reviews_by_file": {
-            "CodeGuard-AI-main/app.py": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/check_db.py": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/components/AppShell.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/dashboard/page.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/history/page.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/hooks/useScan.ts": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/layout.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/lib/auth.ts": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/lib/validation.ts": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/page.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/reports/page.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/settings/page.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/next.config.ts": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/utils.py": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: No API key available for analysis.",
-                        "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "unknown": {
-                "summary": "This file has 14 issue(s): 0 high, 0 medium, and 14 low severity. Security hardening should prioritize high-impact vulnerabilities first.",
-                "strengths": [
-                    "The scan provided concrete remediation guidance for identified issues.",
-                    "Findings are categorized by severity for prioritization."
-                ],
-                "key_risks": [
-                    "Unresolved findings can lead to security exposure in production.",
-                    "Compounded medium and low findings may still become exploitable in chained attacks."
-                ],
-                "maintainability_assessment": "Maintainability is currently affected by the number of unresolved security findings.",
-                "test_recommendations": [
-                    "Introduce focused tests for each vulnerability path and remediation.",
-                    "Add regression tests to prevent reintroduction of fixed issues."
-                ],
-                "priority_actions": [
-                    "Fix all high-severity issues before release.",
-                    "Schedule remediation for medium and low issues with owners and due dates."
-                ]
-            }
-        },
-        "executive_summary": {
-            "status": "ERROR",
-            "stats": {
-                "High": 0,
-                "Medium": 0,
-                "Low": 0
-            },
-            "findings": [
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Provider Error: No API key available for analysis.",
-                    "suggested_fix": "Provide an API key or configure DEFAULT_GROQ_API_KEY on the backend environment."
-                }
-            ],
-            "most_important_findings": [],
-            "immediate_next_steps": [],
-            "overall_assessment": "Executive summary generated from scan findings."
-        },
-        "security_score": {
-            "score": 24,
-            "grade": "F",
-            "total_files": 15,
-            "weights": {
-                "high": 20,
-                "medium": 10,
-                "low": 4,
-                "error": 15
-            },
-            "rationale": "Score starts at 100 and subtracts weighted penalties for unresolved findings."
-        },
-        "username": "tst1",
-        "improvement_suggestions": [],
-        "source": "github:YagilAharoni/CodeGuard-AI"
-    },
-    {
-        "scan_id": "998ebc68-f768-4510-af58-bd5319076101",
-        "timestamp": "2026-04-11 16:24:43",
-        "persona": "Student",
-        "provider": "groq",
-        "status": "VULNERABLE",
-        "stats": {
-            "High": 0,
-            "Medium": 0,
-            "Low": 14,
-            "Safe": 0,
-            "Vuln": 14,
-            "Error": 0
-        },
-        "findings": [
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            },
-            {
-                "file_name": "unknown",
-                "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                "root_problem": "",
-                "suggested_solution": "",
-                "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                "source_code": "",
-                "fixed_code": ""
-            }
-        ],
-        "findings_by_file": {
-            "CodeGuard-AI-main/app.py": [],
-            "CodeGuard-AI-main/check_db.py": [],
-            "CodeGuard-AI-main/my-security-ui/app/components/AppShell.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/app/dashboard/page.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/app/history/page.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/app/hooks/useScan.ts": [],
-            "CodeGuard-AI-main/my-security-ui/app/layout.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/app/lib/auth.ts": [],
-            "CodeGuard-AI-main/my-security-ui/app/lib/validation.ts": [],
-            "CodeGuard-AI-main/my-security-ui/app/page.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/app/reports/page.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/app/settings/page.tsx": [],
-            "CodeGuard-AI-main/my-security-ui/next.config.ts": [],
-            "CodeGuard-AI-main/utils.py": [],
-            "unknown": [
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                },
-                {
-                    "file_name": "unknown",
-                    "issue_description": "[LOW] Provider Error: Missing API key for Groq.",
-                    "root_problem": "",
-                    "suggested_solution": "",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key.",
-                    "source_code": "",
-                    "fixed_code": ""
-                }
-            ]
-        },
-        "overall_reviews_by_file": {
-            "CodeGuard-AI-main/app.py": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/check_db.py": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/components/AppShell.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/dashboard/page.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/history/page.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/hooks/useScan.ts": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/layout.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/lib/auth.ts": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/lib/validation.ts": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/page.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/reports/page.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/app/settings/page.tsx": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/my-security-ui/next.config.ts": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "CodeGuard-AI-main/utils.py": {
-                "status": "ERROR",
-                "stats": {
-                    "High": 0,
-                    "Medium": 0,
-                    "Low": 0
-                },
-                "findings": [
-                    {
-                        "file_name": "unknown",
-                        "issue_description": "Provider Error: Missing API key for Groq.",
-                        "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                    }
-                ],
-                "summary": "Professional review generated from file content and findings.",
-                "strengths": [],
-                "key_risks": [],
-                "maintainability_assessment": "Maintainability assessed based on file structure and risk profile.",
-                "test_recommendations": [],
-                "priority_actions": []
-            },
-            "unknown": {
-                "summary": "This file has 14 issue(s): 0 high, 0 medium, and 14 low severity. Security hardening should prioritize high-impact vulnerabilities first.",
-                "strengths": [
-                    "The scan provided concrete remediation guidance for identified issues.",
-                    "Findings are categorized by severity for prioritization."
-                ],
-                "key_risks": [
-                    "Unresolved findings can lead to security exposure in production.",
-                    "Compounded medium and low findings may still become exploitable in chained attacks."
-                ],
-                "maintainability_assessment": "Maintainability is currently affected by the number of unresolved security findings.",
-                "test_recommendations": [
-                    "Introduce focused tests for each vulnerability path and remediation.",
-                    "Add regression tests to prevent reintroduction of fixed issues."
-                ],
-                "priority_actions": [
-                    "Fix all high-severity issues before release.",
-                    "Schedule remediation for medium and low issues with owners and due dates."
-                ]
-            }
-        },
-        "executive_summary": {
-            "status": "ERROR",
-            "stats": {
-                "High": 0,
-                "Medium": 0,
-                "Low": 0
-            },
-            "findings": [
-                {
-                    "file_name": "unknown",
-                    "issue_description": "Provider Error: Missing API key for Groq.",
-                    "suggested_fix": "Provide a Groq API key (starts with gsk_) or use provider=auto with a configured server default key."
-                }
-            ],
-            "most_important_findings": [],
-            "immediate_next_steps": [],
-            "overall_assessment": "Executive summary generated from scan findings."
-        },
-        "security_score": {
-            "score": 44,
-            "grade": "F",
-            "total_files": 15,
-            "weights": {
-                "high": 20,
-                "medium": 10,
-                "low": 4,
-                "error": 15
-            },
-            "rationale": "Score starts at 100 and subtracts weighted penalties for unresolved findings."
-        },
-        "username": "tst1",
-        "improvement_suggestions": [],
-        "source": "github:YagilAharoni/CodeGuard-AI"
-    },
-    {
         "scan_id": "ec2253c3-1b75-4ee1-956c-c1d8d96102be",
         "timestamp": "2026-04-18 13:18:53",
         "persona": "Student",
@@ -1884,6 +593,1540 @@
         },
         "username": "tst1",
         "improvement_suggestions": [],
+        "source": "github:YagilAharoni/CodeGuard-AI"
+    },
+    {
+        "scan_id": "9d8a6776-25e3-44ea-bd87-86017118808d",
+        "timestamp": "2026-04-21 15:39:05",
+        "persona": "Student",
+        "provider": "auto",
+        "status": "VULNERABLE",
+        "stats": {
+            "High": 0,
+            "Medium": 0,
+            "Low": 1,
+            "Safe": 0,
+            "Vuln": 1,
+            "Error": 0
+        },
+        "findings": [
+            {
+                "file_name": "unknown",
+                "issue_description": "Provider Error: Unsupported API key format for auto provider.",
+                "suggested_fix": "Use one of: gsk_ (Groq), sk- (OpenAI), or AIzaSy (Gemini), or select an explicit provider."
+            }
+        ],
+        "findings_by_file": {
+            "HW1_318725405_Q3.cpp": [],
+            "unknown": [
+                {
+                    "file_name": "unknown",
+                    "issue_description": "Provider Error: Unsupported API key format for auto provider.",
+                    "suggested_fix": "Use one of: gsk_ (Groq), sk- (OpenAI), or AIzaSy (Gemini), or select an explicit provider."
+                }
+            ]
+        },
+        "overall_reviews_by_file": {
+            "HW1_318725405_Q3.cpp": {
+                "summary": "No professional code review was returned by the model.",
+                "strengths": [],
+                "key_risks": [],
+                "maintainability_assessment": "Not assessed.",
+                "test_recommendations": [],
+                "priority_actions": []
+            },
+            "unknown": {
+                "summary": "This file has 1 issue(s): 0 high, 0 medium, and 1 low severity. Security hardening should prioritize high-impact vulnerabilities first.",
+                "strengths": [
+                    "The scan provided concrete remediation guidance for identified issues.",
+                    "Findings are categorized by severity for prioritization."
+                ],
+                "key_risks": [
+                    "Unresolved findings can lead to security exposure in production.",
+                    "Compounded medium and low findings may still become exploitable in chained attacks."
+                ],
+                "maintainability_assessment": "Maintainability is currently affected by the number of unresolved security findings.",
+                "test_recommendations": [
+                    "Introduce focused tests for each vulnerability path and remediation.",
+                    "Add regression tests to prevent reintroduction of fixed issues."
+                ],
+                "priority_actions": [
+                    "Fix all high-severity issues before release.",
+                    "Schedule remediation for medium and low issues with owners and due dates."
+                ]
+            }
+        },
+        "executive_summary": {
+            "overall_assessment": "Fallback executive summary generated from structured findings due to provider output constraints.",
+            "most_important_findings": [
+                {
+                    "title": "Provider Error: Unsupported API key format for auto provider.",
+                    "severity": "Low",
+                    "cwe_ids": [
+                        "CWE-798"
+                    ],
+                    "owasp_categories": [
+                        "A02:2021 - Cryptographic Failures"
+                    ],
+                    "affected_files": [
+                        "unknown"
+                    ],
+                    "why_it_matters": "This issue increases attack surface and risk exposure.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "Implement secure coding remediation and validation controls.",
+                        "Use one of: gsk_ (Groq), sk- (OpenAI), or AIzaSy (Gemini), or select an explicit provider.",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                }
+            ],
+            "immediate_next_steps": [
+                "Remediate high-severity issues first and verify with tests.",
+                "Create owners and deadlines for each remaining finding.",
+                "Re-run full scan after fixes and compare results."
+            ]
+        },
+        "security_score": {
+            "score": 96,
+            "grade": "A",
+            "total_files": 2,
+            "weights": {
+                "high": 20,
+                "medium": 10,
+                "low": 4,
+                "error": 15
+            },
+            "rationale": "Score starts at 100 and subtracts weighted penalties for unresolved findings."
+        },
+        "username": "tst1",
+        "improvement_suggestions": [
+            "Keep dependencies up to date using automated vulnerability scanners.",
+            "Run continuous static analysis on all Pull Requests.",
+            "Enforce linting rules in CI/CD."
+        ],
+        "source": "local_upload"
+    },
+    {
+        "scan_id": "39576f27-bdfa-4dbf-8c15-e0f3b32a76f2",
+        "timestamp": "2026-04-21 15:47:29",
+        "persona": "Student",
+        "provider": "auto",
+        "status": "SAFE",
+        "stats": {
+            "High": 0,
+            "Medium": 0,
+            "Low": 0,
+            "Safe": 1,
+            "Vuln": 0,
+            "Error": 0
+        },
+        "findings": [],
+        "findings_by_file": {
+            "HW1_318725405_Q3.cpp": []
+        },
+        "overall_reviews_by_file": {
+            "HW1_318725405_Q3.cpp": {
+                "summary": "No vulnerabilities were detected in this file during the current scan.",
+                "strengths": [
+                    "No explicit security findings were reported by the static AI scan.",
+                    "Code appears to avoid obvious high-risk anti-patterns in this pass."
+                ],
+                "key_risks": [
+                    "Absence of findings does not guarantee exploit resistance.",
+                    "Runtime behavior and edge cases still require testing."
+                ],
+                "maintainability_assessment": "Maintainability risk appears low from a security perspective in this scan.",
+                "test_recommendations": [
+                    "Add negative-path tests for malformed inputs.",
+                    "Run dependency and runtime security checks in CI."
+                ],
+                "priority_actions": [
+                    "Keep regression tests for auth, validation, and error handling up to date.",
+                    "Re-run this scan after major refactors or dependency upgrades."
+                ]
+            }
+        },
+        "executive_summary": {
+            "overall_assessment": "No vulnerabilities were detected in this scan.",
+            "most_important_findings": [],
+            "immediate_next_steps": [
+                "Maintain secure coding and dependency hygiene.",
+                "Continue periodic scans and add targeted security tests."
+            ]
+        },
+        "security_score": {
+            "score": 100,
+            "grade": "A",
+            "total_files": 1,
+            "weights": {
+                "high": 20,
+                "medium": 10,
+                "low": 4,
+                "error": 15
+            },
+            "rationale": "Score starts at 100 and subtracts weighted penalties for unresolved findings."
+        },
+        "username": "tst1",
+        "improvement_suggestions": [
+            "Keep dependencies up to date using automated vulnerability scanners.",
+            "Run continuous static analysis on all Pull Requests.",
+            "Enforce linting rules in CI/CD."
+        ],
+        "source": "local_upload"
+    },
+    {
+        "scan_id": "f06db7b6-4b27-4a0c-815f-5ca0308d5ece",
+        "timestamp": "2026-04-21 15:47:42",
+        "persona": "Student",
+        "provider": "auto",
+        "status": "SAFE",
+        "stats": {
+            "High": 0,
+            "Medium": 0,
+            "Low": 0,
+            "Safe": 4,
+            "Vuln": 0,
+            "Error": 0
+        },
+        "findings": [],
+        "findings_by_file": {
+            "HW1_318725405_Q1.cpp": [],
+            "HW1_318725405_Q2.cpp": [],
+            "HW1_318725405_Q3.cpp": [],
+            "HW1_318725405_Q4.cpp": []
+        },
+        "overall_reviews_by_file": {
+            "HW1_318725405_Q1.cpp": {
+                "summary": "No vulnerabilities were detected in this file during the current scan.",
+                "strengths": [
+                    "No explicit security findings were reported by the static AI scan.",
+                    "Code appears to avoid obvious high-risk anti-patterns in this pass."
+                ],
+                "key_risks": [
+                    "Absence of findings does not guarantee exploit resistance.",
+                    "Runtime behavior and edge cases still require testing."
+                ],
+                "maintainability_assessment": "Maintainability risk appears low from a security perspective in this scan.",
+                "test_recommendations": [
+                    "Add negative-path tests for malformed inputs.",
+                    "Run dependency and runtime security checks in CI."
+                ],
+                "priority_actions": [
+                    "Keep regression tests for auth, validation, and error handling up to date.",
+                    "Re-run this scan after major refactors or dependency upgrades."
+                ]
+            },
+            "HW1_318725405_Q2.cpp": {
+                "summary": "No vulnerabilities were detected in this file during the current scan.",
+                "strengths": [
+                    "No explicit security findings were reported by the static AI scan.",
+                    "Code appears to avoid obvious high-risk anti-patterns in this pass."
+                ],
+                "key_risks": [
+                    "Absence of findings does not guarantee exploit resistance.",
+                    "Runtime behavior and edge cases still require testing."
+                ],
+                "maintainability_assessment": "Maintainability risk appears low from a security perspective in this scan.",
+                "test_recommendations": [
+                    "Add negative-path tests for malformed inputs.",
+                    "Run dependency and runtime security checks in CI."
+                ],
+                "priority_actions": [
+                    "Keep regression tests for auth, validation, and error handling up to date.",
+                    "Re-run this scan after major refactors or dependency upgrades."
+                ]
+            },
+            "HW1_318725405_Q3.cpp": {
+                "summary": "No vulnerabilities were detected in this file during the current scan.",
+                "strengths": [
+                    "No explicit security findings were reported by the static AI scan.",
+                    "Code appears to avoid obvious high-risk anti-patterns in this pass."
+                ],
+                "key_risks": [
+                    "Absence of findings does not guarantee exploit resistance.",
+                    "Runtime behavior and edge cases still require testing."
+                ],
+                "maintainability_assessment": "Maintainability risk appears low from a security perspective in this scan.",
+                "test_recommendations": [
+                    "Add negative-path tests for malformed inputs.",
+                    "Run dependency and runtime security checks in CI."
+                ],
+                "priority_actions": [
+                    "Keep regression tests for auth, validation, and error handling up to date.",
+                    "Re-run this scan after major refactors or dependency upgrades."
+                ]
+            },
+            "HW1_318725405_Q4.cpp": {
+                "summary": "No vulnerabilities were detected in this file during the current scan.",
+                "strengths": [
+                    "No explicit security findings were reported by the static AI scan.",
+                    "Code appears to avoid obvious high-risk anti-patterns in this pass."
+                ],
+                "key_risks": [
+                    "Absence of findings does not guarantee exploit resistance.",
+                    "Runtime behavior and edge cases still require testing."
+                ],
+                "maintainability_assessment": "Maintainability risk appears low from a security perspective in this scan.",
+                "test_recommendations": [
+                    "Add negative-path tests for malformed inputs.",
+                    "Run dependency and runtime security checks in CI."
+                ],
+                "priority_actions": [
+                    "Keep regression tests for auth, validation, and error handling up to date.",
+                    "Re-run this scan after major refactors or dependency upgrades."
+                ]
+            }
+        },
+        "executive_summary": {
+            "overall_assessment": "No vulnerabilities were detected in this scan.",
+            "most_important_findings": [],
+            "immediate_next_steps": [
+                "Maintain secure coding and dependency hygiene.",
+                "Continue periodic scans and add targeted security tests."
+            ]
+        },
+        "security_score": {
+            "score": 100,
+            "grade": "A",
+            "total_files": 4,
+            "weights": {
+                "high": 20,
+                "medium": 10,
+                "low": 4,
+                "error": 15
+            },
+            "rationale": "Score starts at 100 and subtracts weighted penalties for unresolved findings."
+        },
+        "username": "tst1",
+        "improvement_suggestions": [
+            "Keep dependencies up to date using automated vulnerability scanners.",
+            "Run continuous static analysis on all Pull Requests.",
+            "Enforce linting rules in CI/CD."
+        ],
+        "source": "local_upload"
+    },
+    {
+        "scan_id": "c66cfa32-2418-48e3-839a-6aa2c814f870",
+        "timestamp": "2026-04-21 15:47:50",
+        "persona": "Student",
+        "provider": "auto",
+        "status": "SAFE",
+        "stats": {
+            "High": 0,
+            "Medium": 0,
+            "Low": 0,
+            "Safe": 4,
+            "Vuln": 0,
+            "Error": 0
+        },
+        "findings": [],
+        "findings_by_file": {
+            "HW1_318725405_Q1.cpp": [],
+            "HW1_318725405_Q2.cpp": [],
+            "HW1_318725405_Q3.cpp": [],
+            "HW1_318725405_Q4.cpp": []
+        },
+        "overall_reviews_by_file": {
+            "HW1_318725405_Q1.cpp": {
+                "summary": "No vulnerabilities were detected in this file during the current scan.",
+                "strengths": [
+                    "No explicit security findings were reported by the static AI scan.",
+                    "Code appears to avoid obvious high-risk anti-patterns in this pass."
+                ],
+                "key_risks": [
+                    "Absence of findings does not guarantee exploit resistance.",
+                    "Runtime behavior and edge cases still require testing."
+                ],
+                "maintainability_assessment": "Maintainability risk appears low from a security perspective in this scan.",
+                "test_recommendations": [
+                    "Add negative-path tests for malformed inputs.",
+                    "Run dependency and runtime security checks in CI."
+                ],
+                "priority_actions": [
+                    "Keep regression tests for auth, validation, and error handling up to date.",
+                    "Re-run this scan after major refactors or dependency upgrades."
+                ]
+            },
+            "HW1_318725405_Q2.cpp": {
+                "summary": "No vulnerabilities were detected in this file during the current scan.",
+                "strengths": [
+                    "No explicit security findings were reported by the static AI scan.",
+                    "Code appears to avoid obvious high-risk anti-patterns in this pass."
+                ],
+                "key_risks": [
+                    "Absence of findings does not guarantee exploit resistance.",
+                    "Runtime behavior and edge cases still require testing."
+                ],
+                "maintainability_assessment": "Maintainability risk appears low from a security perspective in this scan.",
+                "test_recommendations": [
+                    "Add negative-path tests for malformed inputs.",
+                    "Run dependency and runtime security checks in CI."
+                ],
+                "priority_actions": [
+                    "Keep regression tests for auth, validation, and error handling up to date.",
+                    "Re-run this scan after major refactors or dependency upgrades."
+                ]
+            },
+            "HW1_318725405_Q3.cpp": {
+                "summary": "No vulnerabilities were detected in this file during the current scan.",
+                "strengths": [
+                    "No explicit security findings were reported by the static AI scan.",
+                    "Code appears to avoid obvious high-risk anti-patterns in this pass."
+                ],
+                "key_risks": [
+                    "Absence of findings does not guarantee exploit resistance.",
+                    "Runtime behavior and edge cases still require testing."
+                ],
+                "maintainability_assessment": "Maintainability risk appears low from a security perspective in this scan.",
+                "test_recommendations": [
+                    "Add negative-path tests for malformed inputs.",
+                    "Run dependency and runtime security checks in CI."
+                ],
+                "priority_actions": [
+                    "Keep regression tests for auth, validation, and error handling up to date.",
+                    "Re-run this scan after major refactors or dependency upgrades."
+                ]
+            },
+            "HW1_318725405_Q4.cpp": {
+                "summary": "No vulnerabilities were detected in this file during the current scan.",
+                "strengths": [
+                    "No explicit security findings were reported by the static AI scan.",
+                    "Code appears to avoid obvious high-risk anti-patterns in this pass."
+                ],
+                "key_risks": [
+                    "Absence of findings does not guarantee exploit resistance.",
+                    "Runtime behavior and edge cases still require testing."
+                ],
+                "maintainability_assessment": "Maintainability risk appears low from a security perspective in this scan.",
+                "test_recommendations": [
+                    "Add negative-path tests for malformed inputs.",
+                    "Run dependency and runtime security checks in CI."
+                ],
+                "priority_actions": [
+                    "Keep regression tests for auth, validation, and error handling up to date.",
+                    "Re-run this scan after major refactors or dependency upgrades."
+                ]
+            }
+        },
+        "executive_summary": {
+            "overall_assessment": "No vulnerabilities were detected in this scan.",
+            "most_important_findings": [],
+            "immediate_next_steps": [
+                "Maintain secure coding and dependency hygiene.",
+                "Continue periodic scans and add targeted security tests."
+            ]
+        },
+        "security_score": {
+            "score": 100,
+            "grade": "A",
+            "total_files": 4,
+            "weights": {
+                "high": 20,
+                "medium": 10,
+                "low": 4,
+                "error": 15
+            },
+            "rationale": "Score starts at 100 and subtracts weighted penalties for unresolved findings."
+        },
+        "username": "tst1",
+        "improvement_suggestions": [
+            "Keep dependencies up to date using automated vulnerability scanners.",
+            "Run continuous static analysis on all Pull Requests.",
+            "Enforce linting rules in CI/CD."
+        ],
+        "source": "local_upload"
+    },
+    {
+        "scan_id": "480d8c76-c963-447f-95af-76355f9174ed",
+        "timestamp": "2026-04-21 15:48:03",
+        "persona": "Student",
+        "provider": "auto",
+        "status": "VULNERABLE",
+        "stats": {
+            "High": 1,
+            "Medium": 1,
+            "Low": 0,
+            "Safe": 0,
+            "Vuln": 1,
+            "Error": 0
+        },
+        "findings": [
+            {
+                "file_name": "app.py",
+                "issue_description": "[HIGH] SQL Injection \u2014 string-interpolated query",
+                "root_problem": "SQL query is built by concatenating or formatting user-controlled strings, allowing attackers to manipulate the query structure.",
+                "suggested_solution": "Use parameterized queries / prepared statements with driver-level placeholder binding for all dynamic values.",
+                "suggested_fix": "Replace string interpolation with positional placeholders: `cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))`",
+                "source_code": "c.execute(\"SELECT id FROM users WHERE username = ? COLLATE NOCASE OR email = ?\", (username, email))",
+                "fixed_code": "cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "app.py",
+                "issue_description": "[MEDIUM] Sensitive data written to logs",
+                "root_problem": "Logging credentials or tokens creates exposure in log aggregation systems and audit trails.",
+                "suggested_solution": "Sanitize all log messages; never log passwords, tokens, or full request bodies with credentials.",
+                "suggested_fix": "Use a log scrubber or redaction filter. Replace `log.info(f'token={token}')` with `log.info('token=[REDACTED]')`.",
+                "source_code": "logger.warning(\"AUTH_TOKEN_SECRET is not configured; using an ephemeral in-memory secret for this process.\")",
+                "fixed_code": "",
+                "detected_by": "sast"
+            }
+        ],
+        "findings_by_file": {
+            "app.py": [
+                {
+                    "file_name": "app.py",
+                    "issue_description": "[HIGH] SQL Injection \u2014 string-interpolated query",
+                    "root_problem": "SQL query is built by concatenating or formatting user-controlled strings, allowing attackers to manipulate the query structure.",
+                    "suggested_solution": "Use parameterized queries / prepared statements with driver-level placeholder binding for all dynamic values.",
+                    "suggested_fix": "Replace string interpolation with positional placeholders: `cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))`",
+                    "source_code": "c.execute(\"SELECT id FROM users WHERE username = ? COLLATE NOCASE OR email = ?\", (username, email))",
+                    "fixed_code": "cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "app.py",
+                    "issue_description": "[MEDIUM] Sensitive data written to logs",
+                    "root_problem": "Logging credentials or tokens creates exposure in log aggregation systems and audit trails.",
+                    "suggested_solution": "Sanitize all log messages; never log passwords, tokens, or full request bodies with credentials.",
+                    "suggested_fix": "Use a log scrubber or redaction filter. Replace `log.info(f'token={token}')` with `log.info('token=[REDACTED]')`.",
+                    "source_code": "logger.warning(\"AUTH_TOKEN_SECRET is not configured; using an ephemeral in-memory secret for this process.\")",
+                    "fixed_code": "",
+                    "detected_by": "sast"
+                }
+            ]
+        },
+        "overall_reviews_by_file": {
+            "app.py": {
+                "summary": "This file has 2 issue(s): 1 high, 1 medium, and 0 low severity. Security hardening should prioritize high-impact vulnerabilities first.",
+                "strengths": [
+                    "The scan provided concrete remediation guidance for identified issues.",
+                    "Findings are categorized by severity for prioritization."
+                ],
+                "key_risks": [
+                    "Unresolved findings can lead to security exposure in production.",
+                    "Compounded medium and low findings may still become exploitable in chained attacks."
+                ],
+                "maintainability_assessment": "Maintainability is currently affected by the number of unresolved security findings.",
+                "test_recommendations": [
+                    "Introduce focused tests for each vulnerability path and remediation.",
+                    "Add regression tests to prevent reintroduction of fixed issues."
+                ],
+                "priority_actions": [
+                    "Fix all high-severity issues before release.",
+                    "Schedule remediation for medium and low issues with owners and due dates."
+                ]
+            }
+        },
+        "executive_summary": {
+            "overall_assessment": "Fallback executive summary generated from structured findings due to provider output constraints.",
+            "most_important_findings": [
+                {
+                    "title": "[HIGH] SQL Injection \u2014 string-interpolated query",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-89"
+                    ],
+                    "owasp_categories": [
+                        "A03:2021 - Injection"
+                    ],
+                    "affected_files": [
+                        "app.py"
+                    ],
+                    "why_it_matters": "SQL query is built by concatenating or formatting user-controlled strings, allowing attackers to manipulate the query structure.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "Use parameterized queries / prepared statements with driver-level placeholder binding for all dynamic values.",
+                        "Replace string interpolation with positional placeholders: `cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))`",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                },
+                {
+                    "title": "[MEDIUM] Sensitive data written to logs",
+                    "severity": "Medium",
+                    "cwe_ids": [
+                        "CWE-Other"
+                    ],
+                    "owasp_categories": [
+                        "A04:2021 - Insecure Design"
+                    ],
+                    "affected_files": [
+                        "app.py"
+                    ],
+                    "why_it_matters": "Logging credentials or tokens creates exposure in log aggregation systems and audit trails.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "Sanitize all log messages; never log passwords, tokens, or full request bodies with credentials.",
+                        "Use a log scrubber or redaction filter. Replace `log.info(f'token={token}')` with `log.info('token=[REDACTED]')`.",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                }
+            ],
+            "immediate_next_steps": [
+                "Remediate high-severity issues first and verify with tests.",
+                "Create owners and deadlines for each remaining finding.",
+                "Re-run full scan after fixes and compare results."
+            ]
+        },
+        "security_score": {
+            "score": 70,
+            "grade": "C",
+            "total_files": 1,
+            "weights": {
+                "high": 20,
+                "medium": 10,
+                "low": 4,
+                "error": 15
+            },
+            "rationale": "Score starts at 100 and subtracts weighted penalties for unresolved findings."
+        },
+        "username": "tst1",
+        "improvement_suggestions": [
+            "Keep dependencies up to date using automated vulnerability scanners.",
+            "Run continuous static analysis on all Pull Requests.",
+            "Enforce linting rules in CI/CD."
+        ],
+        "source": "local_upload"
+    },
+    {
+        "scan_id": "776e2986-3b66-462c-b59b-3ea4c8adec90",
+        "timestamp": "2026-04-21 16:01:42",
+        "persona": "Student",
+        "provider": "auto",
+        "status": "VULNERABLE",
+        "stats": {
+            "High": 1,
+            "Medium": 1,
+            "Low": 0,
+            "Safe": 0,
+            "Vuln": 1,
+            "Error": 0
+        },
+        "findings": [
+            {
+                "file_name": "app.py",
+                "issue_description": "[HIGH] SQL Injection \u2014 string-interpolated query",
+                "root_problem": "The application appears to be constructing a SQL query by directly concatenating or interpolating user-controlled variables. This is a classic 'SQL Injection' vulnerability (CWE-89). An attacker could leverage this to manipulate the query structure\u2014for example, by injecting ' OR 1=1 --'\u2014to bypass login screens, leak the entire database content, or even delete data depending on the database user's permissions.",
+                "suggested_solution": "To fix this, you should never use string formatting (like f-strings, %, or .format()) to build SQL queries with dynamic data. Instead, use 'parameterized queries' or 'prepared statements.' This method sends the query structure and the data to the database engine separately, ensuring that the data is never executed as code.",
+                "suggested_fix": "Replace manual string concatenation with positional or named placeholders. For example, if using `psycopg2` or `sqlite3`, use: `cursor.execute('SELECT * FROM users WHERE username = ?', (user_input,))` instead of an f-string or `+` operator.",
+                "source_code": "c.execute(\"SELECT id FROM users WHERE username = ? COLLATE NOCASE OR email = ?\", (username, email))",
+                "fixed_code": "cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "app.py",
+                "issue_description": "[MEDIUM] Sensitive data written to logs",
+                "root_problem": "The application is explicitly logging potentially sensitive information such as passwords, tokens, or API keys. This is a common but serious security oversight. Logs are often stored in plain text, aggregated in observability platforms, or sent to third-party services. If these systems are compromised, your user credentials or system secrets are immediately exposed to attackers.",
+                "suggested_solution": "Implement a robust 'Log Redaction' or 'Sanitization' policy. You should never log the raw value of any field containing secrets. Use structural logging where you can filter specific keys, or use a custom filter in your logging configuration to mask patterns that look like credentials.",
+                "suggested_fix": "1. Audit your logging statements and remove direct printing of secrets.\n2. In Python, you can use a `logging.Filter` to automatically redact sensitive keys from log records.\n3. Change `logger.info(f'User password: {pwd}')` to `logger.info(f'Login attempt for user: {username}')` or use a mask: `logger.info('API Key: ' + key[:4] + '****')`.",
+                "source_code": "logger.warning(\"AUTH_TOKEN_SECRET is not configured; using an ephemeral in-memory secret for this process.\")",
+                "fixed_code": "",
+                "detected_by": "sast"
+            }
+        ],
+        "findings_by_file": {
+            "app.py": [
+                {
+                    "file_name": "app.py",
+                    "issue_description": "[HIGH] SQL Injection \u2014 string-interpolated query",
+                    "root_problem": "The application appears to be constructing a SQL query by directly concatenating or interpolating user-controlled variables. This is a classic 'SQL Injection' vulnerability (CWE-89). An attacker could leverage this to manipulate the query structure\u2014for example, by injecting ' OR 1=1 --'\u2014to bypass login screens, leak the entire database content, or even delete data depending on the database user's permissions.",
+                    "suggested_solution": "To fix this, you should never use string formatting (like f-strings, %, or .format()) to build SQL queries with dynamic data. Instead, use 'parameterized queries' or 'prepared statements.' This method sends the query structure and the data to the database engine separately, ensuring that the data is never executed as code.",
+                    "suggested_fix": "Replace manual string concatenation with positional or named placeholders. For example, if using `psycopg2` or `sqlite3`, use: `cursor.execute('SELECT * FROM users WHERE username = ?', (user_input,))` instead of an f-string or `+` operator.",
+                    "source_code": "c.execute(\"SELECT id FROM users WHERE username = ? COLLATE NOCASE OR email = ?\", (username, email))",
+                    "fixed_code": "cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "app.py",
+                    "issue_description": "[MEDIUM] Sensitive data written to logs",
+                    "root_problem": "The application is explicitly logging potentially sensitive information such as passwords, tokens, or API keys. This is a common but serious security oversight. Logs are often stored in plain text, aggregated in observability platforms, or sent to third-party services. If these systems are compromised, your user credentials or system secrets are immediately exposed to attackers.",
+                    "suggested_solution": "Implement a robust 'Log Redaction' or 'Sanitization' policy. You should never log the raw value of any field containing secrets. Use structural logging where you can filter specific keys, or use a custom filter in your logging configuration to mask patterns that look like credentials.",
+                    "suggested_fix": "1. Audit your logging statements and remove direct printing of secrets.\n2. In Python, you can use a `logging.Filter` to automatically redact sensitive keys from log records.\n3. Change `logger.info(f'User password: {pwd}')` to `logger.info(f'Login attempt for user: {username}')` or use a mask: `logger.info('API Key: ' + key[:4] + '****')`.",
+                    "source_code": "logger.warning(\"AUTH_TOKEN_SECRET is not configured; using an ephemeral in-memory secret for this process.\")",
+                    "fixed_code": "",
+                    "detected_by": "sast"
+                }
+            ]
+        },
+        "overall_reviews_by_file": {
+            "app.py": {
+                "summary": "The security analysis has identified 2 unresolved issue(s) within this file, including 1 high-severity risk(s). These findings indicate potential entry points for attackers and should be addressed systematically to harden the application's defense-in-depth posture.",
+                "strengths": [
+                    "The code provides a clear structure, which facilitates the identification and remediation of these security gaps.",
+                    "The identified vulnerabilities are well-known patterns with established industry-standard fixes."
+                ],
+                "key_risks": [
+                    "The presence of 1 High-severity issues poses an immediate threat to the confidentiality and integrity of the system.",
+                    "Chained vulnerabilities (combining Medium and Low risks) could still lead to a significant security compromise if left unaddressed."
+                ],
+                "maintainability_assessment": "Security technical debt is currently elevated. Resolving these findings will not only secure the application but also improve the overall quality and reliability of the codebase.",
+                "test_recommendations": [
+                    "Develop specific security regression tests for each identified vulnerability to ensure they do not reappear in future updates.",
+                    "Incorporate automated security scanning into the development workflow to catch similar issues earlier in the lifecycle."
+                ],
+                "priority_actions": [
+                    "Immediate Action: Remediate the 1 High-severity vulnerability(ies) prior to any production deployment.",
+                    "Schedule a follow-up review for the Medium and Low risk issues to ensure a comprehensive security hardening."
+                ]
+            }
+        },
+        "executive_summary": {
+            "overall_assessment": "The security analysis has identified several critical areas requiring immediate attention. While the core logic is sound, the presence of specific vulnerability patterns significantly increases the application's risk profile. A systematic remediation effort is required to ensure a high level of security assurance.",
+            "most_important_findings": [
+                {
+                    "title": "[HIGH] SQL Injection \u2014 string-interpolated query",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-89"
+                    ],
+                    "owasp_categories": [
+                        "A03:2021 - Injection"
+                    ],
+                    "affected_files": [
+                        "app.py"
+                    ],
+                    "why_it_matters": "The application appears to be constructing a SQL query by directly concatenating or interpolating user-controlled variables. This is a classic 'SQL Injection' vulnerability (CWE-89). An attacker could leverage this to manipulate the query structure\u2014for example, by injecting ' OR 1=1 --'\u2014to bypass login screens, leak the entire database content, or even delete data depending on the database user's permissions.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "To fix this, you should never use string formatting (like f-strings, %, or .format()) to build SQL queries with dynamic data. Instead, use 'parameterized queries' or 'prepared statements.' This method sends the query structure and the data to the database engine separately, ensuring that the data is never executed as code.",
+                        "Replace manual string concatenation with positional or named placeholders. For example, if using `psycopg2` or `sqlite3`, use: `cursor.execute('SELECT * FROM users WHERE username = ?', (user_input,))` instead of an f-string or `+` operator.",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                },
+                {
+                    "title": "[MEDIUM] Sensitive data written to logs",
+                    "severity": "Medium",
+                    "cwe_ids": [
+                        "CWE-Other"
+                    ],
+                    "owasp_categories": [
+                        "A04:2021 - Insecure Design"
+                    ],
+                    "affected_files": [
+                        "app.py"
+                    ],
+                    "why_it_matters": "The application is explicitly logging potentially sensitive information such as passwords, tokens, or API keys. This is a common but serious security oversight. Logs are often stored in plain text, aggregated in observability platforms, or sent to third-party services. If these systems are compromised, your user credentials or system secrets are immediately exposed to attackers.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "Implement a robust 'Log Redaction' or 'Sanitization' policy. You should never log the raw value of any field containing secrets. Use structural logging where you can filter specific keys, or use a custom filter in your logging configuration to mask patterns that look like credentials.",
+                        "1. Audit your logging statements and remove direct printing of secrets.\n2. In Python, you can use a `logging.Filter` to automatically redact sensitive keys from log records.\n3. Change `logger.info(f'User password: {pwd}')` to `logger.info(f'Login attempt for user: {username}')` or use a mask: `logger.info('API Key: ' + key[:4] + '****')`.",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                }
+            ],
+            "immediate_next_steps": [
+                "Prioritize the remediation of 'High' severity findings as they represent the most immediate threat to your infrastructure and data.",
+                "Establish a clear ownership and remediation timeline for all identified security tasks.",
+                "Perform a verification scan after fixes are applied to confirm that all vulnerabilities have been effectively neutralized."
+            ]
+        },
+        "security_score": {
+            "score": 70,
+            "grade": "C",
+            "total_files": 1,
+            "weights": {
+                "high": 20,
+                "medium": 10,
+                "low": 4,
+                "error": 15
+            },
+            "rationale": "Score starts at 100 and subtracts weighted penalties for unresolved findings."
+        },
+        "username": "tst1",
+        "improvement_suggestions": [
+            "Keep dependencies up to date using automated vulnerability scanners.",
+            "Run continuous static analysis on all Pull Requests.",
+            "Enforce linting rules in CI/CD."
+        ],
+        "source": "local_upload"
+    },
+    {
+        "scan_id": "22d74e65-0fa4-4c5f-b9f6-977395d220e3",
+        "timestamp": "2026-04-21 16:17:34",
+        "persona": "Student",
+        "provider": "auto",
+        "status": "VULNERABLE",
+        "stats": {
+            "High": 13,
+            "Medium": 1,
+            "Low": 0,
+            "Safe": 12,
+            "Vuln": 1,
+            "Error": 0
+        },
+        "findings": [
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] SQL Injection \u2014 string-interpolated query",
+                "root_problem": "The application appears to be constructing a SQL query by directly concatenating or interpolating user-controlled variables. This is a classic 'SQL Injection' vulnerability (CWE-89). An attacker could leverage this to manipulate the query structure\u2014for example, by injecting ' OR 1=1 --'\u2014to bypass login screens, leak the entire database content, or even delete data depending on the database user's permissions.",
+                "suggested_solution": "To fix this, you should never use string formatting (like f-strings, %, or .format()) to build SQL queries with dynamic data. Instead, use 'parameterized queries' or 'prepared statements.' This method sends the query structure and the data to the database engine separately, ensuring that the data is never executed as code.",
+                "suggested_fix": "Replace manual string concatenation with positional or named placeholders. For example, if using `psycopg2` or `sqlite3`, use: `cursor.execute('SELECT * FROM users WHERE username = ?', (user_input,))` instead of an f-string or `+` operator.",
+                "source_code": "c.execute(\"SELECT id FROM users WHERE username = ? COLLATE NOCASE OR email = ?\", (username, email))",
+                "fixed_code": "cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Weak hash algorithm: MD5",
+                "root_problem": "The code is using a cryptographic primitive (Weak hash algorithm: MD5) that is considered weak, deprecated, or broken by modern security standards. Algorithms like MD5 or SHA-1 are vulnerable to collision attacks, meaning an attacker can generate two different inputs that produce the same hash. Using insecure ciphers like DES or ECB mode leaves encrypted data susceptible to decryption via brute-force or statistical analysis.",
+                "suggested_solution": "You should upgrade to modern, industry-standard cryptographic algorithms. Hashing should use SHA-256 (or better), and password-specific hashing should use 'Argon2id', 'bcrypt', or 'scrypt'. For symmetric encryption, use AES-GCM or ChaCha20-Poly1305, which provide both confidentiality and integrity.",
+                "suggested_fix": "Replace the identified Weak hash algorithm: MD5 call with a secure alternative from a verified library like `cryptography` or `hashlib`. For hashing, use `hashlib.sha256()`. For encryption, prefer authenticated encryption modes (AEAD).",
+                "source_code": "(r\"\"\"\\b(md5|MD5)\\b.*?\\(\"\"\", \"Weak hash algorithm: MD5\", \"CWE-327\"),",
+                "fixed_code": "",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Weak hash algorithm: SHA-1",
+                "root_problem": "The code is using a cryptographic primitive (Weak hash algorithm: SHA-1) that is considered weak, deprecated, or broken by modern security standards. Algorithms like MD5 or SHA-1 are vulnerable to collision attacks, meaning an attacker can generate two different inputs that produce the same hash. Using insecure ciphers like DES or ECB mode leaves encrypted data susceptible to decryption via brute-force or statistical analysis.",
+                "suggested_solution": "You should upgrade to modern, industry-standard cryptographic algorithms. Hashing should use SHA-256 (or better), and password-specific hashing should use 'Argon2id', 'bcrypt', or 'scrypt'. For symmetric encryption, use AES-GCM or ChaCha20-Poly1305, which provide both confidentiality and integrity.",
+                "suggested_fix": "Replace the identified Weak hash algorithm: SHA-1 call with a secure alternative from a verified library like `cryptography` or `hashlib`. For hashing, use `hashlib.sha256()`. For encryption, prefer authenticated encryption modes (AEAD).",
+                "source_code": "(r\"\"\"\\b(sha1|SHA1|sha_1)\\b.*?\\(\"\"\", \"Weak hash algorithm: SHA-1\", \"CWE-327\"),",
+                "fixed_code": "",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Weak symmetric cipher: DES/RC4",
+                "root_problem": "The code is using a cryptographic primitive (Weak symmetric cipher: DES/RC4) that is considered weak, deprecated, or broken by modern security standards. Algorithms like MD5 or SHA-1 are vulnerable to collision attacks, meaning an attacker can generate two different inputs that produce the same hash. Using insecure ciphers like DES or ECB mode leaves encrypted data susceptible to decryption via brute-force or statistical analysis.",
+                "suggested_solution": "You should upgrade to modern, industry-standard cryptographic algorithms. Hashing should use SHA-256 (or better), and password-specific hashing should use 'Argon2id', 'bcrypt', or 'scrypt'. For symmetric encryption, use AES-GCM or ChaCha20-Poly1305, which provide both confidentiality and integrity.",
+                "suggested_fix": "Replace the identified Weak symmetric cipher: DES/RC4 call with a secure alternative from a verified library like `cryptography` or `hashlib`. For hashing, use `hashlib.sha256()`. For encryption, prefer authenticated encryption modes (AEAD).",
+                "source_code": "(r\"\"\"\\b(des|DES|3des|RC4|rc4)\\b\"\"\", \"Weak symmetric cipher: DES/RC4\", \"CWE-327\"),",
+                "fixed_code": "",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Insecure cipher mode: ECB",
+                "root_problem": "The code is using a cryptographic primitive (Insecure cipher mode: ECB) that is considered weak, deprecated, or broken by modern security standards. Algorithms like MD5 or SHA-1 are vulnerable to collision attacks, meaning an attacker can generate two different inputs that produce the same hash. Using insecure ciphers like DES or ECB mode leaves encrypted data susceptible to decryption via brute-force or statistical analysis.",
+                "suggested_solution": "You should upgrade to modern, industry-standard cryptographic algorithms. Hashing should use SHA-256 (or better), and password-specific hashing should use 'Argon2id', 'bcrypt', or 'scrypt'. For symmetric encryption, use AES-GCM or ChaCha20-Poly1305, which provide both confidentiality and integrity.",
+                "suggested_fix": "Replace the identified Insecure cipher mode: ECB call with a secure alternative from a verified library like `cryptography` or `hashlib`. For hashing, use `hashlib.sha256()`. For encryption, prefer authenticated encryption modes (AEAD).",
+                "source_code": "(r\"\"\"(?i)ECB\\b\"\"\", \"Insecure cipher mode: ECB\", \"CWE-327\"),",
+                "fixed_code": "",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Command Injection risk \u2014 os.system() \u2014 arbitrary command execution",
+                "root_problem": "The code is using a function (os.system() \u2014 arbitrary command execution) that executes strings as system commands. If any part of this string includes unvalidated input from a user, an attacker can 'inject' additional commands (e.g., `; rm -rf /`) that will be executed with the privileges of the application. This is a critical risk that can lead to a complete server takeover.",
+                "suggested_solution": "The safest way to execute external programs is to avoid the system shell entirely. Instead of passing a single formatted string, pass a 'list' of arguments to `subprocess.run()` with `shell=False`. This ensures that the arguments are never interpreted by a shell (/bin/sh or cmd.exe), effectively neutralizing injection attempts.",
+                "suggested_fix": "Replace `os.system(command)` or `subprocess.run(command, shell=True)` with `subprocess.run(['prog', 'arg1', 'arg2'], shell=False)`. Always validate or allowlist inputs if they must be used as arguments.",
+                "source_code": "(r\"\"\"os\\.system\\s*\\(\"\"\", \"os.system() \u2014 arbitrary command execution\"),",
+                "fixed_code": "subprocess.run(['ls', '-la', safe_dir], shell=False, check=True)",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Command Injection risk \u2014 subprocess with shell=True",
+                "root_problem": "The code is using a function (subprocess with shell=True) that executes strings as system commands. If any part of this string includes unvalidated input from a user, an attacker can 'inject' additional commands (e.g., `; rm -rf /`) that will be executed with the privileges of the application. This is a critical risk that can lead to a complete server takeover.",
+                "suggested_solution": "The safest way to execute external programs is to avoid the system shell entirely. Instead of passing a single formatted string, pass a 'list' of arguments to `subprocess.run()` with `shell=False`. This ensures that the arguments are never interpreted by a shell (/bin/sh or cmd.exe), effectively neutralizing injection attempts.",
+                "suggested_fix": "Replace `os.system(command)` or `subprocess.run(command, shell=True)` with `subprocess.run(['prog', 'arg1', 'arg2'], shell=False)`. Always validate or allowlist inputs if they must be used as arguments.",
+                "source_code": "\"Replace `os.system(cmd)` or `subprocess.run(cmd, shell=True)` with `subprocess.run(['program', arg1, arg2], shell=False)`.\",",
+                "fixed_code": "subprocess.run(['ls', '-la', safe_dir], shell=False, check=True)",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Remote Code Execution risk \u2014 eval()",
+                "root_problem": "The use of `eval()` is extremely dangerous when used with data that can be influenced by a user. These functions parse and execute strings as Python code, allowing an attacker to run arbitrary logic, access local variables, or import modules to perform malicious actions on the host system.",
+                "suggested_solution": "Avoid dynamic code execution entirely. If you need to evaluate mathematical expressions or literal data structures, use safer alternatives like `ast.literal_eval()`. For dynamic logic, use a predefined 'dispatch table' (a dictionary) that maps safe keys to specific functions.",
+                "suggested_fix": "Refactor the code to remove `eval()`. If you are parsing a stringified list or dictionary, use `import ast; data = ast.literal_eval(user_input)` which only evaluates literal constants.",
+                "source_code": "(r\"\"\"\\beval\\s*\\(\"\"\", \"eval()\"),",
+                "fixed_code": "result = safe_dispatch.get(user_input, default_handler)()",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Remote Code Execution risk \u2014 exec()",
+                "root_problem": "The use of `exec()` is extremely dangerous when used with data that can be influenced by a user. These functions parse and execute strings as Python code, allowing an attacker to run arbitrary logic, access local variables, or import modules to perform malicious actions on the host system.",
+                "suggested_solution": "Avoid dynamic code execution entirely. If you need to evaluate mathematical expressions or literal data structures, use safer alternatives like `ast.literal_eval()`. For dynamic logic, use a predefined 'dispatch table' (a dictionary) that maps safe keys to specific functions.",
+                "suggested_fix": "Refactor the code to remove `exec()`. If you are parsing a stringified list or dictionary, use `import ast; data = ast.literal_eval(user_input)` which only evaluates literal constants.",
+                "source_code": "(r\"\"\"\\bexec\\s*\\(\"\"\", \"exec()\"),",
+                "fixed_code": "result = safe_dispatch.get(user_input, default_handler)()",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Remote Code Execution risk \u2014 __import__()",
+                "root_problem": "The use of `__import__()` is extremely dangerous when used with data that can be influenced by a user. These functions parse and execute strings as Python code, allowing an attacker to run arbitrary logic, access local variables, or import modules to perform malicious actions on the host system.",
+                "suggested_solution": "Avoid dynamic code execution entirely. If you need to evaluate mathematical expressions or literal data structures, use safer alternatives like `ast.literal_eval()`. For dynamic logic, use a predefined 'dispatch table' (a dictionary) that maps safe keys to specific functions.",
+                "suggested_fix": "Refactor the code to remove `__import__()`. If you are parsing a stringified list or dictionary, use `import ast; data = ast.literal_eval(user_input)` which only evaluates literal constants.",
+                "source_code": "(r\"\"\"\\b__import__\\s*\\(\"\"\", \"__import__()\"),",
+                "fixed_code": "result = safe_dispatch.get(user_input, default_handler)()",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Remote Code Execution risk \u2014 compile(..., 'exec')",
+                "root_problem": "The use of `compile(..., 'exec')` is extremely dangerous when used with data that can be influenced by a user. These functions parse and execute strings as Python code, allowing an attacker to run arbitrary logic, access local variables, or import modules to perform malicious actions on the host system.",
+                "suggested_solution": "Avoid dynamic code execution entirely. If you need to evaluate mathematical expressions or literal data structures, use safer alternatives like `ast.literal_eval()`. For dynamic logic, use a predefined 'dispatch table' (a dictionary) that maps safe keys to specific functions.",
+                "suggested_fix": "Refactor the code to remove `compile(..., 'exec')`. If you are parsing a stringified list or dictionary, use `import ast; data = ast.literal_eval(user_input)` which only evaluates literal constants.",
+                "source_code": "(r\"\"\"compile\\s*\\(.*?,\\s*[\"']exec[\"']\"\"\", \"compile(..., 'exec')\"),",
+                "fixed_code": "result = safe_dispatch.get(user_input, default_handler)()",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Insecure Deserialization \u2014 pickle.load \u2014 arbitrary code execution",
+                "root_problem": "The application is using `pickle.load \u2014 arbitrary code execution` to deserialize data. In Python, `pickle` is notoriously insecure because it can execute arbitrary code during the unpickling process. If an attacker can provide a malicious serialized payload, they can gain full control over the execution environment. This vulnerability is a common vector for Remote Code Execution (RCE).",
+                "suggested_solution": "Never deserialize data from untrusted sources using `pickle`, `marshal`, or insecure `yaml.load()`. Instead, use data-only formats like JSON. If you must use a complex format, use `yaml.safe_load()` or ensure the data is digitally signed and verified before processing.",
+                "suggested_fix": "Replace `pickle.loads(data)` with `json.loads(data)` for pure data objects, or `yaml.safe_load(data)` if using YAML. If you must use pickle, verify a HMAC signature of the data first.",
+                "source_code": "\"Replace `pickle.loads(data)` with JSON or `yaml.safe_load(data)`. Never deserialize untrusted input with pickle.\",",
+                "fixed_code": "data = yaml.safe_load(raw_input)",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[HIGH] Server-Side Template Injection (SSTI)",
+                "root_problem": "Rendering user-supplied strings as templates allows attackers to execute arbitrary code on the server.",
+                "suggested_solution": "Never pass user input as template source. Use static template files and pass data as context variables only.",
+                "suggested_fix": "Replace `render_template_string(user_input)` with `render_template('template.html', data=validated_input)`.",
+                "source_code": "if re.search(r\"\"\"(render_template_string|Environment\\(\\)\\.from_string|jinja2\\.Template)\\s*\\(.*?(request|input|user|param)\"\"\", content):",
+                "fixed_code": "",
+                "detected_by": "sast"
+            },
+            {
+                "file_name": "CodeGuard-AI-main/app.py",
+                "issue_description": "[MEDIUM] Sensitive data written to logs",
+                "root_problem": "The application is explicitly logging potentially sensitive information such as passwords, tokens, or API keys. This is a common but serious security oversight. Logs are often stored in plain text, aggregated in observability platforms, or sent to third-party services. If these systems are compromised, your user credentials or system secrets are immediately exposed to attackers.",
+                "suggested_solution": "Implement a robust 'Log Redaction' or 'Sanitization' policy. You should never log the raw value of any field containing secrets. Use structural logging where you can filter specific keys, or use a custom filter in your logging configuration to mask patterns that look like credentials.",
+                "suggested_fix": "1. Audit your logging statements and remove direct printing of secrets.\n2. In Python, you can use a `logging.Filter` to automatically redact sensitive keys from log records.\n3. Change `logger.info(f'User password: {pwd}')` to `logger.info(f'Login attempt for user: {username}')` or use a mask: `logger.info('API Key: ' + key[:4] + '****')`.",
+                "source_code": "logger.warning(\"AUTH_TOKEN_SECRET is not configured; using an ephemeral in-memory secret for this process.\")",
+                "fixed_code": "",
+                "detected_by": "sast"
+            }
+        ],
+        "findings_by_file": {
+            "CodeGuard-AI-main/app.py": [
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] SQL Injection \u2014 string-interpolated query",
+                    "root_problem": "The application appears to be constructing a SQL query by directly concatenating or interpolating user-controlled variables. This is a classic 'SQL Injection' vulnerability (CWE-89). An attacker could leverage this to manipulate the query structure\u2014for example, by injecting ' OR 1=1 --'\u2014to bypass login screens, leak the entire database content, or even delete data depending on the database user's permissions.",
+                    "suggested_solution": "To fix this, you should never use string formatting (like f-strings, %, or .format()) to build SQL queries with dynamic data. Instead, use 'parameterized queries' or 'prepared statements.' This method sends the query structure and the data to the database engine separately, ensuring that the data is never executed as code.",
+                    "suggested_fix": "Replace manual string concatenation with positional or named placeholders. For example, if using `psycopg2` or `sqlite3`, use: `cursor.execute('SELECT * FROM users WHERE username = ?', (user_input,))` instead of an f-string or `+` operator.",
+                    "source_code": "c.execute(\"SELECT id FROM users WHERE username = ? COLLATE NOCASE OR email = ?\", (username, email))",
+                    "fixed_code": "cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Weak hash algorithm: MD5",
+                    "root_problem": "The code is using a cryptographic primitive (Weak hash algorithm: MD5) that is considered weak, deprecated, or broken by modern security standards. Algorithms like MD5 or SHA-1 are vulnerable to collision attacks, meaning an attacker can generate two different inputs that produce the same hash. Using insecure ciphers like DES or ECB mode leaves encrypted data susceptible to decryption via brute-force or statistical analysis.",
+                    "suggested_solution": "You should upgrade to modern, industry-standard cryptographic algorithms. Hashing should use SHA-256 (or better), and password-specific hashing should use 'Argon2id', 'bcrypt', or 'scrypt'. For symmetric encryption, use AES-GCM or ChaCha20-Poly1305, which provide both confidentiality and integrity.",
+                    "suggested_fix": "Replace the identified Weak hash algorithm: MD5 call with a secure alternative from a verified library like `cryptography` or `hashlib`. For hashing, use `hashlib.sha256()`. For encryption, prefer authenticated encryption modes (AEAD).",
+                    "source_code": "(r\"\"\"\\b(md5|MD5)\\b.*?\\(\"\"\", \"Weak hash algorithm: MD5\", \"CWE-327\"),",
+                    "fixed_code": "",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Weak hash algorithm: SHA-1",
+                    "root_problem": "The code is using a cryptographic primitive (Weak hash algorithm: SHA-1) that is considered weak, deprecated, or broken by modern security standards. Algorithms like MD5 or SHA-1 are vulnerable to collision attacks, meaning an attacker can generate two different inputs that produce the same hash. Using insecure ciphers like DES or ECB mode leaves encrypted data susceptible to decryption via brute-force or statistical analysis.",
+                    "suggested_solution": "You should upgrade to modern, industry-standard cryptographic algorithms. Hashing should use SHA-256 (or better), and password-specific hashing should use 'Argon2id', 'bcrypt', or 'scrypt'. For symmetric encryption, use AES-GCM or ChaCha20-Poly1305, which provide both confidentiality and integrity.",
+                    "suggested_fix": "Replace the identified Weak hash algorithm: SHA-1 call with a secure alternative from a verified library like `cryptography` or `hashlib`. For hashing, use `hashlib.sha256()`. For encryption, prefer authenticated encryption modes (AEAD).",
+                    "source_code": "(r\"\"\"\\b(sha1|SHA1|sha_1)\\b.*?\\(\"\"\", \"Weak hash algorithm: SHA-1\", \"CWE-327\"),",
+                    "fixed_code": "",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Weak symmetric cipher: DES/RC4",
+                    "root_problem": "The code is using a cryptographic primitive (Weak symmetric cipher: DES/RC4) that is considered weak, deprecated, or broken by modern security standards. Algorithms like MD5 or SHA-1 are vulnerable to collision attacks, meaning an attacker can generate two different inputs that produce the same hash. Using insecure ciphers like DES or ECB mode leaves encrypted data susceptible to decryption via brute-force or statistical analysis.",
+                    "suggested_solution": "You should upgrade to modern, industry-standard cryptographic algorithms. Hashing should use SHA-256 (or better), and password-specific hashing should use 'Argon2id', 'bcrypt', or 'scrypt'. For symmetric encryption, use AES-GCM or ChaCha20-Poly1305, which provide both confidentiality and integrity.",
+                    "suggested_fix": "Replace the identified Weak symmetric cipher: DES/RC4 call with a secure alternative from a verified library like `cryptography` or `hashlib`. For hashing, use `hashlib.sha256()`. For encryption, prefer authenticated encryption modes (AEAD).",
+                    "source_code": "(r\"\"\"\\b(des|DES|3des|RC4|rc4)\\b\"\"\", \"Weak symmetric cipher: DES/RC4\", \"CWE-327\"),",
+                    "fixed_code": "",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Insecure cipher mode: ECB",
+                    "root_problem": "The code is using a cryptographic primitive (Insecure cipher mode: ECB) that is considered weak, deprecated, or broken by modern security standards. Algorithms like MD5 or SHA-1 are vulnerable to collision attacks, meaning an attacker can generate two different inputs that produce the same hash. Using insecure ciphers like DES or ECB mode leaves encrypted data susceptible to decryption via brute-force or statistical analysis.",
+                    "suggested_solution": "You should upgrade to modern, industry-standard cryptographic algorithms. Hashing should use SHA-256 (or better), and password-specific hashing should use 'Argon2id', 'bcrypt', or 'scrypt'. For symmetric encryption, use AES-GCM or ChaCha20-Poly1305, which provide both confidentiality and integrity.",
+                    "suggested_fix": "Replace the identified Insecure cipher mode: ECB call with a secure alternative from a verified library like `cryptography` or `hashlib`. For hashing, use `hashlib.sha256()`. For encryption, prefer authenticated encryption modes (AEAD).",
+                    "source_code": "(r\"\"\"(?i)ECB\\b\"\"\", \"Insecure cipher mode: ECB\", \"CWE-327\"),",
+                    "fixed_code": "",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Command Injection risk \u2014 os.system() \u2014 arbitrary command execution",
+                    "root_problem": "The code is using a function (os.system() \u2014 arbitrary command execution) that executes strings as system commands. If any part of this string includes unvalidated input from a user, an attacker can 'inject' additional commands (e.g., `; rm -rf /`) that will be executed with the privileges of the application. This is a critical risk that can lead to a complete server takeover.",
+                    "suggested_solution": "The safest way to execute external programs is to avoid the system shell entirely. Instead of passing a single formatted string, pass a 'list' of arguments to `subprocess.run()` with `shell=False`. This ensures that the arguments are never interpreted by a shell (/bin/sh or cmd.exe), effectively neutralizing injection attempts.",
+                    "suggested_fix": "Replace `os.system(command)` or `subprocess.run(command, shell=True)` with `subprocess.run(['prog', 'arg1', 'arg2'], shell=False)`. Always validate or allowlist inputs if they must be used as arguments.",
+                    "source_code": "(r\"\"\"os\\.system\\s*\\(\"\"\", \"os.system() \u2014 arbitrary command execution\"),",
+                    "fixed_code": "subprocess.run(['ls', '-la', safe_dir], shell=False, check=True)",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Command Injection risk \u2014 subprocess with shell=True",
+                    "root_problem": "The code is using a function (subprocess with shell=True) that executes strings as system commands. If any part of this string includes unvalidated input from a user, an attacker can 'inject' additional commands (e.g., `; rm -rf /`) that will be executed with the privileges of the application. This is a critical risk that can lead to a complete server takeover.",
+                    "suggested_solution": "The safest way to execute external programs is to avoid the system shell entirely. Instead of passing a single formatted string, pass a 'list' of arguments to `subprocess.run()` with `shell=False`. This ensures that the arguments are never interpreted by a shell (/bin/sh or cmd.exe), effectively neutralizing injection attempts.",
+                    "suggested_fix": "Replace `os.system(command)` or `subprocess.run(command, shell=True)` with `subprocess.run(['prog', 'arg1', 'arg2'], shell=False)`. Always validate or allowlist inputs if they must be used as arguments.",
+                    "source_code": "\"Replace `os.system(cmd)` or `subprocess.run(cmd, shell=True)` with `subprocess.run(['program', arg1, arg2], shell=False)`.\",",
+                    "fixed_code": "subprocess.run(['ls', '-la', safe_dir], shell=False, check=True)",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Remote Code Execution risk \u2014 eval()",
+                    "root_problem": "The use of `eval()` is extremely dangerous when used with data that can be influenced by a user. These functions parse and execute strings as Python code, allowing an attacker to run arbitrary logic, access local variables, or import modules to perform malicious actions on the host system.",
+                    "suggested_solution": "Avoid dynamic code execution entirely. If you need to evaluate mathematical expressions or literal data structures, use safer alternatives like `ast.literal_eval()`. For dynamic logic, use a predefined 'dispatch table' (a dictionary) that maps safe keys to specific functions.",
+                    "suggested_fix": "Refactor the code to remove `eval()`. If you are parsing a stringified list or dictionary, use `import ast; data = ast.literal_eval(user_input)` which only evaluates literal constants.",
+                    "source_code": "(r\"\"\"\\beval\\s*\\(\"\"\", \"eval()\"),",
+                    "fixed_code": "result = safe_dispatch.get(user_input, default_handler)()",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Remote Code Execution risk \u2014 exec()",
+                    "root_problem": "The use of `exec()` is extremely dangerous when used with data that can be influenced by a user. These functions parse and execute strings as Python code, allowing an attacker to run arbitrary logic, access local variables, or import modules to perform malicious actions on the host system.",
+                    "suggested_solution": "Avoid dynamic code execution entirely. If you need to evaluate mathematical expressions or literal data structures, use safer alternatives like `ast.literal_eval()`. For dynamic logic, use a predefined 'dispatch table' (a dictionary) that maps safe keys to specific functions.",
+                    "suggested_fix": "Refactor the code to remove `exec()`. If you are parsing a stringified list or dictionary, use `import ast; data = ast.literal_eval(user_input)` which only evaluates literal constants.",
+                    "source_code": "(r\"\"\"\\bexec\\s*\\(\"\"\", \"exec()\"),",
+                    "fixed_code": "result = safe_dispatch.get(user_input, default_handler)()",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Remote Code Execution risk \u2014 __import__()",
+                    "root_problem": "The use of `__import__()` is extremely dangerous when used with data that can be influenced by a user. These functions parse and execute strings as Python code, allowing an attacker to run arbitrary logic, access local variables, or import modules to perform malicious actions on the host system.",
+                    "suggested_solution": "Avoid dynamic code execution entirely. If you need to evaluate mathematical expressions or literal data structures, use safer alternatives like `ast.literal_eval()`. For dynamic logic, use a predefined 'dispatch table' (a dictionary) that maps safe keys to specific functions.",
+                    "suggested_fix": "Refactor the code to remove `__import__()`. If you are parsing a stringified list or dictionary, use `import ast; data = ast.literal_eval(user_input)` which only evaluates literal constants.",
+                    "source_code": "(r\"\"\"\\b__import__\\s*\\(\"\"\", \"__import__()\"),",
+                    "fixed_code": "result = safe_dispatch.get(user_input, default_handler)()",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Remote Code Execution risk \u2014 compile(..., 'exec')",
+                    "root_problem": "The use of `compile(..., 'exec')` is extremely dangerous when used with data that can be influenced by a user. These functions parse and execute strings as Python code, allowing an attacker to run arbitrary logic, access local variables, or import modules to perform malicious actions on the host system.",
+                    "suggested_solution": "Avoid dynamic code execution entirely. If you need to evaluate mathematical expressions or literal data structures, use safer alternatives like `ast.literal_eval()`. For dynamic logic, use a predefined 'dispatch table' (a dictionary) that maps safe keys to specific functions.",
+                    "suggested_fix": "Refactor the code to remove `compile(..., 'exec')`. If you are parsing a stringified list or dictionary, use `import ast; data = ast.literal_eval(user_input)` which only evaluates literal constants.",
+                    "source_code": "(r\"\"\"compile\\s*\\(.*?,\\s*[\"']exec[\"']\"\"\", \"compile(..., 'exec')\"),",
+                    "fixed_code": "result = safe_dispatch.get(user_input, default_handler)()",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Insecure Deserialization \u2014 pickle.load \u2014 arbitrary code execution",
+                    "root_problem": "The application is using `pickle.load \u2014 arbitrary code execution` to deserialize data. In Python, `pickle` is notoriously insecure because it can execute arbitrary code during the unpickling process. If an attacker can provide a malicious serialized payload, they can gain full control over the execution environment. This vulnerability is a common vector for Remote Code Execution (RCE).",
+                    "suggested_solution": "Never deserialize data from untrusted sources using `pickle`, `marshal`, or insecure `yaml.load()`. Instead, use data-only formats like JSON. If you must use a complex format, use `yaml.safe_load()` or ensure the data is digitally signed and verified before processing.",
+                    "suggested_fix": "Replace `pickle.loads(data)` with `json.loads(data)` for pure data objects, or `yaml.safe_load(data)` if using YAML. If you must use pickle, verify a HMAC signature of the data first.",
+                    "source_code": "\"Replace `pickle.loads(data)` with JSON or `yaml.safe_load(data)`. Never deserialize untrusted input with pickle.\",",
+                    "fixed_code": "data = yaml.safe_load(raw_input)",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[HIGH] Server-Side Template Injection (SSTI)",
+                    "root_problem": "Rendering user-supplied strings as templates allows attackers to execute arbitrary code on the server.",
+                    "suggested_solution": "Never pass user input as template source. Use static template files and pass data as context variables only.",
+                    "suggested_fix": "Replace `render_template_string(user_input)` with `render_template('template.html', data=validated_input)`.",
+                    "source_code": "if re.search(r\"\"\"(render_template_string|Environment\\(\\)\\.from_string|jinja2\\.Template)\\s*\\(.*?(request|input|user|param)\"\"\", content):",
+                    "fixed_code": "",
+                    "detected_by": "sast"
+                },
+                {
+                    "file_name": "CodeGuard-AI-main/app.py",
+                    "issue_description": "[MEDIUM] Sensitive data written to logs",
+                    "root_problem": "The application is explicitly logging potentially sensitive information such as passwords, tokens, or API keys. This is a common but serious security oversight. Logs are often stored in plain text, aggregated in observability platforms, or sent to third-party services. If these systems are compromised, your user credentials or system secrets are immediately exposed to attackers.",
+                    "suggested_solution": "Implement a robust 'Log Redaction' or 'Sanitization' policy. You should never log the raw value of any field containing secrets. Use structural logging where you can filter specific keys, or use a custom filter in your logging configuration to mask patterns that look like credentials.",
+                    "suggested_fix": "1. Audit your logging statements and remove direct printing of secrets.\n2. In Python, you can use a `logging.Filter` to automatically redact sensitive keys from log records.\n3. Change `logger.info(f'User password: {pwd}')` to `logger.info(f'Login attempt for user: {username}')` or use a mask: `logger.info('API Key: ' + key[:4] + '****')`.",
+                    "source_code": "logger.warning(\"AUTH_TOKEN_SECRET is not configured; using an ephemeral in-memory secret for this process.\")",
+                    "fixed_code": "",
+                    "detected_by": "sast"
+                }
+            ],
+            "CodeGuard-AI-main/my-security-ui/app/components/AppShell.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/dashboard/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/history/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/hooks/useScan.ts": [],
+            "CodeGuard-AI-main/my-security-ui/app/layout.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/lib/auth.ts": [],
+            "CodeGuard-AI-main/my-security-ui/app/lib/validation.ts": [],
+            "CodeGuard-AI-main/my-security-ui/app/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/reports/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/app/settings/page.tsx": [],
+            "CodeGuard-AI-main/my-security-ui/next.config.ts": [],
+            "CodeGuard-AI-main/utils.py": []
+        },
+        "overall_reviews_by_file": {
+            "CodeGuard-AI-main/app.py": {
+                "summary": "The security analysis has identified 14 unresolved issue(s) within this file, including 13 high-severity risk(s). These findings indicate potential entry points for attackers and should be addressed systematically to harden the application's defense-in-depth posture.",
+                "strengths": [
+                    "The code provides a clear structure, which facilitates the identification and remediation of these security gaps.",
+                    "The identified vulnerabilities are well-known patterns with established industry-standard fixes."
+                ],
+                "key_risks": [
+                    "The presence of 13 High-severity issues poses an immediate threat to the confidentiality and integrity of the system.",
+                    "Chained vulnerabilities (combining Medium and Low risks) could still lead to a significant security compromise if left unaddressed."
+                ],
+                "maintainability_assessment": "Security technical debt is currently elevated. Resolving these findings will not only secure the application but also improve the overall quality and reliability of the codebase.",
+                "test_recommendations": [
+                    "Develop specific security regression tests for each identified vulnerability to ensure they do not reappear in future updates.",
+                    "Incorporate automated security scanning into the development workflow to catch similar issues earlier in the lifecycle."
+                ],
+                "priority_actions": [
+                    "Immediate Action: Remediate the 13 High-severity vulnerability(ies) prior to any production deployment.",
+                    "Schedule a follow-up review for the Medium and Low risk issues to ensure a comprehensive security hardening."
+                ]
+            },
+            "CodeGuard-AI-main/my-security-ui/app/components/AppShell.tsx": {
+                "summary": "Our comprehensive static analysis has concluded, and we are pleased to report that no explicit security vulnerabilities were detected in this file during this pass. The code demonstrates a clean security posture regarding common anti-patterns and known vulnerability signatures.",
+                "strengths": [
+                    "The source code appears to follow secure coding patterns for the identified language and framework.",
+                    "No hardcoded credentials, injection sinks, or insecure cryptographic primitives were discovered.",
+                    "The implementation shows a good baseline for security hygiene and maintainability."
+                ],
+                "key_risks": [
+                    "While no issues were found, static analysis cannot detect all logic flaws or runtime-specific vulnerabilities.",
+                    "The security of the file also depends on its dependencies and the environment in which it executes."
+                ],
+                "maintainability_assessment": "The code is well-structured from a security perspective. Continued use of linting and type-checking will help maintain this high standard.",
+                "test_recommendations": [
+                    "Implement unit tests that specifically target edge cases and malformed inputs to ensure ongoing robustness.",
+                    "Consider adding property-based testing to explore a wider range of potential input states."
+                ],
+                "priority_actions": [
+                    "Maintain regular dependency audits to identify and remediate vulnerabilities in third-party libraries.",
+                    "Integrate this security scanning process into your continuous integration (CI) pipeline for real-time feedback."
+                ]
+            },
+            "CodeGuard-AI-main/my-security-ui/app/dashboard/page.tsx": {
+                "summary": "Our comprehensive static analysis has concluded, and we are pleased to report that no explicit security vulnerabilities were detected in this file during this pass. The code demonstrates a clean security posture regarding common anti-patterns and known vulnerability signatures.",
+                "strengths": [
+                    "The source code appears to follow secure coding patterns for the identified language and framework.",
+                    "No hardcoded credentials, injection sinks, or insecure cryptographic primitives were discovered.",
+                    "The implementation shows a good baseline for security hygiene and maintainability."
+                ],
+                "key_risks": [
+                    "While no issues were found, static analysis cannot detect all logic flaws or runtime-specific vulnerabilities.",
+                    "The security of the file also depends on its dependencies and the environment in which it executes."
+                ],
+                "maintainability_assessment": "The code is well-structured from a security perspective. Continued use of linting and type-checking will help maintain this high standard.",
+                "test_recommendations": [
+                    "Implement unit tests that specifically target edge cases and malformed inputs to ensure ongoing robustness.",
+                    "Consider adding property-based testing to explore a wider range of potential input states."
+                ],
+                "priority_actions": [
+                    "Maintain regular dependency audits to identify and remediate vulnerabilities in third-party libraries.",
+                    "Integrate this security scanning process into your continuous integration (CI) pipeline for real-time feedback."
+                ]
+            },
+            "CodeGuard-AI-main/my-security-ui/app/history/page.tsx": {
+                "summary": "Our comprehensive static analysis has concluded, and we are pleased to report that no explicit security vulnerabilities were detected in this file during this pass. The code demonstrates a clean security posture regarding common anti-patterns and known vulnerability signatures.",
+                "strengths": [
+                    "The source code appears to follow secure coding patterns for the identified language and framework.",
+                    "No hardcoded credentials, injection sinks, or insecure cryptographic primitives were discovered.",
+                    "The implementation shows a good baseline for security hygiene and maintainability."
+                ],
+                "key_risks": [
+                    "While no issues were found, static analysis cannot detect all logic flaws or runtime-specific vulnerabilities.",
+                    "The security of the file also depends on its dependencies and the environment in which it executes."
+                ],
+                "maintainability_assessment": "The code is well-structured from a security perspective. Continued use of linting and type-checking will help maintain this high standard.",
+                "test_recommendations": [
+                    "Implement unit tests that specifically target edge cases and malformed inputs to ensure ongoing robustness.",
+                    "Consider adding property-based testing to explore a wider range of potential input states."
+                ],
+                "priority_actions": [
+                    "Maintain regular dependency audits to identify and remediate vulnerabilities in third-party libraries.",
+                    "Integrate this security scanning process into your continuous integration (CI) pipeline for real-time feedback."
+                ]
+            },
+            "CodeGuard-AI-main/my-security-ui/app/hooks/useScan.ts": {
+                "summary": "Our comprehensive static analysis has concluded, and we are pleased to report that no explicit security vulnerabilities were detected in this file during this pass. The code demonstrates a clean security posture regarding common anti-patterns and known vulnerability signatures.",
+                "strengths": [
+                    "The source code appears to follow secure coding patterns for the identified language and framework.",
+                    "No hardcoded credentials, injection sinks, or insecure cryptographic primitives were discovered.",
+                    "The implementation shows a good baseline for security hygiene and maintainability."
+                ],
+                "key_risks": [
+                    "While no issues were found, static analysis cannot detect all logic flaws or runtime-specific vulnerabilities.",
+                    "The security of the file also depends on its dependencies and the environment in which it executes."
+                ],
+                "maintainability_assessment": "The code is well-structured from a security perspective. Continued use of linting and type-checking will help maintain this high standard.",
+                "test_recommendations": [
+                    "Implement unit tests that specifically target edge cases and malformed inputs to ensure ongoing robustness.",
+                    "Consider adding property-based testing to explore a wider range of potential input states."
+                ],
+                "priority_actions": [
+                    "Maintain regular dependency audits to identify and remediate vulnerabilities in third-party libraries.",
+                    "Integrate this security scanning process into your continuous integration (CI) pipeline for real-time feedback."
+                ]
+            },
+            "CodeGuard-AI-main/my-security-ui/app/layout.tsx": {
+                "summary": "Our comprehensive static analysis has concluded, and we are pleased to report that no explicit security vulnerabilities were detected in this file during this pass. The code demonstrates a clean security posture regarding common anti-patterns and known vulnerability signatures.",
+                "strengths": [
+                    "The source code appears to follow secure coding patterns for the identified language and framework.",
+                    "No hardcoded credentials, injection sinks, or insecure cryptographic primitives were discovered.",
+                    "The implementation shows a good baseline for security hygiene and maintainability."
+                ],
+                "key_risks": [
+                    "While no issues were found, static analysis cannot detect all logic flaws or runtime-specific vulnerabilities.",
+                    "The security of the file also depends on its dependencies and the environment in which it executes."
+                ],
+                "maintainability_assessment": "The code is well-structured from a security perspective. Continued use of linting and type-checking will help maintain this high standard.",
+                "test_recommendations": [
+                    "Implement unit tests that specifically target edge cases and malformed inputs to ensure ongoing robustness.",
+                    "Consider adding property-based testing to explore a wider range of potential input states."
+                ],
+                "priority_actions": [
+                    "Maintain regular dependency audits to identify and remediate vulnerabilities in third-party libraries.",
+                    "Integrate this security scanning process into your continuous integration (CI) pipeline for real-time feedback."
+                ]
+            },
+            "CodeGuard-AI-main/my-security-ui/app/lib/auth.ts": {
+                "summary": "Our comprehensive static analysis has concluded, and we are pleased to report that no explicit security vulnerabilities were detected in this file during this pass. The code demonstrates a clean security posture regarding common anti-patterns and known vulnerability signatures.",
+                "strengths": [
+                    "The source code appears to follow secure coding patterns for the identified language and framework.",
+                    "No hardcoded credentials, injection sinks, or insecure cryptographic primitives were discovered.",
+                    "The implementation shows a good baseline for security hygiene and maintainability."
+                ],
+                "key_risks": [
+                    "While no issues were found, static analysis cannot detect all logic flaws or runtime-specific vulnerabilities.",
+                    "The security of the file also depends on its dependencies and the environment in which it executes."
+                ],
+                "maintainability_assessment": "The code is well-structured from a security perspective. Continued use of linting and type-checking will help maintain this high standard.",
+                "test_recommendations": [
+                    "Implement unit tests that specifically target edge cases and malformed inputs to ensure ongoing robustness.",
+                    "Consider adding property-based testing to explore a wider range of potential input states."
+                ],
+                "priority_actions": [
+                    "Maintain regular dependency audits to identify and remediate vulnerabilities in third-party libraries.",
+                    "Integrate this security scanning process into your continuous integration (CI) pipeline for real-time feedback."
+                ]
+            },
+            "CodeGuard-AI-main/my-security-ui/app/lib/validation.ts": {
+                "summary": "Our comprehensive static analysis has concluded, and we are pleased to report that no explicit security vulnerabilities were detected in this file during this pass. The code demonstrates a clean security posture regarding common anti-patterns and known vulnerability signatures.",
+                "strengths": [
+                    "The source code appears to follow secure coding patterns for the identified language and framework.",
+                    "No hardcoded credentials, injection sinks, or insecure cryptographic primitives were discovered.",
+                    "The implementation shows a good baseline for security hygiene and maintainability."
+                ],
+                "key_risks": [
+                    "While no issues were found, static analysis cannot detect all logic flaws or runtime-specific vulnerabilities.",
+                    "The security of the file also depends on its dependencies and the environment in which it executes."
+                ],
+                "maintainability_assessment": "The code is well-structured from a security perspective. Continued use of linting and type-checking will help maintain this high standard.",
+                "test_recommendations": [
+                    "Implement unit tests that specifically target edge cases and malformed inputs to ensure ongoing robustness.",
+                    "Consider adding property-based testing to explore a wider range of potential input states."
+                ],
+                "priority_actions": [
+                    "Maintain regular dependency audits to identify and remediate vulnerabilities in third-party libraries.",
+                    "Integrate this security scanning process into your continuous integration (CI) pipeline for real-time feedback."
+                ]
+            },
+            "CodeGuard-AI-main/my-security-ui/app/page.tsx": {
+                "summary": "Our comprehensive static analysis has concluded, and we are pleased to report that no explicit security vulnerabilities were detected in this file during this pass. The code demonstrates a clean security posture regarding common anti-patterns and known vulnerability signatures.",
+                "strengths": [
+                    "The source code appears to follow secure coding patterns for the identified language and framework.",
+                    "No hardcoded credentials, injection sinks, or insecure cryptographic primitives were discovered.",
+                    "The implementation shows a good baseline for security hygiene and maintainability."
+                ],
+                "key_risks": [
+                    "While no issues were found, static analysis cannot detect all logic flaws or runtime-specific vulnerabilities.",
+                    "The security of the file also depends on its dependencies and the environment in which it executes."
+                ],
+                "maintainability_assessment": "The code is well-structured from a security perspective. Continued use of linting and type-checking will help maintain this high standard.",
+                "test_recommendations": [
+                    "Implement unit tests that specifically target edge cases and malformed inputs to ensure ongoing robustness.",
+                    "Consider adding property-based testing to explore a wider range of potential input states."
+                ],
+                "priority_actions": [
+                    "Maintain regular dependency audits to identify and remediate vulnerabilities in third-party libraries.",
+                    "Integrate this security scanning process into your continuous integration (CI) pipeline for real-time feedback."
+                ]
+            },
+            "CodeGuard-AI-main/my-security-ui/app/reports/page.tsx": {
+                "summary": "Our comprehensive static analysis has concluded, and we are pleased to report that no explicit security vulnerabilities were detected in this file during this pass. The code demonstrates a clean security posture regarding common anti-patterns and known vulnerability signatures.",
+                "strengths": [
+                    "The source code appears to follow secure coding patterns for the identified language and framework.",
+                    "No hardcoded credentials, injection sinks, or insecure cryptographic primitives were discovered.",
+                    "The implementation shows a good baseline for security hygiene and maintainability."
+                ],
+                "key_risks": [
+                    "While no issues were found, static analysis cannot detect all logic flaws or runtime-specific vulnerabilities.",
+                    "The security of the file also depends on its dependencies and the environment in which it executes."
+                ],
+                "maintainability_assessment": "The code is well-structured from a security perspective. Continued use of linting and type-checking will help maintain this high standard.",
+                "test_recommendations": [
+                    "Implement unit tests that specifically target edge cases and malformed inputs to ensure ongoing robustness.",
+                    "Consider adding property-based testing to explore a wider range of potential input states."
+                ],
+                "priority_actions": [
+                    "Maintain regular dependency audits to identify and remediate vulnerabilities in third-party libraries.",
+                    "Integrate this security scanning process into your continuous integration (CI) pipeline for real-time feedback."
+                ]
+            },
+            "CodeGuard-AI-main/my-security-ui/app/settings/page.tsx": {
+                "summary": "Our comprehensive static analysis has concluded, and we are pleased to report that no explicit security vulnerabilities were detected in this file during this pass. The code demonstrates a clean security posture regarding common anti-patterns and known vulnerability signatures.",
+                "strengths": [
+                    "The source code appears to follow secure coding patterns for the identified language and framework.",
+                    "No hardcoded credentials, injection sinks, or insecure cryptographic primitives were discovered.",
+                    "The implementation shows a good baseline for security hygiene and maintainability."
+                ],
+                "key_risks": [
+                    "While no issues were found, static analysis cannot detect all logic flaws or runtime-specific vulnerabilities.",
+                    "The security of the file also depends on its dependencies and the environment in which it executes."
+                ],
+                "maintainability_assessment": "The code is well-structured from a security perspective. Continued use of linting and type-checking will help maintain this high standard.",
+                "test_recommendations": [
+                    "Implement unit tests that specifically target edge cases and malformed inputs to ensure ongoing robustness.",
+                    "Consider adding property-based testing to explore a wider range of potential input states."
+                ],
+                "priority_actions": [
+                    "Maintain regular dependency audits to identify and remediate vulnerabilities in third-party libraries.",
+                    "Integrate this security scanning process into your continuous integration (CI) pipeline for real-time feedback."
+                ]
+            },
+            "CodeGuard-AI-main/my-security-ui/next.config.ts": {
+                "summary": "Our comprehensive static analysis has concluded, and we are pleased to report that no explicit security vulnerabilities were detected in this file during this pass. The code demonstrates a clean security posture regarding common anti-patterns and known vulnerability signatures.",
+                "strengths": [
+                    "The source code appears to follow secure coding patterns for the identified language and framework.",
+                    "No hardcoded credentials, injection sinks, or insecure cryptographic primitives were discovered.",
+                    "The implementation shows a good baseline for security hygiene and maintainability."
+                ],
+                "key_risks": [
+                    "While no issues were found, static analysis cannot detect all logic flaws or runtime-specific vulnerabilities.",
+                    "The security of the file also depends on its dependencies and the environment in which it executes."
+                ],
+                "maintainability_assessment": "The code is well-structured from a security perspective. Continued use of linting and type-checking will help maintain this high standard.",
+                "test_recommendations": [
+                    "Implement unit tests that specifically target edge cases and malformed inputs to ensure ongoing robustness.",
+                    "Consider adding property-based testing to explore a wider range of potential input states."
+                ],
+                "priority_actions": [
+                    "Maintain regular dependency audits to identify and remediate vulnerabilities in third-party libraries.",
+                    "Integrate this security scanning process into your continuous integration (CI) pipeline for real-time feedback."
+                ]
+            },
+            "CodeGuard-AI-main/utils.py": {
+                "summary": "Our comprehensive static analysis has concluded, and we are pleased to report that no explicit security vulnerabilities were detected in this file during this pass. The code demonstrates a clean security posture regarding common anti-patterns and known vulnerability signatures.",
+                "strengths": [
+                    "The source code appears to follow secure coding patterns for the identified language and framework.",
+                    "No hardcoded credentials, injection sinks, or insecure cryptographic primitives were discovered.",
+                    "The implementation shows a good baseline for security hygiene and maintainability."
+                ],
+                "key_risks": [
+                    "While no issues were found, static analysis cannot detect all logic flaws or runtime-specific vulnerabilities.",
+                    "The security of the file also depends on its dependencies and the environment in which it executes."
+                ],
+                "maintainability_assessment": "The code is well-structured from a security perspective. Continued use of linting and type-checking will help maintain this high standard.",
+                "test_recommendations": [
+                    "Implement unit tests that specifically target edge cases and malformed inputs to ensure ongoing robustness.",
+                    "Consider adding property-based testing to explore a wider range of potential input states."
+                ],
+                "priority_actions": [
+                    "Maintain regular dependency audits to identify and remediate vulnerabilities in third-party libraries.",
+                    "Integrate this security scanning process into your continuous integration (CI) pipeline for real-time feedback."
+                ]
+            }
+        },
+        "executive_summary": {
+            "overall_assessment": "The security analysis has identified several critical areas requiring immediate attention. While the core logic is sound, the presence of specific vulnerability patterns significantly increases the application's risk profile. A systematic remediation effort is required to ensure a high level of security assurance.",
+            "most_important_findings": [
+                {
+                    "title": "[HIGH] SQL Injection \u2014 string-interpolated query",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-89"
+                    ],
+                    "owasp_categories": [
+                        "A03:2021 - Injection"
+                    ],
+                    "affected_files": [
+                        "CodeGuard-AI-main/app.py"
+                    ],
+                    "why_it_matters": "The application appears to be constructing a SQL query by directly concatenating or interpolating user-controlled variables. This is a classic 'SQL Injection' vulnerability (CWE-89). An attacker could leverage this to manipulate the query structure\u2014for example, by injecting ' OR 1=1 --'\u2014to bypass login screens, leak the entire database content, or even delete data depending on the database user's permissions.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "To fix this, you should never use string formatting (like f-strings, %, or .format()) to build SQL queries with dynamic data. Instead, use 'parameterized queries' or 'prepared statements.' This method sends the query structure and the data to the database engine separately, ensuring that the data is never executed as code.",
+                        "Replace manual string concatenation with positional or named placeholders. For example, if using `psycopg2` or `sqlite3`, use: `cursor.execute('SELECT * FROM users WHERE username = ?', (user_input,))` instead of an f-string or `+` operator.",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                },
+                {
+                    "title": "[HIGH] Weak hash algorithm: MD5",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-Other"
+                    ],
+                    "owasp_categories": [
+                        "A04:2021 - Insecure Design"
+                    ],
+                    "affected_files": [
+                        "CodeGuard-AI-main/app.py"
+                    ],
+                    "why_it_matters": "The code is using a cryptographic primitive (Weak hash algorithm: MD5) that is considered weak, deprecated, or broken by modern security standards. Algorithms like MD5 or SHA-1 are vulnerable to collision attacks, meaning an attacker can generate two different inputs that produce the same hash. Using insecure ciphers like DES or ECB mode leaves encrypted data susceptible to decryption via brute-force or statistical analysis.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "You should upgrade to modern, industry-standard cryptographic algorithms. Hashing should use SHA-256 (or better), and password-specific hashing should use 'Argon2id', 'bcrypt', or 'scrypt'. For symmetric encryption, use AES-GCM or ChaCha20-Poly1305, which provide both confidentiality and integrity.",
+                        "Replace the identified Weak hash algorithm: MD5 call with a secure alternative from a verified library like `cryptography` or `hashlib`. For hashing, use `hashlib.sha256()`. For encryption, prefer authenticated encryption modes (AEAD).",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                },
+                {
+                    "title": "[HIGH] Weak hash algorithm: SHA-1",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-Other"
+                    ],
+                    "owasp_categories": [
+                        "A04:2021 - Insecure Design"
+                    ],
+                    "affected_files": [
+                        "CodeGuard-AI-main/app.py"
+                    ],
+                    "why_it_matters": "The code is using a cryptographic primitive (Weak hash algorithm: SHA-1) that is considered weak, deprecated, or broken by modern security standards. Algorithms like MD5 or SHA-1 are vulnerable to collision attacks, meaning an attacker can generate two different inputs that produce the same hash. Using insecure ciphers like DES or ECB mode leaves encrypted data susceptible to decryption via brute-force or statistical analysis.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "You should upgrade to modern, industry-standard cryptographic algorithms. Hashing should use SHA-256 (or better), and password-specific hashing should use 'Argon2id', 'bcrypt', or 'scrypt'. For symmetric encryption, use AES-GCM or ChaCha20-Poly1305, which provide both confidentiality and integrity.",
+                        "Replace the identified Weak hash algorithm: SHA-1 call with a secure alternative from a verified library like `cryptography` or `hashlib`. For hashing, use `hashlib.sha256()`. For encryption, prefer authenticated encryption modes (AEAD).",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                },
+                {
+                    "title": "[HIGH] Weak symmetric cipher: DES/RC4",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-Other"
+                    ],
+                    "owasp_categories": [
+                        "A04:2021 - Insecure Design"
+                    ],
+                    "affected_files": [
+                        "CodeGuard-AI-main/app.py"
+                    ],
+                    "why_it_matters": "The code is using a cryptographic primitive (Weak symmetric cipher: DES/RC4) that is considered weak, deprecated, or broken by modern security standards. Algorithms like MD5 or SHA-1 are vulnerable to collision attacks, meaning an attacker can generate two different inputs that produce the same hash. Using insecure ciphers like DES or ECB mode leaves encrypted data susceptible to decryption via brute-force or statistical analysis.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "You should upgrade to modern, industry-standard cryptographic algorithms. Hashing should use SHA-256 (or better), and password-specific hashing should use 'Argon2id', 'bcrypt', or 'scrypt'. For symmetric encryption, use AES-GCM or ChaCha20-Poly1305, which provide both confidentiality and integrity.",
+                        "Replace the identified Weak symmetric cipher: DES/RC4 call with a secure alternative from a verified library like `cryptography` or `hashlib`. For hashing, use `hashlib.sha256()`. For encryption, prefer authenticated encryption modes (AEAD).",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                },
+                {
+                    "title": "[HIGH] Insecure cipher mode: ECB",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-Other"
+                    ],
+                    "owasp_categories": [
+                        "A04:2021 - Insecure Design"
+                    ],
+                    "affected_files": [
+                        "CodeGuard-AI-main/app.py"
+                    ],
+                    "why_it_matters": "The code is using a cryptographic primitive (Insecure cipher mode: ECB) that is considered weak, deprecated, or broken by modern security standards. Algorithms like MD5 or SHA-1 are vulnerable to collision attacks, meaning an attacker can generate two different inputs that produce the same hash. Using insecure ciphers like DES or ECB mode leaves encrypted data susceptible to decryption via brute-force or statistical analysis.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "You should upgrade to modern, industry-standard cryptographic algorithms. Hashing should use SHA-256 (or better), and password-specific hashing should use 'Argon2id', 'bcrypt', or 'scrypt'. For symmetric encryption, use AES-GCM or ChaCha20-Poly1305, which provide both confidentiality and integrity.",
+                        "Replace the identified Insecure cipher mode: ECB call with a secure alternative from a verified library like `cryptography` or `hashlib`. For hashing, use `hashlib.sha256()`. For encryption, prefer authenticated encryption modes (AEAD).",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                },
+                {
+                    "title": "[HIGH] Command Injection risk \u2014 os.system() \u2014 arbitrary command execution",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-Other"
+                    ],
+                    "owasp_categories": [
+                        "A04:2021 - Insecure Design"
+                    ],
+                    "affected_files": [
+                        "CodeGuard-AI-main/app.py"
+                    ],
+                    "why_it_matters": "The code is using a function (os.system() \u2014 arbitrary command execution) that executes strings as system commands. If any part of this string includes unvalidated input from a user, an attacker can 'inject' additional commands (e.g., `; rm -rf /`) that will be executed with the privileges of the application. This is a critical risk that can lead to a complete server takeover.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "The safest way to execute external programs is to avoid the system shell entirely. Instead of passing a single formatted string, pass a 'list' of arguments to `subprocess.run()` with `shell=False`. This ensures that the arguments are never interpreted by a shell (/bin/sh or cmd.exe), effectively neutralizing injection attempts.",
+                        "Replace `os.system(command)` or `subprocess.run(command, shell=True)` with `subprocess.run(['prog', 'arg1', 'arg2'], shell=False)`. Always validate or allowlist inputs if they must be used as arguments.",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                },
+                {
+                    "title": "[HIGH] Command Injection risk \u2014 subprocess with shell=True",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-Other"
+                    ],
+                    "owasp_categories": [
+                        "A04:2021 - Insecure Design"
+                    ],
+                    "affected_files": [
+                        "CodeGuard-AI-main/app.py"
+                    ],
+                    "why_it_matters": "The code is using a function (subprocess with shell=True) that executes strings as system commands. If any part of this string includes unvalidated input from a user, an attacker can 'inject' additional commands (e.g., `; rm -rf /`) that will be executed with the privileges of the application. This is a critical risk that can lead to a complete server takeover.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "The safest way to execute external programs is to avoid the system shell entirely. Instead of passing a single formatted string, pass a 'list' of arguments to `subprocess.run()` with `shell=False`. This ensures that the arguments are never interpreted by a shell (/bin/sh or cmd.exe), effectively neutralizing injection attempts.",
+                        "Replace `os.system(command)` or `subprocess.run(command, shell=True)` with `subprocess.run(['prog', 'arg1', 'arg2'], shell=False)`. Always validate or allowlist inputs if they must be used as arguments.",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                },
+                {
+                    "title": "[HIGH] Remote Code Execution risk \u2014 eval()",
+                    "severity": "High",
+                    "cwe_ids": [
+                        "CWE-Other"
+                    ],
+                    "owasp_categories": [
+                        "A04:2021 - Insecure Design"
+                    ],
+                    "affected_files": [
+                        "CodeGuard-AI-main/app.py"
+                    ],
+                    "why_it_matters": "The use of `eval()` is extremely dangerous when used with data that can be influenced by a user. These functions parse and execute strings as Python code, allowing an attacker to run arbitrary logic, access local variables, or import modules to perform malicious actions on the host system.",
+                    "attack_scenario": "An attacker could abuse this weakness to compromise confidentiality, integrity, or availability.",
+                    "business_impact": "Potential service disruption, data exposure, or trust and compliance impact depending on exploitability.",
+                    "recommended_actions": [
+                        "Avoid dynamic code execution entirely. If you need to evaluate mathematical expressions or literal data structures, use safer alternatives like `ast.literal_eval()`. For dynamic logic, use a predefined 'dispatch table' (a dictionary) that maps safe keys to specific functions.",
+                        "Refactor the code to remove `eval()`. If you are parsing a stringified list or dictionary, use `import ast; data = ast.literal_eval(user_input)` which only evaluates literal constants.",
+                        "Add regression security tests to prevent recurrence."
+                    ]
+                }
+            ],
+            "immediate_next_steps": [
+                "Prioritize the remediation of 'High' severity findings as they represent the most immediate threat to your infrastructure and data.",
+                "Establish a clear ownership and remediation timeline for all identified security tasks.",
+                "Perform a verification scan after fixes are applied to confirm that all vulnerabilities have been effectively neutralized."
+            ]
+        },
+        "security_score": {
+            "score": 0,
+            "grade": "F",
+            "total_files": 13,
+            "weights": {
+                "high": 20,
+                "medium": 10,
+                "low": 4,
+                "error": 15
+            },
+            "rationale": "Score starts at 100 and subtracts weighted penalties for unresolved findings."
+        },
+        "username": "tst1",
+        "improvement_suggestions": [
+            "Keep dependencies up to date using automated vulnerability scanners.",
+            "Run continuous static analysis on all Pull Requests.",
+            "Enforce linting rules in CI/CD."
+        ],
         "source": "github:YagilAharoni/CodeGuard-AI"
     }
 ]

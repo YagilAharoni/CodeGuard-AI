@@ -28,7 +28,7 @@ const formatDate = (timestamp: string) =>
 
 function HistoryPageContent() {
   const router = useRouter();
-  const username = getStoredUser()?.username || "anonymous";
+  const [username, setUsername] = useState("anonymous");
 
   const [history, setHistory] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +39,9 @@ function HistoryPageContent() {
 
   useEffect(() => {
     setMounted(true);
+    const user = getStoredUser();
+    if (user) setUsername(user.username);
+    
     if (!isAuthenticated()) {
       router.replace("/");
     }
