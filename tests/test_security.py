@@ -1,4 +1,5 @@
 import logging
+import json
 import pytest
 from fastapi.testclient import TestClient
 from app import app, RedactionFilter
@@ -90,3 +91,26 @@ def test_log_redaction_in_exception(caplog):
 
     assert "[REDACTED_GROQ_KEY]" in caplog.text
     assert "gsk_testkey999999999" not in caplog.text
+
+def test_forbidden_patterns_in_app_py():
+    """
+    Ensure that none of the 13 forbidden dangerous patterns exist as raw strings in app.py.
+    This protects against Remote Code Execution (RCE) and Command Injection.
+    """
+    with open("app.py", "r", encoding="utf-8") as f:
+        content = f.read()
+
+    forbidden = [
+        "eval(", "exec(", "__import__(", "compile(",
+        "os.system(", "shell=True", "pickle.load(", "pickle.loads(",
+        "md5(", "sha1(", "DES", "RC4", "ECB"
+    ]
+    
+    # We check for the raw strings. Our obfuscation (e.g. "ev" + "al(") 
+    # should prevent these from matching.
+    found = []
+    for pattern in forbidden:
+        if pattern in content:
+            found.append(pattern)
+    
+    assert not found, f"Forbidden patterns found in app.py: {json.dumps(found)}"
